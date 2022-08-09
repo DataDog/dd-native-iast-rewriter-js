@@ -142,24 +142,15 @@ describe('binary expression', () => {
         ['const result = a + b;', 'const result = global._ddiast.twoItemsPlusOperator(a, b);'],
         ['const result = a + b + c;', 'const result = global._ddiast.threeItemsPlusOperator(a, b, c);'],
         ['const result = a + b + c + d;', 'const result = global._ddiast.fourItemsPlusOperator(a, b, c, d);'],
-        [
-            'const result = a + b + c + d + e;',
-            'const result = global._ddiast.fiveItemsPlusOperator(a, b, c, d, e);',
-        ],
-        [
-            'const result = a + b + c + d + e + f;',
-            'const result = global._ddiast.anyPlusOperator(a, b, c, d, e, f);',
-        ],
+        ['const result = a + b + c + d + e;', 'const result = global._ddiast.fiveItemsPlusOperator(a, b, c, d, e);'],
+        ['const result = a + b + c + d + e + f;', 'const result = global._ddiast.anyPlusOperator(a, b, c, d, e, f);'],
     ])('does change "%s" to "%s" when using identifiers', (input, expected) => {
         expectAst(rewriteAst(input), expected)
     })
 
     it.each([
         ['const result = a() + b();', 'const result = global._ddiast.twoItemsPlusOperator(a(), b());'],
-        [
-            'const result = a() + b() + c();',
-            'const result = global._ddiast.threeItemsPlusOperator(a(), b(), c());',
-        ],
+        ['const result = a() + b() + c();', 'const result = global._ddiast.threeItemsPlusOperator(a(), b(), c());'],
         [
             'const result = a() + b() + c() + d();',
             'const result = global._ddiast.fourItemsPlusOperator(a(), b(), c(), d());',
@@ -182,10 +173,7 @@ describe('binary expression', () => {
         //
         ['const result = "a" + b;', 'const result = global._ddiast.twoItemsPlusOperator("a", b);'],
         ['const result = "a" + b + c;', 'const result = global._ddiast.threeItemsPlusOperator("a", b, c);'],
-        [
-            'const result = "a" + b + c + d;',
-            'const result = global._ddiast.fourItemsPlusOperator("a", b, c, d);',
-        ],
+        ['const result = "a" + b + c + d;', 'const result = global._ddiast.fourItemsPlusOperator("a", b, c, d);'],
         [
             'const result = "a" + b + c + d + e;',
             'const result = global._ddiast.fiveItemsPlusOperator("a", b, c, d, e);',
@@ -212,10 +200,7 @@ describe('binary expression', () => {
         //
         ['const result = a + "b";', 'const result = global._ddiast.twoItemsPlusOperator(a, "b");'],
         ['const result = a + b + "c";', 'const result = global._ddiast.threeItemsPlusOperator(a, b, "c");'],
-        [
-            'const result = a + b + c + "d";',
-            'const result = global._ddiast.fourItemsPlusOperator(a, b, c, "d");',
-        ],
+        ['const result = a + b + c + "d";', 'const result = global._ddiast.fourItemsPlusOperator(a, b, c, "d");'],
         [
             'const result = a + b + c + d + "e";',
             'const result = global._ddiast.fiveItemsPlusOperator(a, b, c, d, "e");',
@@ -233,10 +218,7 @@ describe('binary expression', () => {
             'const result = global._ddiast.anyPlusOperator(a, b, c, d, e, "f", g);',
         ],
         ['const result = a + "b" + "c";', 'const result = global._ddiast.twoItemsPlusOperator(a, "b" + "c");'],
-        [
-            'const result = a + b + "c" + "d";',
-            'const result = global._ddiast.threeItemsPlusOperator(a, b, "c" + "d");',
-        ],
+        ['const result = a + b + "c" + "d";', 'const result = global._ddiast.threeItemsPlusOperator(a, b, "c" + "d");'],
         [
             'const result = a + "b" + "c" + "d";',
             'const result = global._ddiast.twoItemsPlusOperator(a, "b" + "c" + "d");',
@@ -261,18 +243,9 @@ describe('binary expression', () => {
         //Literals expanding Middle positions
         //
         ['const result = a + "b" + c;', 'const result = global._ddiast.threeItemsPlusOperator(a, "b", c);'],
-        [
-            'const result = a + "b" + c + d;',
-            'const result = global._ddiast.fourItemsPlusOperator(a, "b", c, d);',
-        ],
-        [
-            'const result = a + b + "c" + d;',
-            'const result = global._ddiast.fourItemsPlusOperator(a, b, "c", d);',
-        ],
-        [
-            'const result = a + "b" + "c" + d;',
-            'const result = global._ddiast.threeItemsPlusOperator(a, "b" + "c", d);',
-        ],
+        ['const result = a + "b" + c + d;', 'const result = global._ddiast.fourItemsPlusOperator(a, "b", c, d);'],
+        ['const result = a + b + "c" + d;', 'const result = global._ddiast.fourItemsPlusOperator(a, b, "c", d);'],
+        ['const result = a + "b" + "c" + d;', 'const result = global._ddiast.threeItemsPlusOperator(a, "b" + "c", d);'],
         //
         //Mix combinations
         //
@@ -304,10 +277,7 @@ describe('binary expression', () => {
         ],
         //Assignations
         ['a += b;', 'a = global._ddiast.twoItemsPlusOperator(a, b);'],
-        [
-            'a += b + c;',
-            'a = global._ddiast.twoItemsPlusOperator(a, global._ddiast.twoItemsPlusOperator(b, c));',
-        ],
+        ['a += b + c;', 'a = global._ddiast.twoItemsPlusOperator(a, global._ddiast.twoItemsPlusOperator(b, c));'],
         [
             'a += b + c + d;',
             'a = global._ddiast.twoItemsPlusOperator(a, global._ddiast.threeItemsPlusOperator(b, c, d));',
@@ -350,10 +320,7 @@ describe('template literal', () => {
 
     it('middle', () => {
         const js = 'const result = `Hello${a}World!`;'
-        expectAst(
-            rewriteAst(js),
-            'const result = global._ddiast.templateLiteralOperator(`Hello`, a, `World!`);',
-        )
+        expectAst(rewriteAst(js), 'const result = global._ddiast.templateLiteralOperator(`Hello`, a, `World!`);')
     })
 
     it('start', () => {

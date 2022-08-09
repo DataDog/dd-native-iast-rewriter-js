@@ -1,0 +1,30 @@
+name: Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - dockerfile: Dockerfile
+            artifact: iast-rewriter.linux-x64-gnu
+          - dockerfile: alpine.Dockerfile
+            artifact: iast-rewriter.linux-x64-musl
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - run: docker build -t build -f ./docker/${{ matrix.target.dockerfile }} .
+      - run: docker run --name builder build
+      - run: docker cp builder:/build/${{ matrix.target.artifact }}.node .
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.target.artifact }}
+          path: ${{ matrix.target.artifact }}.node
+
+
+

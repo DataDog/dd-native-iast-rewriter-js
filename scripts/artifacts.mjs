@@ -14,7 +14,7 @@ const copyFile = async (src, dest) => {
 }
 
 const copyArtifact = (classifier) => {
-    const filename = `swc-rewriter.${classifier}.node`
+    const filename = `iast-rewriter.${classifier}.node`
     const sourceNode = path.join(process.cwd(), filename)
     const destNode = path.join(`${process.cwd()}`, 'npm', classifier, filename)
     return copyFile(sourceNode, destNode)
