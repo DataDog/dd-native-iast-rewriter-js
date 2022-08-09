@@ -4,7 +4,7 @@ WORKDIR /build
 COPY ./package.json .
 COPY ./package-lock.json .
 
-ENV PATH=$PATH:"$HOME/.cargo/bin"
+ENV PATH=$PATH:/root/.cargo/bin
 RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
 
 RUN npm ci --ignore-scripts
