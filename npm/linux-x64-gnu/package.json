@@ -1,0 +1,17 @@
+{
+  "name": "@datadog/native-iast-rewriter-linux-x64-gnu",
+  "version": "0.0.1",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "iast-rewriter.linux-x64-gnu.node",
+  "files": [
+    "iast-rewriter.linux-x64-gnu.node"
+  ],
+  "engines": {
+    "node": ">= 10"
+  }
+}

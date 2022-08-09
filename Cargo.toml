@@ -1,0 +1,27 @@
+[package]
+edition = "2021"
+name = "datadog_native-iast-rewriter"
+version = "0.0.1"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
+napi = { version = "2.2.0", default-features = false, features = ["napi4"] }
+napi-derive = "2.2.0"
+swc = "0.159.0"
+swc_ecma_visit = "0.58.0"
+swc_visit_macros = "0.3.1"
+swc_ecma_parser = "0.96.0"
+anyhow = "1.0.56"
+
+[dev-dependencies]
+tempfile = "3.3.0"
+spectral = "0.6.0"
+
+[build-dependencies]
+napi-build = "1.2.1"
+
+[profile.release]
+lto = true
