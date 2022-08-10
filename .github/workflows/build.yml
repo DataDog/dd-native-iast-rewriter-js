@@ -8,6 +8,28 @@ on:
     - main
 
 jobs:
+  build-native:
+    strategy:
+      matrix:
+        target:
+          - name: windows 64 bits
+            os: windows-2019
+            artifact: iast-rewriter.win32-x64-msvc
+            
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+          architecture: ${{ matrix.target.arch }}
+      - run: npm ci --ignore-scripts
+      - run: npm run buildAndTest:windows
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.target.artifact }}
+          path: ${{ matrix.target.artifact }}.node
+    
   build-docker:
     runs-on: ubuntu-latest
     strategy:

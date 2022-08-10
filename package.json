@@ -9,7 +9,8 @@
       "defaults": false,
       "additional": [
         "x86_64-unknown-linux-gnu",
-        "x86_64-unknown-linux-musl"
+        "x86_64-unknown-linux-musl",
+        "x86_64-pc-windows-msvc"
       ]
     }
   },
@@ -95,6 +96,7 @@
   },
   "optionalDependencies": {
     "@datadog/native-iast-rewriter-linux-x64-gnu": "0.0.1",
-    "@datadog/native-iast-rewriter-linux-x64-musl": "0.0.1"
+    "@datadog/native-iast-rewriter-linux-x64-musl": "0.0.1",
+    "@datadog/native-iast-rewriter-win32-x64-msvc": "0.0.1"
   }
 }
