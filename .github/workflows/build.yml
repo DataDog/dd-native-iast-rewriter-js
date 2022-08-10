@@ -35,9 +35,11 @@ jobs:
     strategy:
       matrix:
         target:
-          - dockerfile: Dockerfile
+          - name: linux 64 bits
+            dockerfile: Dockerfile
             artifact: iast-rewriter.linux-x64-gnu
-          - dockerfile: alpine.Dockerfile
+          - name: alpine 64 bits
+            dockerfile: alpine.Dockerfile
             artifact: iast-rewriter.linux-x64-musl
     steps:
       - uses: actions/checkout@v2
@@ -63,9 +65,30 @@ jobs:
       - uses: actions/setup-node@v2
       - run: npm ci
       - run: npm run ${{ matrix.run }}
-      
+
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - uses: actions/download-artifact@v2
+        with:
+          path: artifacts
+      - run: npm run artifacts
+      - run: npm pack
+      - run: npm pack npm/linux-x64-gnu/
+      - run: npm pack npm/linux-x64-musl/
+      - run: npm pack npm/win32-x64-msvc/
+      - uses: actions/upload-artifact@v2
+        with:
+          name: @datadog/native-iast-rewriter files Pack
+          path: *.tgz
+
   all-good:
     needs:
+      - build-native
       - build-docker
       - static-checks
       
