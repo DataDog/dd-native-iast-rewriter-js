@@ -77,6 +77,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           path: artifacts
+      - run: npm ci --ignore-scripts          
       - run: npm run artifacts
       - run: npm pack
       - run: npm pack npm/linux-x64-gnu/
@@ -88,11 +89,7 @@ jobs:
           path: '*.tgz'
 
   all-good:
-    needs:
-      - build-native
-      - build-docker
-      - static-checks
-      
+    needs: ['static-checks', 'pack']
     runs-on: ubuntu-latest
     steps:
       - run: echo '🚀🚀🚀🚀🚀'
