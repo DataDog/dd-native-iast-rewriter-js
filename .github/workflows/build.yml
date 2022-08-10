@@ -30,5 +30,23 @@ jobs:
           name: ${{ matrix.target.artifact }}
           path: ${{ matrix.target.artifact }}.node
 
-
-
+  static-checks:
+    strategy:
+      matrix:
+        run:
+          - lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      - run: npm ci
+      - run: npm run ${{ matrix.run }}
+      
+  all-good:
+    needs:
+      - build-docker
+      - static-checks
+      
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo '🚀🚀🚀🚀🚀'
