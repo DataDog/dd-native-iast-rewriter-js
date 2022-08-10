@@ -83,7 +83,7 @@ jobs:
       - run: npm pack npm/win32-x64-msvc/
       - uses: actions/upload-artifact@v2
         with:
-          name: @datadog/native-iast-rewriter files Pack
+          name: datadog-native-iast-rewriter files Pack
           path: *.tgz
 
   all-good:
