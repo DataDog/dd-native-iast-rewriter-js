@@ -4,7 +4,14 @@ Cargo.lock
 .github
 npm
 .eslintrc
+.eslintignore
+.eslintrc.yml
 .prettierignore
+.editorconfig
+.gitattributes
 rustfmt.toml
 yarn.lock
 *.node
+docker
+samples
+scripts
