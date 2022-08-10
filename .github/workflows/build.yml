@@ -84,7 +84,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: datadog-native-iast-rewriter files Pack
-          path: *.tgz
+          path: '*.tgz'
 
   all-good:
     needs:
