@@ -118,14 +118,13 @@ jobs:
         with:
           node-version: '16'
       - run: npm ci --ignore-scripts
-      - name: Read package.json
-        uses: dutscher/read-package-json-endpoint-actions@v1.33.7
-        id: package-json-endpoint
+      - uses: gagle/package-version@v1
+          id: package-version
       - uses: actions/download-artifact@v2
         with:
           name: datadog-native-iast-rewriter
-      - run: npm i datadog-native-iast-rewriter-${{ steps.package-json-endpoint.outputs.endpoint }}.tgz
-      - run: npm i datadog-native-iast-rewriter${{ matrix.target.artifact }}-${{ steps.package-json-endpoint.outputs.endpoint }}.tgz
+      - run: npm i datadog-native-iast-rewriter-${{ steps.package-version.outputs.version }}.tgz
+      - run: npm i datadog-native-iast-rewriter${{ matrix.target.artifact }}-${{ steps.package-version.outputs.version }}.tgz
       - run: npm t
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v3

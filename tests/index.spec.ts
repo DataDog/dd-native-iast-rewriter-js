@@ -7,9 +7,9 @@ import { expect } from '@jest/globals'
 import { BasicSourceMapConsumer, SourceMapConsumer } from 'source-map'
 import * as tmp from 'tmp'
 
-const { Rewriter } = require(process.env['NPM_REWRITER'] ? '@datadog/native-iast-rewriter' : '../index')
-
 import Dict = NodeJS.Dict
+
+const { Rewriter } = require(process.env['NPM_REWRITER'] ? '@datadog/native-iast-rewriter' : '../index')
 
 enum ExpectMode {
     STRING,
