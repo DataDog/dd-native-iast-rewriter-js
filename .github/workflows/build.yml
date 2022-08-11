@@ -128,11 +128,11 @@ jobs:
       - run: npm i datadog-native-iast-rewriter${{ matrix.target.artifact }}-${{ steps.package-json-endpoint.outputs.endpoint }}.tgz
       - run: npm t
       - name: Publish Test Report
-        check_name: junit test report ${{ matrix.target.name }}
         uses: mikepenz/action-junit-report@v3
         if: always()
         with:
           report_paths: '**/build/junit.xml'
+          check_name: junit test report ${{ matrix.target.name }}
 
   all-good:
     needs: ['static-checks', 'test-native']
