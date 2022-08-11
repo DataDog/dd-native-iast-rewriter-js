@@ -118,13 +118,13 @@ jobs:
         with:
           node-version: '16'
       - run: npm ci --ignore-scripts
-      - uses: gagle/package-version@v1
-        id: package-version
+      - uses: codex-team/action-nodejs-package-info@v1
+        id: package
       - uses: actions/download-artifact@v2
         with:
           name: datadog-native-iast-rewriter
-      - run: npm i datadog-native-iast-rewriter-${{ steps.package-version.outputs.version }}.tgz
-      - run: npm i datadog-native-iast-rewriter${{ matrix.target.artifact }}-${{ steps.package-version.outputs.version }}.tgz
+      - run: npm i datadog-native-iast-rewriter-${{ steps.package.outputs.version }}.tgz
+      - run: npm i datadog-native-iast-rewriter${{ matrix.target.artifact }}-${{ steps.package.outputs.version }}.tgz
       - run: npm t
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v3
