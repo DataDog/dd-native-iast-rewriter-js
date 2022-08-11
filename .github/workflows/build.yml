@@ -14,11 +14,11 @@ jobs:
         target:
           - name: linux 64 bits
             buildid: linux
-            os: windows-2019
+            os: ubuntu-latest
             artifact: iast-rewriter.linux-x64-gnu
           - name: windows 64 bits
             buildid: windows
-            os: windows-2019
+            os: windows-latest
             artifact: iast-rewriter.win32-x64-msvc
           - name: macos 64 bits
             buildid: darwin
