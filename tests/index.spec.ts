@@ -7,7 +7,7 @@ import { expect } from '@jest/globals'
 import { BasicSourceMapConsumer, SourceMapConsumer } from 'source-map'
 import * as tmp from 'tmp'
 
-import { Rewriter } from '../index'
+const { Rewriter } = require(process.env['NPM_REWRITER'] ? '@datadog/native-iast-rewriter' : '../index')
 
 import Dict = NodeJS.Dict
 
@@ -49,7 +49,7 @@ const temporalFile = (): Promise<string> => {
 interface RewriteOpts {
     file?: string
     sourceMap?: string
-    rewriter?: Rewriter
+    rewriter?: typeof Rewriter
 }
 
 const rewriteAst = (code: string, opts: RewriteOpts = {}): string => {
