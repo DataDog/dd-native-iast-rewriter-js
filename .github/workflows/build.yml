@@ -12,10 +12,19 @@ jobs:
     strategy:
       matrix:
         target:
+          - name: linux 64 bits
+            buildid: linux
+            os: windows-2019
+            artifact: iast-rewriter.linux-x64-gnu
           - name: windows 64 bits
+            buildid: windows
             os: windows-2019
             artifact: iast-rewriter.win32-x64-msvc
-            
+          - name: macos 64 bits
+            buildid: darwin
+            os: macos-latest
+            artifact: iast-rewriter.darwin-x64
+                        
     runs-on: ${{ matrix.target.os }}
     steps:
       - uses: actions/checkout@v2
@@ -24,7 +33,7 @@ jobs:
           node-version: '16'
           architecture: ${{ matrix.target.arch }}
       - run: npm ci --ignore-scripts
-      - run: npm run buildAndTest:windows
+      - run: npm run buildAndTest:${{ matrix.target.buildid }}
       - uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.target.artifact }}
@@ -35,9 +44,6 @@ jobs:
     strategy:
       matrix:
         target:
-          - name: linux 64 bits
-            dockerfile: Dockerfile
-            artifact: iast-rewriter.linux-x64-gnu
           - name: alpine 64 bits
             dockerfile: alpine.Dockerfile
             artifact: iast-rewriter.linux-x64-musl
@@ -83,6 +89,8 @@ jobs:
       - run: npm pack npm/linux-x64-gnu/
       - run: npm pack npm/linux-x64-musl/
       - run: npm pack npm/win32-x64-msvc/
+      - run: npm pack npm/darwin-x64/
+      - run: npm pack npm/darwin-arm64/      
       - uses: actions/upload-artifact@v2
         with:
           name: datadog-native-iast-rewriter files Pack

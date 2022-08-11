@@ -10,7 +10,9 @@
       "additional": [
         "x86_64-unknown-linux-gnu",
         "x86_64-unknown-linux-musl",
-        "x86_64-pc-windows-msvc"
+        "x86_64-pc-windows-msvc",
+        "aarch64-apple-darwin",
+        "x86_64-apple-darwin"
       ]
     }
   },
@@ -55,11 +57,13 @@
     "build:alpine": "napi build --target x86_64-unknown-linux-musl --platform --release",
     "build:windows": "napi build --target x86_64-pc-windows-msvc --platform --release",
     "build:darwin": "napi build --target x86_64-apple-darwin --platform --release",
+    "build:darwinArm": "napi build --target aarch64-apple-darwin --platform --release",    
     "buildAndTest:debug": "npm run build && npm run test",
     "buildAndTest:linux": "npm run build:linux && npm run test",
     "buildAndTest:alpine": "npm run build:alpine && npm run test",
     "buildAndTest:windows": "npm run build:windows && npm run test",
     "buildAndTest:darwin": "npm run build:darwin && npm run test",
+    "buildAndTest:darwinArm": "npm run build:darwinArm && npm run test",    
     "format": "run-p format:prettier format:rs",
     "format:prettier": "prettier . -w",
     "format:rs": "cargo fmt",
@@ -97,6 +101,8 @@
   "optionalDependencies": {
     "@datadog/native-iast-rewriter-linux-x64-gnu": "0.0.1",
     "@datadog/native-iast-rewriter-linux-x64-musl": "0.0.1",
-    "@datadog/native-iast-rewriter-win32-x64-msvc": "0.0.1"
+    "@datadog/native-iast-rewriter-win32-x64-msvc": "0.0.1",
+    "@datadog/native-iast-rewriter-darwin-arm64": "0.0.1",
+    "@datadog/native-iast-rewriter-darwin-x64": "0.0.1"
   }
 }
