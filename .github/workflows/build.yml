@@ -89,8 +89,7 @@ jobs:
       - run: npm pack npm/linux-x64-gnu/
       - run: npm pack npm/linux-x64-musl/
       - run: npm pack npm/win32-x64-msvc/
-      - run: npm pack npm/darwin-x64/
-      - run: npm pack npm/darwin-arm64/      
+      - run: npm pack npm/darwin-x64/      
       - uses: actions/upload-artifact@v2
         with:
           name: datadog-native-iast-rewriter files Pack
