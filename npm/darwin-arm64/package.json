@@ -2,10 +2,10 @@
   "name": "@datadog/native-iast-rewriter-darwin-arm64",
   "version": "0.0.1",
   "os": [
-    "linux"
+    "darwin"
   ],
   "cpu": [
-    "x64"
+    "arm64"
   ],
   "main": "iast-rewriter.darwin-arm64.node",
   "files": [

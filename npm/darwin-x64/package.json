@@ -2,7 +2,7 @@
   "name": "@datadog/native-iast-rewriter-darwin-x64",
   "version": "0.0.1",
   "os": [
-    "linux"
+    "darwin"
   ],
   "cpu": [
     "x64"
