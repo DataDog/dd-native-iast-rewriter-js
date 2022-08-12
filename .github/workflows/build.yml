@@ -153,12 +153,12 @@ jobs:
         id: package
       - run: docker build -t test -f ./docker/${{ matrix.target.dockerfile }} --build-arg NPM_VERSION=${{ steps.package.outputs.version }} .
       - run: docker run --name tester test
-      - run: docker cp tester:/test/build/junit.xml ./build/junit.xml
+      - run: docker cp tester:/test/build/junit.xml ./junit.xml
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v3
         if: always()
         with:
-          report_paths: '**/build/junit.xml'
+          report_paths: '**/junit.xml'
           check_name: junit test report ${{ matrix.target.name }}
 
   all-good:
