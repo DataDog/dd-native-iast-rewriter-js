@@ -123,8 +123,8 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: datadog-native-iast-rewriter
-      - run: npm i --force datadog-native-iast-rewriter-${{ steps.package.outputs.version }}.tgz
-      - run: npm i --force datadog-native-iast-rewriter-${{ matrix.target.artifact }}-${{ steps.package.outputs.version }}.tgz
+      - run: npm i --verbose datadog-native-iast-rewriter-${{ steps.package.outputs.version }}.tgz
+      - run: npm i --verbose datadog-native-iast-rewriter-${{ matrix.target.artifact }}-${{ steps.package.outputs.version }}.tgz
       - run: npm t
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v3
