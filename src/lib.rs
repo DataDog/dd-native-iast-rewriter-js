@@ -35,45 +35,9 @@ impl Rewriter {
 #[cfg(test)]
 mod tests {
     use spectral::assert_that;
-    use spectral::option::OptionAssertions;
     use spectral::string::StrAssertions;
-    use std::fs;
-    use swc::sourcemap::SourceMap;
-    use tempfile::NamedTempFile;
-
-    use crate::{print_js, rewrite_js};
-
-    #[test]
-    fn test_source_maps() -> Result<(), String> {
-        let folder = std::env::current_dir()
-            .map(|cwd| cwd.join("samples"))
-            .map_err(|e| e.to_string())?;
-
-        let js_file = folder.join("login.js");
-        let original_code = fs::read_to_string(js_file.clone()).map_err(|e| e.to_string())?;
-        let rewritten = rewrite_js(original_code, String::from(js_file.to_str().unwrap()))
-            .map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("global._ddiast.templateLiteralOperator(`SELECT");
-        assert_that(&rewritten.code.find("# sourceMappingURL=")).is_none();
-
-        let source_map_file = NamedTempFile::new().map_err(|e| e.to_string())?;
-        let result = print_js(
-            rewritten,
-            Some(String::from(
-                source_map_file
-                    .path()
-                    .to_str()
-                    .ok_or("Fail to get source path")?,
-            )),
-        );
-        assert_that(&result).contains("# sourceMappingURL=");
-        let source_map = SourceMap::from_reader(source_map_file).map_err(|e| e.to_string())?;
-        let token = source_map.lookup_token(35, 25).unwrap();
-        assert_that(&token.get_src_line()).is_equal_to(31);
-        assert_that(&token.get_source().unwrap()).contains("login.ts");
-
-        Ok(())
-    }
+    
+    use crate::rewrite_js;
 
     #[test]
     fn test_multiple_plus() -> Result<(), String> {
