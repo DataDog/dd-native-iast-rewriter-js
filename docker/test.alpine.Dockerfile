@@ -20,4 +20,4 @@ COPY . .
 
 ENV NPM_REWRITER=true
 
-CMD ["npm", "t"]
+CMD ["npm", "run", "test:junit"]
