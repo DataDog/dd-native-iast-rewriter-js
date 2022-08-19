@@ -70,7 +70,7 @@ mod tests {
         ".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("global._ddiast.fourItemsPlusOperator(a, b, c, d)");
+        assert_that(&rewritten.code).contains("(global._ddiast.twoItemsPlusOperator(this.height + this.width, this.height, this.width))");
         Ok(())
     }
 
@@ -91,7 +91,7 @@ mod tests {
         ".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("global._ddiast.fourItemsPlusOperator(a, b, c, d)");
+        assert_that(&rewritten.code).contains("(__dd_0 = this.w(), global._ddiast.twoItemsPlusOperator(this.height + __dd_0, this.height, __dd_0))");
         Ok(())
     }
 
@@ -100,7 +100,7 @@ mod tests {
         let original_code = "{const result = a + b}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("global._ddiast.fourItemsPlusOperator(a, b)");
+        assert_that(&rewritten.code).contains("(global._ddiast.twoItemsPlusOperator(a + b, a, b))");
         Ok(())
     }
 
@@ -109,7 +109,7 @@ mod tests {
         let original_code = "{const result = a + b()}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("global._ddiast.fourItemsPlusOperator(a, b)");
+        assert_that(&rewritten.code).contains("(__dd_0 = b(), global._ddiast.twoItemsPlusOperator(a + __dd_0, a, __dd_0))");
         Ok(())
     }
 
@@ -118,25 +118,25 @@ mod tests {
         let original_code = "{const result = a + b + c + d}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("global._ddiast.fourItemsPlusOperator(a, b, c, d)");
+        assert_that(&rewritten.code).contains("(global._ddiast.fourItemsPlusOperator(a + b + c + d, a, b, c, d))");
         Ok(())
     }
 
     #[test]
     fn test_multiple_plus_and_func() -> Result<(), String> {
-        let original_code = "const result = a + b + c() + d".to_string();
+        let original_code = "{const result = a + b + c() + d}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("global._ddiast.fourItemsPlusOperator(a, b, c(), d)");
+        assert_that(&rewritten.code).contains("(__dd_0 = c(), global._ddiast.fourItemsPlusOperator(a + b + __dd_0 + d, a, b, __dd_0, d))");
         Ok(())
     }
 
     #[test]
     fn test_multiple_plus_and_inlined_func() -> Result<(), String> {
-        let original_code = "const result = a + b + (function(){return a + b + 'epa';})(a, b)".to_string();
+        let original_code = "{const result = a + b + (function(a){return a + 'epa';})(a)}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("global._ddiast.fourItemsPlusOperator(a, b, c(), d)");
+        assert_that(&rewritten.code).contains("global._ddiast.threeItemsPlusOperator(a + b + __dd_0, a, b, __dd_0)");
         Ok(())
     }
 }
