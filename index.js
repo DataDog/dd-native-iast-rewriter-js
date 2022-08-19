@@ -7,7 +7,7 @@ let nativeBinding = null
 let localFileExisted = false
 let loadError = null
 
-function isMusl () {
+function isMusl() {
   // For Node 10
   if (!process.report || typeof process.report.getReport !== 'function') {
     try {
@@ -55,7 +55,9 @@ switch (platform) {
   case 'win32':
     switch (arch) {
       case 'x64':
-        localFileExisted = existsSync(join(__dirname, 'iast-rewriter.win32-x64-msvc.node'))
+        localFileExisted = existsSync(
+          join(__dirname, 'iast-rewriter.win32-x64-msvc.node')
+        )
         try {
           if (localFileExisted) {
             nativeBinding = require('./iast-rewriter.win32-x64-msvc.node')
@@ -67,7 +69,9 @@ switch (platform) {
         }
         break
       case 'ia32':
-        localFileExisted = existsSync(join(__dirname, 'iast-rewriter.win32-ia32-msvc.node'))
+        localFileExisted = existsSync(
+          join(__dirname, 'iast-rewriter.win32-ia32-msvc.node')
+        )
         try {
           if (localFileExisted) {
             nativeBinding = require('./iast-rewriter.win32-ia32-msvc.node')
@@ -79,7 +83,9 @@ switch (platform) {
         }
         break
       case 'arm64':
-        localFileExisted = existsSync(join(__dirname, 'iast-rewriter.win32-arm64-msvc.node'))
+        localFileExisted = existsSync(
+          join(__dirname, 'iast-rewriter.win32-arm64-msvc.node')
+        )
         try {
           if (localFileExisted) {
             nativeBinding = require('./iast-rewriter.win32-arm64-msvc.node')
@@ -109,7 +115,9 @@ switch (platform) {
         }
         break
       case 'arm64':
-        localFileExisted = existsSync(join(__dirname, 'iast-rewriter.darwin-arm64.node'))
+        localFileExisted = existsSync(
+          join(__dirname, 'iast-rewriter.darwin-arm64.node')
+        )
         try {
           if (localFileExisted) {
             nativeBinding = require('./iast-rewriter.darwin-arm64.node')
@@ -143,7 +151,9 @@ switch (platform) {
     switch (arch) {
       case 'x64':
         if (isMusl()) {
-          localFileExisted = existsSync(join(__dirname, 'iast-rewriter.linux-x64-musl.node'))
+          localFileExisted = existsSync(
+            join(__dirname, 'iast-rewriter.linux-x64-musl.node')
+          )
           try {
             if (localFileExisted) {
               nativeBinding = require('./iast-rewriter.linux-x64-musl.node')
@@ -154,7 +164,9 @@ switch (platform) {
             loadError = e
           }
         } else {
-          localFileExisted = existsSync(join(__dirname, 'iast-rewriter.linux-x64-gnu.node'))
+          localFileExisted = existsSync(
+            join(__dirname, 'iast-rewriter.linux-x64-gnu.node')
+          )
           try {
             if (localFileExisted) {
               nativeBinding = require('./iast-rewriter.linux-x64-gnu.node')
@@ -168,7 +180,9 @@ switch (platform) {
         break
       case 'arm64':
         if (isMusl()) {
-          localFileExisted = existsSync(join(__dirname, 'iast-rewriter.linux-arm64-musl.node'))
+          localFileExisted = existsSync(
+            join(__dirname, 'iast-rewriter.linux-arm64-musl.node')
+          )
           try {
             if (localFileExisted) {
               nativeBinding = require('./iast-rewriter.linux-arm64-musl.node')
@@ -179,7 +193,9 @@ switch (platform) {
             loadError = e
           }
         } else {
-          localFileExisted = existsSync(join(__dirname, 'iast-rewriter.linux-arm64-gnu.node'))
+          localFileExisted = existsSync(
+            join(__dirname, 'iast-rewriter.linux-arm64-gnu.node')
+          )
           try {
             if (localFileExisted) {
               nativeBinding = require('./iast-rewriter.linux-arm64-gnu.node')
@@ -192,7 +208,9 @@ switch (platform) {
         }
         break
       case 'arm':
-        localFileExisted = existsSync(join(__dirname, 'iast-rewriter.linux-arm-gnueabihf.node'))
+        localFileExisted = existsSync(
+          join(__dirname, 'iast-rewriter.linux-arm-gnueabihf.node')
+        )
         try {
           if (localFileExisted) {
             nativeBinding = require('./iast-rewriter.linux-arm-gnueabihf.node')
@@ -215,7 +233,7 @@ if (!nativeBinding) {
   if (loadError) {
     throw loadError
   }
-  throw new Error('Failed to load native binding')
+  throw new Error(`Failed to load native binding`)
 }
 
 const { Rewriter } = nativeBinding
