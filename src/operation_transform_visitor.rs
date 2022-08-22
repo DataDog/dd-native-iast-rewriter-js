@@ -1,8 +1,9 @@
 use std::ops::DerefMut;
-use swc::atoms::JsWord;
-use swc::common::util::take::Take;
-use swc::common::Span;
-use swc::ecmascript::ast::*;
+use swc::{
+    atoms::JsWord,
+    common::{util::take::Take, Span},
+    ecmascript::ast::*,
+};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use crate::visitor_util::{

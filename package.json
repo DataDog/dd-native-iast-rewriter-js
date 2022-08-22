@@ -77,7 +77,7 @@
     "format": "run-p format:prettier format:rs",
     "format:prettier": "prettier . -w",
     "format:rs": "cargo fmt",
-    "lint": "eslint . -c ./.eslintrc.json",
+    "lint": "eslint . -c ./.eslintrc.json && rustfmt --config imports_granularity=Crate src/*.rs",
     "prepublishOnly": "run-p artifacts:prepare artifacts:prepublish",
     "version": "napi version",
     "test": "mocha",

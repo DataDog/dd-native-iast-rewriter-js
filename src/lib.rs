@@ -41,12 +41,9 @@ mod tests {
     use spectral::{assert_that, string::StrAssertions};
 
     use anyhow::Error;
-    use spectral::assert_that;
-    use spectral::string::StrAssertions;
     use std::env;
 
-    use crate::rewrite_js;
-    use crate::rewriter::debug_js;
+    use crate::{rewrite_js, rewriter::debug_js};
 
     #[cfg(test)]
     #[ctor::ctor]

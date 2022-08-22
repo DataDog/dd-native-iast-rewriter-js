@@ -1,13 +1,13 @@
-use crate::transform_visitor::AssignOp::{AddAssign, Assign};
-use crate::visitor_util::{
-    dd_global_method_invocation, get_plus_operator_based_on_num_of_args_for_span,
-    template_literal_operator, two_items_plus_operator, DD_GLOBAL_NAMESPACE, DD_METHODS,
-    NODE_GLOBAL,
+use crate::{
+    transform_visitor::AssignOp::{AddAssign, Assign},
+    visitor_util::{
+        dd_global_method_invocation, get_plus_operator_based_on_num_of_args_for_span,
+        template_literal_operator, two_items_plus_operator, DD_GLOBAL_NAMESPACE, DD_METHODS,
+        NODE_GLOBAL,
+    },
 };
 use std::ops::Deref;
-use swc::atoms::JsWord;
-use swc::common::util::take::Take;
-use swc::ecmascript::ast::*;
+use swc::{atoms::JsWord, common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 pub struct TransformVisitor {

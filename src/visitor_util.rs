@@ -1,9 +1,6 @@
 use random_string::generate;
-use std::env;
-use std::sync::Once;
-use swc::atoms::JsWord;
-use swc::common::Span;
-use swc::ecmascript::ast::*;
+use std::{env, sync::Once};
+use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
 
 pub const NODE_GLOBAL: &str = "global";
 pub const DD_GLOBAL_NAMESPACE: &str = "_ddiast";

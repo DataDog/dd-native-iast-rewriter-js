@@ -1,5 +1,5 @@
 use crate::{
-    rewriter::AssignOp::{AddAssign, Assign},
+    block_transform_visitor::BlockTransformVisitor,
     util::{create_file, file_name, parse_source_map},
 };
 use anyhow::{Error, Result};
@@ -8,42 +8,22 @@ use std::{
     collections::HashMap,
     fs::File,
     io::Write,
-    ops::Deref,
     path::{Path, PathBuf},
     sync::Arc,
 };
 use swc::{
-    atoms::JsWord,
     common,
     common::{
         comments::Comments,
         errors::{ColorConfig, Handler},
-        util::take::Take,
-        FileName, FilePathMapping, Span,
+        FileName, FilePathMapping,
     },
     config::{IsModule, SourceMapsConfig},
     ecmascript::ast::*,
     sourcemap::{decode, decode_data_url, DecodedMap, SourceMap, SourceMapBuilder},
     try_with_handler, Compiler, HandlerOpts, SwcComments, TransformOutput,
 };
-use crate::util::{create_file, file_name, parse_source_map};
-use crate::block_transform_visitor::BlockTransformVisitor;
-use crate::util::{create_file, file_name, parse_source_map};
 //use crate::transform_visitor::TransformVisitor;
-use anyhow::{Error, Result};
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::fs::File;
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use swc::common::comments::Comments;
-use swc::common::errors::{ColorConfig, Handler};
-use swc::common::{FileName, FilePathMapping};
-use swc::config::{IsModule, SourceMapsConfig};
-use swc::ecmascript::ast::*;
-use swc::sourcemap::{decode, decode_data_url, DecodedMap, SourceMap, SourceMapBuilder};
-use swc::{common, try_with_handler, Compiler, HandlerOpts, SwcComments, TransformOutput};
 use swc_ecma_parser::{EsConfig, Syntax};
 use swc_ecma_visit::VisitMutWith;
 
