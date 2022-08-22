@@ -1,12 +1,8 @@
 use crate::transform_visitor::AssignOp::{AddAssign, Assign};
 use crate::visitor_util::{
-    dd_global_method_invocation, 
-    get_plus_operator_based_on_num_of_args_for_span, 
-    template_literal_operator, 
-    two_items_plus_operator,
-    NODE_GLOBAL, 
-    DD_GLOBAL_NAMESPACE,
-    DD_METHODS
+    dd_global_method_invocation, get_plus_operator_based_on_num_of_args_for_span,
+    template_literal_operator, two_items_plus_operator, DD_GLOBAL_NAMESPACE, DD_METHODS,
+    NODE_GLOBAL,
 };
 use std::ops::Deref;
 use swc::atoms::JsWord;
@@ -15,7 +11,7 @@ use swc::ecmascript::ast::*;
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 pub struct TransformVisitor {
-    pub counter: i32
+    pub counter: i32,
 }
 
 impl TransformVisitor {}
@@ -31,7 +27,6 @@ impl VisitMut for TransformVisitor {
     }
 
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
-
         println!("original {:#?}", expr);
         let mut modified = false;
         expr.visit_mut_children_with(self);
@@ -55,7 +50,6 @@ impl VisitMut for TransformVisitor {
         }
     }
 }
-
 
 fn to_dd_assign_expr(assign: AssignExpr) -> AssignExpr {
     let span = assign.span;
@@ -147,10 +141,7 @@ fn is_call_one_of_the_dd_methods_provided(call: &CallExpr, dd_methods: Vec<&str>
 }
 
 fn is_dd_method(call: &CallExpr) -> bool {
-    is_call_one_of_the_dd_methods_provided(
-        call,
-        DD_METHODS.to_vec()
-    )
+    is_call_one_of_the_dd_methods_provided(call, DD_METHODS.to_vec())
 }
 
 fn to_dd_binary_expr(expr: Expr) -> Expr {
@@ -331,5 +322,3 @@ fn to_dd_tpl_expr(expr: Expr) -> Expr {
         other => other,
     }
 }
-
-

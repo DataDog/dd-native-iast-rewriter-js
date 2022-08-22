@@ -1,14 +1,16 @@
-use std::ops::{DerefMut};
+use std::ops::DerefMut;
 use swc::atoms::JsWord;
-use swc::common::Span;
-use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
-use swc::ecmascript::ast::*;
 use swc::common::util::take::Take;
+use swc::common::Span;
+use swc::ecmascript::ast::*;
+use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use crate::visitor_util::get_plus_operator_based_on_num_of_args_for_span;
+use crate::visitor_util::{
+    get_dd_local_variable_name, get_plus_operator_based_on_num_of_args_for_span,
+};
 
 pub struct OperationTransformVisitor {
-    pub counter: i32
+    pub counter: usize,
 }
 
 impl Visit for OperationTransformVisitor {}
@@ -37,7 +39,10 @@ impl VisitMut for OperationTransformVisitor {
         println!("expr block {:#?}", _expr);
     }
 }
-fn to_dd_binary_expr(expr: Expr, operation_transform_visitor: &mut OperationTransformVisitor) -> Expr {
+fn to_dd_binary_expr(
+    expr: Expr,
+    operation_transform_visitor: &mut OperationTransformVisitor,
+) -> Expr {
     match expr {
         Expr::Bin(binary) => {
             let mut binary_clone = binary.clone();
@@ -45,20 +50,27 @@ fn to_dd_binary_expr(expr: Expr, operation_transform_visitor: &mut OperationTran
 
             let mut assign_expressions = Vec::new();
             let mut arguments_expressions = Vec::new();
-            replace_expressions_in_binary(&mut binary_clone, &mut assign_expressions, &mut arguments_expressions);
+            replace_expressions_in_binary(
+                &mut binary_clone,
+                &mut assign_expressions,
+                &mut arguments_expressions,
+            );
 
-            operation_transform_visitor.counter = assign_expressions.len() as i32;
-            assign_expressions.push(Box::new(get_dd_call_plus_operator_expr(binary_clone, &arguments_expressions)));
+            operation_transform_visitor.counter = assign_expressions.len();
+            assign_expressions.push(Box::new(get_dd_call_plus_operator_expr(
+                binary_clone,
+                &arguments_expressions,
+            )));
 
             // TODO Iterate all children items checking if it has direct
             return Expr::Paren(ParenExpr {
                 span,
                 expr: Box::new(Expr::Seq(SeqExpr {
                     span,
-                    exprs: assign_expressions
-                }))
+                    exprs: assign_expressions,
+                })),
             });
-        },
+        }
         _ => {}
     }
     expr.clone()
@@ -67,21 +79,28 @@ fn to_dd_binary_expr(expr: Expr, operation_transform_visitor: &mut OperationTran
 fn fn_create_assign_expression(index: usize, expr: Expr, span: Span) -> (Expr, Expr) {
     let id = Ident {
         span,
-        sym: JsWord::from(format!("__dd_{}", index)),
-        optional: false
+        sym: JsWord::from(get_dd_local_variable_name(index)),
+        optional: false,
     };
-    (Expr::Assign(AssignExpr {
-        span,
-        left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
-            id: id.clone(),
-            type_ann: None
-        }))),
-        right: Box::new(expr),
-        op: AssignOp::Assign
-    }), Expr::Ident(id))
+    (
+        Expr::Assign(AssignExpr {
+            span,
+            left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
+                id: id.clone(),
+                type_ann: None,
+            }))),
+            right: Box::new(expr),
+            op: AssignOp::Assign,
+        }),
+        Expr::Ident(id),
+    )
 }
 
-fn replace_expressions_in_binary(binary: &mut BinExpr, assign_exprs: &mut Vec<Box<Expr>>, argument_exprs: &mut Vec<Expr>) {
+fn replace_expressions_in_binary(
+    binary: &mut BinExpr,
+    assign_exprs: &mut Vec<Box<Expr>>,
+    argument_exprs: &mut Vec<Expr>,
+) {
     let left = binary.left.deref_mut();
     let span = binary.span;
 
@@ -95,12 +114,12 @@ fn replace_expressions_in_binary(binary: &mut BinExpr, assign_exprs: &mut Vec<Bo
             let index = assign_exprs.len();
             let (assign, id) = fn_create_assign_expression(index, *binary.left.clone(), span);
             assign_exprs.push(Box::new(assign));
-            binary.left.map_with_mut(|_left| Box::new(get_ident(span, index)));
+            binary
+                .left
+                .map_with_mut(|_left| Box::new(get_ident(span, index)));
             argument_exprs.push(id);
         }
-        _ => {
-            argument_exprs.push(left.clone())
-        }
+        _ => argument_exprs.push(left.clone()),
     }
     let right = binary.right.deref_mut();
     match right {
@@ -113,40 +132,41 @@ fn replace_expressions_in_binary(binary: &mut BinExpr, assign_exprs: &mut Vec<Bo
             let index = assign_exprs.len();
             let (assign, id) = fn_create_assign_expression(index, *binary.right.clone(), span);
             assign_exprs.push(Box::new(assign));
-            binary.right.map_with_mut(|_right| Box::new(get_ident(span, index)));
+            binary
+                .right
+                .map_with_mut(|_right| Box::new(get_ident(span, index)));
             argument_exprs.push(id);
         }
-        _ => {
-            argument_exprs.push(right.clone())
-        }
+        _ => argument_exprs.push(right.clone()),
     }
 }
 
-fn get_ident(span: Span, index: usize) -> Expr{
-    
+fn get_ident(span: Span, index: usize) -> Expr {
     return Expr::Ident(Ident {
         span,
-        sym: JsWord::from(format!("__dd_{}", index)),
-        optional: false
+        sym: JsWord::from(get_dd_local_variable_name(index)),
+        optional: false,
     });
 }
 
-fn get_dd_call_plus_operator_expr(binary: BinExpr, argument_exprs: &Vec<Expr>) -> Expr{
-
+fn get_dd_call_plus_operator_expr(binary: BinExpr, argument_exprs: &Vec<Expr>) -> Expr {
     let mut args: Vec<ExprOrSpread> = Vec::new();
     let span = binary.span;
 
     args.push(ExprOrSpread {
         expr: Box::new(Expr::Bin(binary)),
-        spread: None
+        spread: None,
     });
 
-    args.append(&mut argument_exprs.iter().map(|expr| {
-        ExprOrSpread {
-            expr: Box::new(expr.to_owned()),
-            spread: None
-        }
-    }).collect::<Vec<_>>());
+    args.append(
+        &mut argument_exprs
+            .iter()
+            .map(|expr| ExprOrSpread {
+                expr: Box::new(expr.to_owned()),
+                spread: None,
+            })
+            .collect::<Vec<_>>(),
+    );
 
     Expr::Call(CallExpr {
         span,

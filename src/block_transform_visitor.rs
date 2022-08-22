@@ -1,9 +1,10 @@
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 // use swc::ecmascript::ast::*;
-use swc::atoms::JsWord;
-use swc::ecmascript::ast::*;//{BindingIdent, BlockStmt, Pat, VarDeclarator, Ident, VarDecl, VarDeclKind};
-use swc::ecmascript::ast::Stmt::Decl as DeclEnumOption;
 use crate::operation_transform_visitor::OperationTransformVisitor;
+use crate::visitor_util::get_dd_local_variable_name;
+use swc::atoms::JsWord;
+use swc::ecmascript::ast::Stmt::Decl as DeclEnumOption;
+use swc::ecmascript::ast::*; //{BindingIdent, BlockStmt, Pat, VarDeclarator, Ident, VarDecl, VarDeclKind};
 
 pub struct BlockTransformVisitor {}
 
@@ -26,23 +27,23 @@ impl VisitMut for BlockTransformVisitor {
     }
 }
 
-fn insert_var_declaration(counter: i32, expr: &mut BlockStmt) {
+fn insert_var_declaration(counter: usize, expr: &mut BlockStmt) {
     if counter > 0 {
         let span = expr.span;
         let mut vec = Vec::new();
-        for n in 0 .. counter {
+        for n in 0..counter {
             let var_declarator = VarDeclarator {
                 span,
                 definite: false,
                 name: Pat::Ident(BindingIdent {
                     id: Ident {
                         span,
-                        sym: JsWord::from(format!("__dd_{}", n)),
-                        optional: false
+                        sym: JsWord::from(get_dd_local_variable_name(n)),
+                        optional: false,
                     },
-                    type_ann: None
+                    type_ann: None,
                 }),
-                init: None
+                init: None,
             };
             vec.push(var_declarator);
         }
@@ -50,7 +51,7 @@ fn insert_var_declaration(counter: i32, expr: &mut BlockStmt) {
             span,
             decls: vec,
             declare: false,
-            kind: VarDeclKind::Let
+            kind: VarDeclKind::Let,
         }));
         expr.stmts.insert(0, declaration);
     }

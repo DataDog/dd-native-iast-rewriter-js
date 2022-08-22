@@ -15,10 +15,12 @@ swc_ecma_visit = "0.58.0"
 swc_visit_macros = "0.3.1"
 swc_ecma_parser = "0.96.0"
 anyhow = "1.0.56"
+random-string = "1.0.0"
 
 [dev-dependencies]
 tempfile = "3.3.0"
 spectral = "0.6.0"
+ctor = "0.1.23"
 
 [build-dependencies]
 napi-build = "1.2.1"

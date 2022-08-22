@@ -28,6 +28,7 @@ use swc::{
 };
 use crate::util::{create_file, file_name, parse_source_map};
 use crate::block_transform_visitor::BlockTransformVisitor;
+use crate::util::{create_file, file_name, parse_source_map};
 //use crate::transform_visitor::TransformVisitor;
 use anyhow::{Error, Result};
 use std::borrow::Borrow;
@@ -46,9 +47,7 @@ use swc::{common, try_with_handler, Compiler, HandlerOpts, SwcComments, Transfor
 use swc_ecma_parser::{EsConfig, Syntax};
 use swc_ecma_visit::VisitMutWith;
 
-
 const SOURCE_MAP_URL: &str = "# sourceMappingURL=";
-
 
 pub struct RewrittenOutput {
     pub code: String,
@@ -56,6 +55,7 @@ pub struct RewrittenOutput {
     pub original_map: Option<SourceMap>,
 }
 
+#[cfg(test)]
 pub fn debug_js(code: String) -> Result<(), Error> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
