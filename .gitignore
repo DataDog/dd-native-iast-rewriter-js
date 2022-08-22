@@ -125,3 +125,4 @@ build
 *.bat
 .idea
 .husky
+.vscode

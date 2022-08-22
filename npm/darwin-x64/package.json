@@ -1,0 +1,17 @@
+{
+  "name": "@datadog/native-iast-rewriter-darwin-x64",
+  "version": "0.0.1",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "iast-rewriter.darwin-x64.node",
+  "files": [
+    "iast-rewriter.darwin-x64.node"
+  ],
+  "engines": {
+    "node": ">= 10"
+  }
+}
