@@ -34,9 +34,8 @@ impl Rewriter {
 
 #[cfg(test)]
 mod tests {
-    use spectral::assert_that;
-    use spectral::string::StrAssertions;
-    
+    use spectral::{assert_that, string::StrAssertions};
+
     use crate::rewrite_js;
 
     #[test]

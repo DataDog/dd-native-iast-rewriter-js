@@ -1,6 +1,8 @@
 use anyhow::{Error, Result};
-use std::fs::{File, OpenOptions};
-use std::path::Path;
+use std::{
+    fs::{File, OpenOptions},
+    path::Path,
+};
 use swc::sourcemap::SourceMap;
 
 pub fn create_file(file: &Path) -> Result<File> {
