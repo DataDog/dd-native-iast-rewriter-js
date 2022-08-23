@@ -36,13 +36,35 @@ pub struct RewrittenOutput {
 }
 
 #[cfg(test)]
-pub fn debug_js(code: String) -> Result<(), Error> {
+pub fn debug_js(code: String) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let js_file = "debug.js".to_string();
         let program = parse_js(code, &js_file, handler, compiler.borrow())?;
+
         print!("{:#?}", program);
-        Ok(())
+
+        let print_result = compiler.print(
+            &program,
+            file_name(&js_file),
+            None,
+            false,
+            EsVersion::Es2020,
+            SourceMapsConfig::Bool(true),
+            &Default::default(),
+            None,
+            false,
+            None,
+        );
+
+        print_result.map(|printed| RewrittenOutput {
+            code: printed.code,
+            source_map: printed.map.unwrap(),
+            original_map: extract_source_map(
+                Path::new(js_file.as_str()).parent().unwrap(),
+                compiler.comments(),
+            ),
+        })
     });
 }
 

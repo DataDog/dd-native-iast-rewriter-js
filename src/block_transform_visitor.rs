@@ -21,12 +21,11 @@ impl Visit for BlockTransformVisitor {}
 
 impl VisitMut for BlockTransformVisitor {
     fn visit_mut_block_stmt(&mut self, expr: &mut BlockStmt) {
-        println!("block {:#?}", expr);
+        //println!("block {:#?}", expr);
         let operation_visitor = &mut OperationTransformVisitor { counter: 0 };
         expr.visit_mut_children_with(operation_visitor);
         insert_var_declaration(operation_visitor.counter, expr);
         expr.visit_mut_children_with(self);
-        // expr.stmts.clear();
     }
 }
 
@@ -58,5 +57,4 @@ fn insert_var_declaration(counter: usize, expr: &mut BlockStmt) {
         }));
         expr.stmts.insert(0, declaration);
     }
-    println!("Inserted vars: {}", counter);
 }

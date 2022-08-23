@@ -18,11 +18,11 @@ impl Visit for OperationTransformVisitor {}
 
 impl VisitMut for OperationTransformVisitor {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
-        println!("expr {:#?}", expr);
+        //println!("expr {:#?}", expr);
         match expr {
             Expr::Bin(binary) => {
                 if binary.op == BinaryOp::Add {
-                    expr.map_with_mut(|bin| to_dd_binary_expr(bin, self));
+                    expr.map_with_mut(|bin| to_dd_binary_expr(&bin, self));
                     return;
                 } else {
                     expr.visit_mut_children_with(self);
@@ -37,11 +37,12 @@ impl VisitMut for OperationTransformVisitor {
         if_stmt.test.visit_mut_children_with(self);
     }
     fn visit_mut_block_stmt(&mut self, _expr: &mut BlockStmt) {
-        println!("expr block {:#?}", _expr);
+        //println!("expr block {:#?}", _expr);
     }
 }
+
 fn to_dd_binary_expr(
-    expr: Expr,
+    expr: &Expr,
     operation_transform_visitor: &mut OperationTransformVisitor,
 ) -> Expr {
     match expr {
@@ -58,26 +59,42 @@ fn to_dd_binary_expr(
             );
 
             operation_transform_visitor.counter = assign_expressions.len();
-            assign_expressions.push(Box::new(get_dd_call_plus_operator_expr(
-                binary_clone,
-                &arguments_expressions,
-            )));
 
-            // TODO Iterate all children items checking if it has direct
-            return Expr::Paren(ParenExpr {
-                span,
-                expr: Box::new(Expr::Seq(SeqExpr {
-                    span,
-                    exprs: assign_expressions,
-                })),
-            });
+            // if all arguments are literals we can skip expression replacement
+            if must_replace_binary_expression(&arguments_expressions) {
+                let plus_operator_call =
+                    get_dd_call_plus_operator_expr(binary_clone, &arguments_expressions);
+
+                // if there are 0 assign expressions we can return just call expression without parentheses
+                // else wrap them all with a sequence of comma separated expressions
+                if assign_expressions.len() == 0 {
+                    return plus_operator_call;
+                } else {
+                    assign_expressions.push(Box::new(plus_operator_call));
+                    return Expr::Paren(ParenExpr {
+                        span,
+                        expr: Box::new(Expr::Seq(SeqExpr {
+                            span,
+                            exprs: assign_expressions,
+                        })),
+                    });
+                }
+            }
         }
         _ => {}
     }
     expr.clone()
 }
 
-fn fn_create_assign_expression(index: usize, expr: Expr, span: Span) -> (Expr, Expr) {
+fn must_replace_binary_expression(argument_exprs: &Vec<Expr>) -> bool {
+    // by now only literals a filtered but may be other cases.
+    argument_exprs.iter().any(|arg| match arg {
+        Expr::Lit(_) => false,
+        _ => true,
+    })
+}
+
+fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (Expr, Expr) {
     let id = Ident {
         span,
         sym: JsWord::from(get_dd_local_variable_name(index)),
@@ -107,13 +124,14 @@ fn replace_expressions_in_binary(
 
     match left {
         Expr::Bin(left_bin) => {
+            // TODO: what if not Add?
             if left_bin.op == BinaryOp::Add {
                 replace_expressions_in_binary(left_bin, assign_exprs, argument_exprs);
             }
         }
         Expr::Call(_) => {
             let index = assign_exprs.len();
-            let (assign, id) = fn_create_assign_expression(index, *binary.left.clone(), span);
+            let (assign, id) = create_assign_expression(index, *binary.left.clone(), span);
             assign_exprs.push(Box::new(assign));
             binary
                 .left
@@ -131,7 +149,7 @@ fn replace_expressions_in_binary(
         }
         Expr::Call(_) => {
             let index = assign_exprs.len();
-            let (assign, id) = fn_create_assign_expression(index, *binary.right.clone(), span);
+            let (assign, id) = create_assign_expression(index, *binary.right.clone(), span);
             assign_exprs.push(Box::new(assign));
             binary
                 .right
