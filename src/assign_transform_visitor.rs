@@ -37,7 +37,7 @@ fn to_dd_assign_expr(assign: AssignExpr) -> AssignExpr {
                 expr: Box::new(left.clone()),
             }];
 
-            // if a += global._ddiast.twoItemsPlusOperator(b + c, b, c) then convert it to global._ddiast.twoItemsPlusOperator(a + b + c, a, b, c)
+            // if a += global._ddiast.twoItemsPlusOperator(b + c, b, c) then convert it to a = global._ddiast.threeItemsPlusOperator(a + b + c, a, b, c)
             if right_is_a_call_to_dd_method(&right) {
                 right = Box::new(extract_call_arguments(&right, &mut args));
             } else {
