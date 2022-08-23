@@ -119,6 +119,16 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
+    fn test_variable_plus_literals() -> Result<(), String> {
+        let original_code = "{const result = a + 'b' + 'c'}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const result = global._ddiast.twoItemsPlusOperator(a + 'b' + 'c', a, 'b' + 'c')");
+        Ok(())
+    }
+
+    #[test]
     fn test_simple_plus_smi() -> Result<(), String> {
         let original_code = "{const result = 1 + 2}".to_string();
         let js_file = "test.js".to_string();
