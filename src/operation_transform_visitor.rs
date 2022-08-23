@@ -6,11 +6,13 @@ use swc::{
 };
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use crate::visitor_util::{
-    get_dd_local_variable_name, get_plus_operator_based_on_num_of_args_for_span,
+use crate::{
+    assign_transform_visitor::AssignTransformVisitor,
+    visitor_util::{get_dd_local_variable_name, get_plus_operator_based_on_num_of_args_for_span},
 };
 
 pub struct OperationTransformVisitor {
+    pub assign_visitor: AssignTransformVisitor,
     pub counter: usize,
 }
 
@@ -28,11 +30,16 @@ impl VisitMut for OperationTransformVisitor {
                     expr.visit_mut_children_with(self);
                 }
             }
+            Expr::Assign(assign) => {
+                assign.visit_mut_children_with(self);
+                self.assign_visitor.visit_mut_assign_expr(assign);
+            }
             _ => {
                 expr.visit_mut_children_with(self);
             }
         }
     }
+
     fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
         if_stmt.test.visit_mut_children_with(self);
     }
@@ -124,9 +131,10 @@ fn replace_expressions_in_binary(
 
     match left {
         Expr::Bin(left_bin) => {
-            // TODO: what if not Add?
             if left_bin.op == BinaryOp::Add {
                 replace_expressions_in_binary(left_bin, assign_exprs, argument_exprs);
+            } else {
+                argument_exprs.push(left.clone())
             }
         }
         Expr::Call(_) => {
@@ -145,6 +153,8 @@ fn replace_expressions_in_binary(
         Expr::Bin(right_bin) => {
             if right_bin.op == BinaryOp::Add {
                 replace_expressions_in_binary(right_bin, assign_exprs, argument_exprs);
+            } else {
+                argument_exprs.push(right.clone())
             }
         }
         Expr::Call(_) => {

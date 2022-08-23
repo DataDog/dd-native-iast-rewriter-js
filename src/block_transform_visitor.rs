@@ -1,6 +1,7 @@
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 // use swc::ecmascript::ast::*;
 use crate::{
+    assign_transform_visitor::AssignTransformVisitor,
     operation_transform_visitor::OperationTransformVisitor,
     visitor_util::get_dd_local_variable_name,
 };
@@ -22,7 +23,10 @@ impl Visit for BlockTransformVisitor {}
 impl VisitMut for BlockTransformVisitor {
     fn visit_mut_block_stmt(&mut self, expr: &mut BlockStmt) {
         //println!("block {:#?}", expr);
-        let operation_visitor = &mut OperationTransformVisitor { counter: 0 };
+        let operation_visitor = &mut OperationTransformVisitor {
+            counter: 0,
+            assign_visitor: AssignTransformVisitor {},
+        };
         expr.visit_mut_children_with(operation_visitor);
         insert_var_declaration(operation_visitor.counter, expr);
         expr.visit_mut_children_with(self);

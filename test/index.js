@@ -147,6 +147,27 @@ __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5));'
     [
       'const result = "a" + b + c + d + e + f;',
       'const result = global._ddiast.anyPlusOperator("a" + b + c + d + e + f, "a", b, c, d, e, f);'
+    ],
+    ['const result = a + b * c;', 'const result = global._ddiast.twoItemsPlusOperator(a + b * c, a, b * c);'],
+    ['const result = a * b + c;', 'const result = global._ddiast.twoItemsPlusOperator(a * b + c, a * b, c);'],
+
+    // Assignations
+    ['a += b;', 'a = global._ddiast.twoItemsPlusOperator(a + b, a, b);'],
+    [
+      'a += b + c;',
+      'a = global._ddiast.threeItemsPlusOperator(a + b + c, a, b, c);'
+    ],
+    [
+      'a += b + c + d;',
+      'a = global._ddiast.fourItemsPlusOperator(a + b + c + d, a, b, c, d);'
+    ],
+    [
+      'a += b + c + d + e;',
+      'a = global._ddiast.fiveItemsPlusOperator(a + b + c + d + e, a, b, c, d, e);'
+    ],
+    [
+      'a += b + c + d + e + f;',
+      'a = global._ddiast.anyPlusOperator(a + b + c + d + e + f, a, b, c, d, e, f);'
     ]
   ], value => {
     const input = value[0]

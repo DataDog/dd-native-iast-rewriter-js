@@ -1,5 +1,5 @@
 use random_string::generate;
-use std::{env, sync::Once};
+use std::{env, ops::Deref, sync::Once};
 use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
 
 pub const NODE_GLOBAL: &str = "global";
@@ -117,4 +117,55 @@ pub fn template_literal_operator(span: Span) -> MemberProp {
         sym: JsWord::from("templateLiteralOperator"),
         optional: false,
     })
+}
+
+pub fn is_dd_method(call: &CallExpr) -> bool {
+    is_call_one_of_the_dd_methods_provided(call, DD_METHODS.to_vec())
+}
+
+fn is_call_one_of_the_dd_methods_provided(call: &CallExpr, dd_methods: Vec<&str>) -> bool {
+    let global_string = JsWord::from(NODE_GLOBAL);
+    let dd_global_string = JsWord::from(DD_GLOBAL_NAMESPACE);
+    let mut is_dd_method = false;
+    let mut is_dd_global = false;
+    let mut is_node_global = false;
+    let mut coded_methods = Vec::new();
+    let dd_methods_iter = dd_methods.iter();
+    let callee: &MemberExpr;
+
+    match &call.callee {
+        Callee::Expr(call_calle) => {
+            if let Expr::Member(c) = &**call_calle {
+                callee = c;
+            } else {
+                return false;
+            }
+        }
+        _ => {
+            return false;
+        }
+    }
+
+    for method in dd_methods_iter {
+        coded_methods.push(JsWord::from(*method));
+    }
+
+    let x = callee.deref();
+    if let MemberProp::Ident(ident) = &x.prop {
+        if coded_methods.contains(&ident.sym) {
+            is_dd_method = true;
+        }
+    }
+
+    if let Expr::Member(member) = &x.obj.deref() {
+        if let MemberProp::Ident(ident) = &member.prop {
+            is_dd_global = ident.sym == dd_global_string;
+        }
+
+        if let Expr::Ident(ident) = &member.obj.deref() {
+            is_node_global = ident.sym == global_string;
+        }
+    }
+
+    return is_dd_method && is_dd_global && is_node_global;
 }

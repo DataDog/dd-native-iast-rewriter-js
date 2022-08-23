@@ -1,5 +1,6 @@
 #![deny(clippy::all)]
 
+mod assign_transform_visitor;
 mod block_transform_visitor;
 mod operation_transform_visitor;
 mod rewriter;
@@ -220,6 +221,36 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("return (__datadog_test_0 = fn2(a), __datadog_test_1 = fn3(c), global._ddiast.twoItemsPlusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
+        Ok(())
+    }
+
+    #[test]
+    fn test_simple_plus_with_multiply() -> Result<(), String> {
+        let original_code = "{const result = a + b * c}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("global._ddiast.twoItemsPlusOperator(a + b * c, a, b * c)");
+        Ok(())
+    }
+
+    #[test]
+    fn test_simple_assignation() -> Result<(), String> {
+        let original_code = "{a += b;}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("a = global._ddiast.twoItemsPlusOperator(a + b, a, b)");
+        Ok(())
+    }
+
+    #[test]
+    fn test_plus_and_assignation() -> Result<(), String> {
+        let original_code = "{a += b + c;}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("a = global._ddiast.threeItemsPlusOperator(a + b + c, a, b, c)");
         Ok(())
     }
 }
