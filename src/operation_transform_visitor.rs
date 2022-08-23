@@ -1,4 +1,4 @@
-use std::ops::{DerefMut, Deref};
+use std::ops::DerefMut;
 use swc::{
     atoms::JsWord,
     common::{util::take::Take, Span},
@@ -63,14 +63,14 @@ fn to_dd_binary_expr(
                 &mut binary_clone,
                 &mut assign_expressions,
                 &mut arguments,
+                operation_transform_visitor,
             );
 
             operation_transform_visitor.counter = assign_expressions.len();
 
             // if all arguments are literals we can skip expression replacement
             if must_replace_binary_expression(&arguments) {
-                let plus_operator_call =
-                    get_dd_call_plus_operator_expr(binary_clone, &arguments);
+                let plus_operator_call = get_dd_call_plus_operator_expr(binary_clone, &arguments);
 
                 // if there are 0 assign expressions we can return just call expression without parentheses
                 // else wrap them all with a sequence of comma separated expressions inside parentheses
@@ -125,31 +125,61 @@ fn replace_expressions_in_binary(
     binary: &mut BinExpr,
     assign_exprs: &mut Vec<Box<Expr>>,
     argument_exprs: &mut Vec<Expr>,
+    operation_transform_visitor: &mut OperationTransformVisitor,
 ) {
     let left = binary.left.deref_mut();
-    replace_expressions_in_binary_operand(left, assign_exprs, argument_exprs, binary.span);
+    replace_expressions_in_binary_operand(
+        left,
+        assign_exprs,
+        argument_exprs,
+        binary.span,
+        operation_transform_visitor,
+    );
 
     let right = binary.right.deref_mut();
-    replace_expressions_in_binary_operand(right, assign_exprs, argument_exprs, binary.span);
+    replace_expressions_in_binary_operand(
+        right,
+        assign_exprs,
+        argument_exprs,
+        binary.span,
+        operation_transform_visitor,
+    );
 }
 
-fn replace_expressions_in_binary_operand(operand: &mut Expr, assign_exprs: &mut Vec<Box<Expr>>, argument_exprs: &mut Vec<Expr>, span: Span){
-    match operand{
+fn replace_expressions_in_binary_operand(
+    operand: &mut Expr,
+    assign_exprs: &mut Vec<Box<Expr>>,
+    argument_exprs: &mut Vec<Expr>,
+    span: Span,
+    operation_transform_visitor: &mut OperationTransformVisitor,
+) {
+    match operand {
         Expr::Bin(binary) => {
             if binary.op == BinaryOp::Add {
-                replace_expressions_in_binary(binary, assign_exprs, argument_exprs);
+                replace_expressions_in_binary(
+                    binary,
+                    assign_exprs,
+                    argument_exprs,
+                    operation_transform_visitor,
+                );
             } else {
                 argument_exprs.push(operand.clone())
             }
         }
-        Expr::Call(_) => {
+        Expr::Call(_) | Expr::Paren(_) => {
+            // visit_mut_children_with maybe only needed by Paren but...
+            operand.visit_mut_children_with(operation_transform_visitor);
+
             let index = assign_exprs.len();
             let (assign, id) = create_assign_expression(index, operand.clone(), span);
             assign_exprs.push(Box::new(assign));
             operand.map_with_mut(|_| get_ident(span, index));
             argument_exprs.push(id);
         }
-        _ => argument_exprs.push(operand.clone()),
+        _ => {
+            //println!("operand {:#?}", operand);
+            argument_exprs.push(operand.clone())
+        }
     }
 }
 

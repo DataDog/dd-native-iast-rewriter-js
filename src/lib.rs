@@ -124,7 +124,9 @@ mod tests {
         let original_code = "{const result = a + 'b' + 'c'}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const result = global._ddiast.twoItemsPlusOperator(a + 'b' + 'c', a, 'b' + 'c')");
+        assert_that(&rewritten.code).contains(
+            "const result = global._ddiast.twoItemsPlusOperator(a + 'b' + 'c', a, 'b' + 'c')",
+        );
         Ok(())
     }
 
@@ -261,6 +263,36 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("a = global._ddiast.threeItemsPlusOperator(a + b + c, a, b, c)");
+        Ok(())
+    }
+
+    #[test]
+    fn test_plus_and_block() -> Result<(), String> {
+        let original_code = "{let b;const a = 'a' + (b = '_b_', b + c);}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0;\n    let b;\n    const a = (__datadog_test_0 = (b = '_b_', global._ddiast.twoItemsPlusOperator(b + c, b, c)), global._ddiast.twoItemsPlusOperator('a' + __datadog_test_0, 'a', __datadog_test_0));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_plus_inside_array() -> Result<(), String> {
+        let original_code = "{const a = [a + b, c + d];}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("const a = [\n        global._ddiast.twoItemsPlusOperator(a + b, a, b),\n        global._ddiast.twoItemsPlusOperator(c + d, c, d)\n    ]");
+        Ok(())
+    }
+
+    #[test]
+    fn test_plus_inside_object_assign() -> Result<(), String> {
+        let original_code = "{const a = Object.assign({[prop]: a + b})}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("const a = Object.assign({\n        [prop]: global._ddiast.twoItemsPlusOperator(a + b, a, b)\n    })");
         Ok(())
     }
 }

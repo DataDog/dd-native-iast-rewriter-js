@@ -57,6 +57,14 @@ global._ddiast.twoItemsPlusOperator(1 + __datadog_test_0, 1, __datadog_test_0));
       }')
   })
 
+  it('does modify add inside ()', () => {
+    const js = 'let c;\
+const a = "a" + (c = "_b_", c + message);'
+    rewriteAndExpect(js, '{\n    let __datadog_test_0;\n\
+let c;\n    const a = (__datadog_test_0 = (c = "_b_", global._ddiast.twoItemsPlusOperator(c + message, c, message)), \
+global._ddiast.twoItemsPlusOperator("a" + __datadog_test_0, "a", __datadog_test_0));\n}')
+  })
+
   itEach('does not change sum of literals', [
     'const result = "a" + "b";',
     'const result = "a" + "b" + "c";',
