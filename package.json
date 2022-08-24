@@ -78,8 +78,8 @@
     "rustfmt": "rustfmt --config imports_granularity=Crate src/*.rs",
     "prepublishOnly": "run-p artifacts:prepare artifacts:prepublish",
     "version": "napi version",
-    "test": "mocha",
-    "test:junit": "mocha --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
+    "test": "DD_LOCAL_VAR_NAME_HASH=test mocha",
+    "test:junit": "DD_LOCAL_VAR_NAME_HASH=test mocha --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
     "prepare": "husky install"
   },
   "lint-staged": {
