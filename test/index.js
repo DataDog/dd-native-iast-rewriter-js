@@ -44,7 +44,7 @@ describe('binary expression', () => {
   it('does modify add', () => {
     const js = 'const result = a + " hey!";'
     rewriteAndExpect(js, `{
-        const result = global._ddiast.twoItemsPlusOperator(a + " hey!", a, " hey!");
+        const result = global._ddiast.plusOperator(a + " hey!", a, " hey!");
     }`)
   })
 
@@ -53,7 +53,7 @@ describe('binary expression', () => {
     rewriteAndExpect(js, '{\n\
         let __datadog_test_0;\n\
 const result = (__datadog_test_0 = otherMethod(2), \
-global._ddiast.twoItemsPlusOperator(1 + __datadog_test_0, 1, __datadog_test_0));\n\
+global._ddiast.plusOperator(1 + __datadog_test_0, 1, __datadog_test_0));\n\
       }')
   })
 
@@ -61,8 +61,22 @@ global._ddiast.twoItemsPlusOperator(1 + __datadog_test_0, 1, __datadog_test_0));
     const js = 'let c;\
 const a = "a" + (c = "_b_", c + message);'
     rewriteAndExpect(js, '{\n    let __datadog_test_0;\n\
-let c;\n    const a = (__datadog_test_0 = (c = "_b_", global._ddiast.twoItemsPlusOperator(c + message, c, message)), \
-global._ddiast.twoItemsPlusOperator("a" + __datadog_test_0, "a", __datadog_test_0));\n}')
+let c;\n    const a = (__datadog_test_0 = (c = "_b_", global._ddiast.plusOperator(c + message, c, message)), \
+global._ddiast.plusOperator("a" + __datadog_test_0, "a", __datadog_test_0));\n}')
+  })
+
+  it('does modify add inside OR operator (right)', () => {
+    const js = 'const result = a || b + c;'
+    rewriteAndExpect(js, `{
+        const result = a || global._ddiast.plusOperator(b + c, b, c);
+    }`)
+  })
+
+  it('does modify add inside OR operator (left)', () => {
+    const js = 'const result = a + b || c;'
+    rewriteAndExpect(js, `{
+        const result = global._ddiast.plusOperator(a + b, a, b) || c;
+    }`)
   })
 
   itEach('does not change sum of literals', [
@@ -76,20 +90,20 @@ global._ddiast.twoItemsPlusOperator("a" + __datadog_test_0, "a", __datadog_test_
   })
 
   itEach('does change + operator with datadog global._ddiast.*plusOperator functions', [
-    ['const result = a + b;', 'const result = global._ddiast.twoItemsPlusOperator(a + b, a, b);'],
+    ['const result = a + b;', 'const result = global._ddiast.plusOperator(a + b, a, b);'],
     [
       'const result = a + b + c;',
-      'const result = global._ddiast.threeItemsPlusOperator(a + b + c, a, b, c);'],
+      'const result = global._ddiast.plusOperator(a + b + c, a, b, c);'],
     [
       'const result = a + b + c + d;',
-      'const result = global._ddiast.fourItemsPlusOperator(a + b + c + d, a, b, c, d);'],
+      'const result = global._ddiast.plusOperator(a + b + c + d, a, b, c, d);'],
     [
       'const result = a + b + c + d + e;',
-      'const result = global._ddiast.fiveItemsPlusOperator(a + b + c + d + e, a, b, c, d, e);'
+      'const result = global._ddiast.plusOperator(a + b + c + d + e, a, b, c, d, e);'
     ],
     [
       'const result = a + b + c + d + e + f;',
-      'const result = global._ddiast.anyPlusOperator(a + b + c + d + e + f, a, b, c, d, e, f);'
+      'const result = global._ddiast.plusOperator(a + b + c + d + e + f, a, b, c, d, e, f);'
     ]
   ], (value) => {
     const input = value[0]
@@ -100,26 +114,26 @@ global._ddiast.twoItemsPlusOperator("a" + __datadog_test_0, "a", __datadog_test_
   itEach('does change + operator with datadog global._ddiast.*plusOperator functions extracting local variables', [
     ['const result = a() + b();', 'let __datadog_test_0, __datadog_test_1;\n\
       const result = (__datadog_test_0 = a(), __datadog_test_1 = b(), \
-global._ddiast.twoItemsPlusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));'],
+global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));'],
     [
       'const result = a() + b() + c();',
       'let __datadog_test_0, __datadog_test_1, __datadog_test_2;\n\
 const result = (__datadog_test_0 = a(), __datadog_test_1 = b(), __datadog_test_2 = c(), \
-global._ddiast.threeItemsPlusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2, \
+global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2, \
 __datadog_test_0, __datadog_test_1, __datadog_test_2));'
     ],
     [
       'const result = a() + b() + c() + d();',
       'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;\n\
       const result = (__datadog_test_0 = a(), __datadog_test_1 = b(), __datadog_test_2 = c(), __datadog_test_3 = d(), \
-global._ddiast.fourItemsPlusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2 + __datadog_test_3, \
+global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2 + __datadog_test_3, \
 __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3));'
     ],
     [
       'const result = a() + b() + c() + d() + e();',
       'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4;\n\
 const result = (__datadog_test_0 = a(), __datadog_test_1 = b(), __datadog_test_2 = c(), __datadog_test_3 = d(), \
-__datadog_test_4 = e(), global._ddiast.fiveItemsPlusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2 + \
+__datadog_test_4 = e(), global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2 + \
 __datadog_test_3 + __datadog_test_4, __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, \
 __datadog_test_4));'
     ],
@@ -128,7 +142,7 @@ __datadog_test_4));'
       'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, \
 __datadog_test_5;\n\
 const result = (__datadog_test_0 = a(), __datadog_test_1 = b(), __datadog_test_2 = c(), __datadog_test_3 = d(), \
-__datadog_test_4 = e(), __datadog_test_5 = f(), global._ddiast.anyPlusOperator(__datadog_test_0 + __datadog_test_1 + \
+__datadog_test_4 = e(), __datadog_test_5 = f(), global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + \
 __datadog_test_2 + __datadog_test_3 + __datadog_test_4 + __datadog_test_5, __datadog_test_0, __datadog_test_1, \
 __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5));'
     ]
@@ -138,44 +152,44 @@ __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5));'
     rewriteAndExpect(input, wrapBlock(expected))
   })
 
-  itEach('does change + operator with datadog global._ddiast.*plusOperator functions extracting mixed variables', [
+  itEach('does change + operator with datadog global._ddiast.plusOperator function extracting mixed variables', [
     //
     // Literals expanding from the beginning
     //
-    ['const result = "a" + b;', 'const result = global._ddiast.twoItemsPlusOperator("a" + b, "a", b);'],
-    ['const result = "a" + b + c;', 'const result = global._ddiast.threeItemsPlusOperator("a" + b + c, "a", b, c);'],
+    ['const result = "a" + b;', 'const result = global._ddiast.plusOperator("a" + b, "a", b);'],
+    ['const result = "a" + b + c;', 'const result = global._ddiast.plusOperator("a" + b + c, "a", b, c);'],
     [
       'const result = "a" + b + c + d;',
-      'const result = global._ddiast.fourItemsPlusOperator("a" + b + c + d, "a", b, c, d);'
+      'const result = global._ddiast.plusOperator("a" + b + c + d, "a", b, c, d);'
     ],
     [
       'const result = "a" + b + c + d + e;',
-      'const result = global._ddiast.fiveItemsPlusOperator("a" + b + c + d + e, "a", b, c, d, e);'
+      'const result = global._ddiast.plusOperator("a" + b + c + d + e, "a", b, c, d, e);'
     ],
     [
       'const result = "a" + b + c + d + e + f;',
-      'const result = global._ddiast.anyPlusOperator("a" + b + c + d + e + f, "a", b, c, d, e, f);'
+      'const result = global._ddiast.plusOperator("a" + b + c + d + e + f, "a", b, c, d, e, f);'
     ],
-    ['const result = a + b * c;', 'const result = global._ddiast.twoItemsPlusOperator(a + b * c, a, b * c);'],
-    ['const result = a * b + c;', 'const result = global._ddiast.twoItemsPlusOperator(a * b + c, a * b, c);'],
+    ['const result = a + b * c;', 'const result = global._ddiast.plusOperator(a + b * c, a, b * c);'],
+    ['const result = a * b + c;', 'const result = global._ddiast.plusOperator(a * b + c, a * b, c);'],
 
     // Assignations
-    ['a += b;', 'a = global._ddiast.twoItemsPlusOperator(a + b, a, b);'],
+    ['a += b;', 'a = global._ddiast.plusOperator(a + b, a, b);'],
     [
       'a += b + c;',
-      'a = global._ddiast.threeItemsPlusOperator(a + b + c, a, b, c);'
+      'a = global._ddiast.plusOperator(a + b + c, a, b, c);'
     ],
     [
       'a += b + c + d;',
-      'a = global._ddiast.fourItemsPlusOperator(a + b + c + d, a, b, c, d);'
+      'a = global._ddiast.plusOperator(a + b + c + d, a, b, c, d);'
     ],
     [
       'a += b + c + d + e;',
-      'a = global._ddiast.fiveItemsPlusOperator(a + b + c + d + e, a, b, c, d, e);'
+      'a = global._ddiast.plusOperator(a + b + c + d + e, a, b, c, d, e);'
     ],
     [
       'a += b + c + d + e + f;',
-      'a = global._ddiast.anyPlusOperator(a + b + c + d + e + f, a, b, c, d, e, f);'
+      'a = global._ddiast.plusOperator(a + b + c + d + e + f, a, b, c, d, e, f);'
     ]
   ], value => {
     const input = value[0]

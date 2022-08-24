@@ -83,7 +83,9 @@ mod tests {
         .to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("global._ddiast.twoItemsPlusOperator(this.height + this.width, this.height, this.width)");
+        assert_that(&rewritten.code).contains(
+            "global._ddiast.plusOperator(this.height + this.width, this.height, this.width)",
+        );
         Ok(())
     }
 
@@ -105,7 +107,7 @@ mod tests {
         .to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("(__datadog_test_0 = this.w(), global._ddiast.twoItemsPlusOperator(this.height + __datadog_test_0, this.height, __datadog_test_0))");
+        assert_that(&rewritten.code).contains("(__datadog_test_0 = this.w(), global._ddiast.plusOperator(this.height + __datadog_test_0, this.height, __datadog_test_0))");
         Ok(())
     }
 
@@ -124,9 +126,8 @@ mod tests {
         let original_code = "{const result = a + 'b' + 'c'}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains(
-            "const result = global._ddiast.twoItemsPlusOperator(a + 'b' + 'c', a, 'b' + 'c')",
-        );
+        assert_that(&rewritten.code)
+            .contains("const result = global._ddiast.plusOperator(a + 'b' + 'c', a, 'b' + 'c')");
         Ok(())
     }
 
@@ -144,7 +145,7 @@ mod tests {
         let original_code = "{const result = a + b}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("global._ddiast.twoItemsPlusOperator(a + b, a, b)");
+        assert_that(&rewritten.code).contains("global._ddiast.plusOperator(a + b, a, b)");
         Ok(())
     }
 
@@ -154,7 +155,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("(__datadog_test_0 = b(), global._ddiast.twoItemsPlusOperator(a + __datadog_test_0, a, __datadog_test_0))");
+            .contains("(__datadog_test_0 = b(), global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0))");
         Ok(())
     }
 
@@ -164,7 +165,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("global._ddiast.fourItemsPlusOperator(a + b + c + d, a, b, c, d)");
+            .contains("global._ddiast.plusOperator(a + b + c + d, a, b, c, d)");
         Ok(())
     }
 
@@ -173,7 +174,7 @@ mod tests {
         let original_code = "{const result = a + b + c() + d}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("(__datadog_test_0 = c(), global._ddiast.fourItemsPlusOperator(a + b + __datadog_test_0 + d, a, b, __datadog_test_0, d))");
+        assert_that(&rewritten.code).contains("(__datadog_test_0 = c(), global._ddiast.plusOperator(a + b + __datadog_test_0 + d, a, b, __datadog_test_0, d))");
         Ok(())
     }
 
@@ -184,7 +185,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains(
-            "global._ddiast.threeItemsPlusOperator(a + b + __datadog_test_0, a, b, __datadog_test_0)",
+            "global._ddiast.plusOperator(a + b + __datadog_test_0, a, b, __datadog_test_0)",
         );
         Ok(())
     }
@@ -205,9 +206,8 @@ mod tests {
         .to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains(
-            "global._ddiast.twoItemsPlusOperator(__datadog_test_0 + c, __datadog_test_0, c)",
-        );
+        assert_that(&rewritten.code)
+            .contains("global._ddiast.plusOperator(__datadog_test_0 + c, __datadog_test_0, c)");
         Ok(())
     }
 
@@ -232,7 +232,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("return (__datadog_test_0 = fn2(a), __datadog_test_1 = fn3(c), global._ddiast.twoItemsPlusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
+            .contains("return (__datadog_test_0 = fn2(a), __datadog_test_1 = fn3(c), global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
         Ok(())
     }
 
@@ -241,8 +241,7 @@ mod tests {
         let original_code = "{const result = a + b * c}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code)
-            .contains("global._ddiast.twoItemsPlusOperator(a + b * c, a, b * c)");
+        assert_that(&rewritten.code).contains("global._ddiast.plusOperator(a + b * c, a, b * c)");
         Ok(())
     }
 
@@ -251,8 +250,7 @@ mod tests {
         let original_code = "{a += b;}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code)
-            .contains("a = global._ddiast.twoItemsPlusOperator(a + b, a, b)");
+        assert_that(&rewritten.code).contains("a = global._ddiast.plusOperator(a + b, a, b)");
         Ok(())
     }
 
@@ -262,7 +260,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("a = global._ddiast.threeItemsPlusOperator(a + b + c, a, b, c)");
+            .contains("a = global._ddiast.plusOperator(a + b + c, a, b, c)");
         Ok(())
     }
 
@@ -272,7 +270,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0;\n    let b;\n    const a = (__datadog_test_0 = (b = '_b_', global._ddiast.twoItemsPlusOperator(b + c, b, c)), global._ddiast.twoItemsPlusOperator('a' + __datadog_test_0, 'a', __datadog_test_0));");
+            .contains("let __datadog_test_0;\n    let b;\n    const a = (__datadog_test_0 = (b = '_b_', global._ddiast.plusOperator(b + c, b, c)), global._ddiast.plusOperator('a' + __datadog_test_0, 'a', __datadog_test_0));");
         Ok(())
     }
 
@@ -282,7 +280,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("const a = [\n        global._ddiast.twoItemsPlusOperator(a + b, a, b),\n        global._ddiast.twoItemsPlusOperator(c + d, c, d)\n    ]");
+            .contains("const a = [\n        global._ddiast.plusOperator(a + b, a, b),\n        global._ddiast.plusOperator(c + d, c, d)\n    ]");
         Ok(())
     }
 
@@ -292,7 +290,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("const a = Object.assign({\n        [prop]: global._ddiast.twoItemsPlusOperator(a + b, a, b)\n    })");
+            .contains("const a = Object.assign({\n        [prop]: global._ddiast.plusOperator(a + b, a, b)\n    })");
         Ok(())
     }
 }

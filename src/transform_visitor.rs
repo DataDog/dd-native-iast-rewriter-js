@@ -1,9 +1,9 @@
 use crate::{
     transform_visitor::AssignOp::{AddAssign, Assign},
     visitor_util::{
-        dd_global_method_invocation, get_plus_operator_based_on_num_of_args_for_span,
-        template_literal_operator, two_items_plus_operator, DD_GLOBAL_NAMESPACE, DD_METHODS,
-        NODE_GLOBAL,
+        any_items_plus_operator, dd_global_method_invocation,
+        get_plus_operator_based_on_num_of_args_for_span, template_literal_operator,
+        DD_GLOBAL_NAMESPACE, DD_METHODS, NODE_GLOBAL,
     },
 };
 use std::ops::Deref;
@@ -66,7 +66,7 @@ fn to_dd_assign_expr(assign: AssignExpr) -> AssignExpr {
         },
         PatOrExpr::Expr(left_expr) => {
             let left = *left_expr;
-            let callee = dd_global_method_invocation(span, two_items_plus_operator);
+            let callee = dd_global_method_invocation(span, any_items_plus_operator);
             let args = vec![
                 ExprOrSpread {
                     spread: None,
