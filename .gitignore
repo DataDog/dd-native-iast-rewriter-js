@@ -124,5 +124,4 @@ build
 *.zip
 *.bat
 .idea
-.husky
 .vscode

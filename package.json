@@ -20,10 +20,7 @@
     "type": "git",
     "url": "git+https://github.com/DataDog/dd-native-iast-rewriter-js.git"
   },
-  "keywords": [
-    "datadog",
-    "iast"
-  ],
+  "keywords": ["datadog", "iast"],
   "author": "Datadog Inc. <info@datadoghq.com>",
   "license": "Apache-2.0",
   "bugs": {
@@ -86,27 +83,11 @@
     "prepare": "husky install"
   },
   "lint-staged": {
-    "*.@(js|ts|tsx)": [
-      "prettier --write",
-      "eslint -c .eslintrc.json --fix"
-    ],
-    "*.@(yml|yaml)": [
-      "prettier --parser yaml --write"
-    ],
-    "*.md": [
-      "prettier --parser markdown --write"
-    ],
-    "*.json": [
-      "prettier --parser json --write"
-    ],
-    "*.rs": [
-      "rustfmt"
-    ]
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm run lint && npm run rustfmt && npm t"
-    }
+    "*.@(js|ts|tsx)": ["prettier --write", "eslint -c .eslintrc.json --fix"],
+    "*.@(yml|yaml)": ["prettier --parser yaml --write"],
+    "*.md": ["prettier --parser markdown --write"],
+    "*.json": ["prettier --parser json --write"],
+    "*.rs": ["rustfmt --config imports_granularity=Crate"]
   },
   "prettier": {
     "printWidth": 120,
