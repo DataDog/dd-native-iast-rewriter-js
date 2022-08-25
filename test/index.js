@@ -30,13 +30,13 @@ const rewriteAndExpect = (code, expect, block) => {
 
 const expectAst = (received, expected) => {
   const rLines = received
-    .split(os.EOL)
+    .split('\n') // it seems that rewriter do not take into account OS line endings
     .map((l) => l.trim())
-    .join('\n')
+    .join(os.EOL)
   const eLines = expected
     .split(os.EOL)
     .map((l) => l.trim())
-    .join('\n')
+    .join(os.EOL)
 
   expect(rLines).to.be.eq(eLines)
 }
@@ -249,4 +249,42 @@ __datadog_test_0 + "c" + d + __datadog_test_1 + "f", a, __datadog_test_0, "c", d
       rewriteAndExpect(input, wrapBlock(expected))
     }
   )
+
+  it('does modify add inside if assignation', () => {
+    const js = 'if ((result = (a + b)) > 100) {}'
+    rewriteAndExpect(
+      js,
+      `{
+        if ((result = (global._ddiast.plusOperator(a + b, a, b))) > 100) {}
+      }`
+    )
+  })
+
+  it('does modify add inside if assignation calling a function', () => {
+    const js = 'if ((result = (a + b())) > 100) {}'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+        if ((result = ((__datadog_test_0 = b(), global._ddiast.plusOperator(a + __datadog_test_0, a\
+, __datadog_test_0)))) > 100) {}
+      }`
+    )
+  })
+
+  it('does modify add and variable declaration is in the correct block', () => {
+    const js = `function a(){}
+      function b(){if ((result = (a() + b)) > 100) {}}`
+    rewriteAndExpect(
+      js,
+      `{
+        function a() {}
+        function b() {
+        let __datadog_test_0;
+        if ((result = ((__datadog_test_0 = a(), global._ddiast.plusOperator(__datadog_test_0 + b\
+, __datadog_test_0, b)))) > 100) {}
+        }
+      }`
+    )
+  })
 })
