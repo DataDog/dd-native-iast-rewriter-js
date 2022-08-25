@@ -32,11 +32,11 @@ const expectAst = (received, expected) => {
   const rLines = received
     .split(os.EOL)
     .map((l) => l.trim())
-    .join(os.EOL)
+    .join('\n')
   const eLines = expected
     .split(os.EOL)
     .map((l) => l.trim())
-    .join(os.EOL)
+    .join('\n')
 
   expect(rLines).to.be.eq(eLines)
 }
