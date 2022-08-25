@@ -32,11 +32,11 @@ const expectAst = (received, expected) => {
   const rLines = received
     .split('\n') // it seems that rewriter do not take into account OS line endings
     .map((l) => l.trim())
-    .join(os.EOL)
+    .join('\n')
   const eLines = expected
-    .split(os.EOL)
+    .split('\n')
     .map((l) => l.trim())
-    .join(os.EOL)
+    .join('\n')
 
   expect(rLines).to.be.eq(eLines)
 }
