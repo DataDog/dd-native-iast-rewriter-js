@@ -32,6 +32,7 @@
     "@napi-rs/cli": "^2.0.0",
     "@swc-node/register": "^1.4.2",
     "chai": "^4.3.6",
+    "cross-env": "^7.0.3",
     "dotenv-cli": "^5.0.0",
     "eslint": "^7.31.0",
     "eslint-config-standard": "^16.0.3",
@@ -78,8 +79,8 @@
     "rustfmt": "rustfmt --config imports_granularity=Crate src/*.rs",
     "prepublishOnly": "run-p artifacts:prepare artifacts:prepublish",
     "version": "napi version",
-    "test": "DD_LOCAL_VAR_NAME_HASH=test mocha",
-    "test:junit": "DD_LOCAL_VAR_NAME_HASH=test mocha --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
+    "test": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha",
+    "test:junit": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
     "prepare": "husky install"
   },
   "lint-staged": {
