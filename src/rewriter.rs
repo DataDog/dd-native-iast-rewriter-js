@@ -23,7 +23,7 @@ use swc::{
     sourcemap::{decode, decode_data_url, DecodedMap, SourceMap, SourceMapBuilder},
     try_with_handler, Compiler, HandlerOpts, SwcComments, TransformOutput,
 };
-//use crate::transform_visitor::TransformVisitor;
+
 use swc_ecma_parser::{EsConfig, Syntax};
 use swc_ecma_visit::VisitMutWith;
 
@@ -118,7 +118,6 @@ fn parse_js(source: String, file: &str, handler: &Handler, compiler: &Compiler) 
 }
 
 fn transform_js(mut program: Program, file: &str, compiler: &Compiler) -> Result<TransformOutput> {
-    //program.visit_mut_with(&mut TransformVisitor {counter: 0});
     program.visit_mut_with(&mut BlockTransformVisitor {});
     compiler.print(
         &program,

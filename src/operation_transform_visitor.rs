@@ -20,7 +20,6 @@ impl Visit for OperationTransformVisitor {}
 
 impl VisitMut for OperationTransformVisitor {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
-        //println!("expr {:#?}", expr);
         match expr {
             Expr::Bin(binary) => {
                 if binary.op == BinaryOp::Add {
@@ -43,9 +42,7 @@ impl VisitMut for OperationTransformVisitor {
     fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
         if_stmt.test.visit_mut_children_with(self);
     }
-    fn visit_mut_block_stmt(&mut self, _expr: &mut BlockStmt) {
-        //println!("expr block {:#?}", _expr);
-    }
+    fn visit_mut_block_stmt(&mut self, _expr: &mut BlockStmt) {}
 }
 
 fn to_dd_binary_expr(
@@ -176,10 +173,7 @@ fn replace_expressions_in_binary_operand(
             operand.map_with_mut(|_| get_ident(span, index));
             argument_exprs.push(id);
         }
-        _ => {
-            //println!("operand {:#?}", operand);
-            argument_exprs.push(operand.clone())
-        }
+        _ => argument_exprs.push(operand.clone()),
     }
 }
 

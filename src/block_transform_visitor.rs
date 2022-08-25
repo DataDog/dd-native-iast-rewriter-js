@@ -1,5 +1,3 @@
-use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
-// use swc::ecmascript::ast::*;
 use crate::{
     assign_transform_visitor::AssignTransformVisitor,
     operation_transform_visitor::OperationTransformVisitor,
@@ -8,11 +6,12 @@ use crate::{
 use swc::{
     atoms::JsWord,
     ecmascript::ast::{Stmt::Decl as DeclEnumOption, *},
-}; //{BindingIdent, BlockStmt, Pat, VarDeclarator, Ident, VarDecl, VarDeclKind};
+};
+use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 pub struct BlockTransformVisitor {}
 
-// TODO: new algorithm
+//  new algorithm
 //  Block:
 //  - Find items to instrument (+ or template literals in statements or in while, if... test part)
 //  - Replace found items by (__dd_XXX_1=....)
@@ -22,7 +21,6 @@ impl Visit for BlockTransformVisitor {}
 
 impl VisitMut for BlockTransformVisitor {
     fn visit_mut_block_stmt(&mut self, expr: &mut BlockStmt) {
-        //println!("block {:#?}", expr);
         let operation_visitor = &mut OperationTransformVisitor {
             counter: 0,
             assign_visitor: AssignTransformVisitor {},
