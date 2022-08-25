@@ -28,4 +28,3 @@ running on one of the supported platforms.
 - [ ] The CHANGELOG.md has been updated
 - [ ] Unit tests have been updated and pass
 - [ ] If known, an appropriate milestone has been selected
-
