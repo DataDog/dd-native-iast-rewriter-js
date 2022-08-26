@@ -1,12 +1,8 @@
 use crate::{
     assign_transform_visitor::AssignTransformVisitor,
     operation_transform_visitor::OperationTransformVisitor,
-    visitor_util::get_dd_local_variable_name,
 };
-use swc::{
-    atoms::JsWord,
-    ecmascript::ast::{Stmt::Decl as DeclEnumOption, *},
-};
+use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 pub struct BlockTransformVisitor {}
@@ -22,35 +18,30 @@ impl Visit for BlockTransformVisitor {}
 impl VisitMut for BlockTransformVisitor {
     fn visit_mut_block_stmt(&mut self, expr: &mut BlockStmt) {
         let operation_visitor = &mut OperationTransformVisitor {
-            counter: 0,
             assign_visitor: AssignTransformVisitor {},
+            idents: Vec::new(),
         };
         expr.visit_mut_children_with(operation_visitor);
-        insert_var_declaration(operation_visitor.counter, expr);
+        insert_var_declaration(&operation_visitor.idents, expr);
         expr.visit_mut_children_with(self);
     }
 }
 
-fn insert_var_declaration(counter: usize, expr: &mut BlockStmt) {
-    if counter > 0 {
+fn insert_var_declaration(ident_expressions: &Vec<Ident>, expr: &mut BlockStmt) {
+    if ident_expressions.len() > 0 {
         let span = expr.span;
         let mut vec = Vec::new();
-        for n in 0..counter {
-            let var_declarator = VarDeclarator {
+        ident_expressions.iter().for_each(|ident| {
+            vec.push(VarDeclarator {
                 span,
                 definite: false,
                 name: Pat::Ident(BindingIdent {
-                    id: Ident {
-                        span,
-                        sym: JsWord::from(get_dd_local_variable_name(n)),
-                        optional: false,
-                    },
+                    id: ident.clone(),
                     type_ann: None,
                 }),
                 init: None,
-            };
-            vec.push(var_declarator);
-        }
+            });
+        });
         let declaration = DeclEnumOption(Decl::Var(VarDecl {
             span,
             decls: vec,
