@@ -11,7 +11,7 @@ const { Rewriter } = require('../index')
 const rewriteAst = (code, opts) => {
   opts = opts || {}
   const rewriter = opts.rewriter ?? new Rewriter()
-  const file = opts.file ?? path.join(process.cwd(), 'index.js')
+  const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
   const sourceMap = opts.sourceMap
   return rewriter.rewrite(code, file, sourceMap)
 }

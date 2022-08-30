@@ -1,12 +1,7 @@
 #![deny(clippy::all)]
-
-mod assign_transform_visitor;
-mod block_transform_visitor;
-mod operation_transform_visitor;
 mod rewriter;
-mod transform_visitor;
 mod util;
-mod visitor_util;
+mod visitor;
 
 #[macro_use]
 extern crate napi_derive;

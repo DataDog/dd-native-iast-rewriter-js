@@ -1,7 +1,7 @@
 use swc::{common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::VisitMut;
 
-use crate::{
+use crate::visitor::{
     assign_transform_visitor::AssignOp::{AddAssign, Assign},
     visitor_util::{get_plus_operator_based_on_num_of_args_for_span, is_dd_method},
 };

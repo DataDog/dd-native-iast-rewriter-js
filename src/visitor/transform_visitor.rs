@@ -1,4 +1,4 @@
-use crate::visitor_util::{dd_global_method_invocation, template_literal_operator};
+use crate::visitor::visitor_util::{dd_global_method_invocation, template_literal_operator};
 
 use swc::{atoms::JsWord, common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};

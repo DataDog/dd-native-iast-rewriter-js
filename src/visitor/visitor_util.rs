@@ -1,4 +1,4 @@
-use random_string::generate;
+use crate::util::rnd_string;
 use std::{env, ops::Deref, sync::Once};
 use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
 
@@ -15,7 +15,7 @@ pub fn get_dd_local_var_name_hash() -> String {
                 DD_LOCAL_VAR_NAME_HASH = val;
             }
             Err(_) => {
-                DD_LOCAL_VAR_NAME_HASH = generate(6, "abcdefghijklmnopqrstuvwxyz");
+                DD_LOCAL_VAR_NAME_HASH = rnd_string(6);
             }
         });
         DD_LOCAL_VAR_NAME_HASH.clone()
