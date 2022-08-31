@@ -1,7 +1,5 @@
 /* eslint-disable no-multi-str */
 
-const { expect } = require('chai')
-const { it, describe } = require('mocha')
 const { itEach } = require('mocha-it-each')
 const os = require('os')
 const path = require('path')
