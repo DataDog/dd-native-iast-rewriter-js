@@ -25,7 +25,7 @@ impl BinaryAddTransform {
 
                 let mut assignations = Vec::new();
                 let mut arguments = Vec::new();
-                if replace_expressions_in_binary(
+                if prepare_replace_expressions_in_binary(
                     &mut binary_clone,
                     &mut assignations,
                     &mut arguments,
@@ -85,7 +85,7 @@ fn must_replace_binary_expression(argument_exprs: &Vec<Expr>) -> bool {
     })
 }
 
-fn replace_expressions_in_binary(
+fn prepare_replace_expressions_in_binary(
     binary: &mut BinExpr,
     assignations: &mut Vec<Box<Expr>>,
     arguments: &mut Vec<Expr>,
@@ -111,7 +111,7 @@ fn replace_expressions_in_binary_operand(
     match operand {
         Expr::Bin(binary) => {
             if binary.op == BinaryOp::Add {
-                replace_expressions_in_binary(binary, assignations, arguments, opv);
+                prepare_replace_expressions_in_binary(binary, assignations, arguments, opv);
             } else {
                 arguments.push(operand.clone())
             }
