@@ -127,3 +127,22 @@ fn is_call_one_of_the_dd_methods_provided(call: &CallExpr, dd_methods: Vec<&str>
 
     return is_dd_method && is_dd_global && is_node_global;
 }
+
+pub fn right_is_a_call_to_dd_method(right: &Expr) -> bool {
+    match right {
+        Expr::Call(call) => is_dd_method(call),
+        _ => false,
+    }
+}
+
+pub fn extract_call_arguments(right: &Expr, args: &mut Vec<ExprOrSpread>) -> Expr {
+    return match right {
+        Expr::Call(call) => {
+            call.args.iter().skip(1).for_each(|a| {
+                args.push(a.clone());
+            });
+            *call.args[0].expr.clone()
+        }
+        _ => right.clone(),
+    };
+}

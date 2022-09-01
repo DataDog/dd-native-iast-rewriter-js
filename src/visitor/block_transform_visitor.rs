@@ -55,7 +55,7 @@ impl VisitMut for BlockTransformVisitor<'_> {
             return;
         }
 
-        let operation_visitor = &mut OperationTransformVisitor::default();
+        let operation_visitor = &mut OperationTransformVisitor::new();
         expr.visit_mut_children_with(operation_visitor);
 
         if variables_contains_possible_duplicate(&operation_visitor.variable_decl) {

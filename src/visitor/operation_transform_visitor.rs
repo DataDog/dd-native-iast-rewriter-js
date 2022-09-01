@@ -1,28 +1,21 @@
-use std::{collections::HashSet, ops::DerefMut};
-use swc::{
-    atoms::JsWord,
-    common::{util::take::Take, Span},
-    ecmascript::ast::*,
-};
+use std::collections::HashSet;
+use swc::{common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use crate::visitor::{
-    assign_transform_visitor::AssignTransformVisitor,
-    visitor_util::{get_dd_local_variable_name, get_plus_operator_based_on_num_of_args_for_span},
-};
+use crate::visitor::binary_add_transform::BinaryAddTransform;
+
+use super::assign_add_transform::AssignAddTransform;
 
 pub struct OperationTransformVisitor {
     pub ident_counter: usize,
     pub idents: Vec<Ident>,
     pub variable_decl: HashSet<Ident>,
-    pub assign_transform_visitor: AssignTransformVisitor,
 }
 
 impl OperationTransformVisitor {
-    pub fn default() -> OperationTransformVisitor {
+    pub fn new() -> Self {
         OperationTransformVisitor {
             ident_counter: 0,
-            assign_transform_visitor: AssignTransformVisitor {},
             idents: Vec::new(),
             variable_decl: HashSet::new(),
         }
@@ -42,14 +35,14 @@ impl VisitMut for OperationTransformVisitor {
         match expr {
             Expr::Bin(binary) => {
                 if binary.op == BinaryOp::Add {
-                    expr.map_with_mut(|bin| to_dd_binary_expr(&bin, self));
+                    expr.map_with_mut(|bin| BinaryAddTransform::to_dd_binary_expr(&bin, self));
                 } else {
                     expr.visit_mut_children_with(self);
                 }
             }
             Expr::Assign(assign) => {
                 assign.visit_mut_children_with(self);
-                self.assign_transform_visitor.visit_mut_assign_expr(assign);
+                assign.map_with_mut(|assign| AssignAddTransform::to_dd_assign_expr(assign));
             }
             _ => {
                 expr.visit_mut_children_with(self);
@@ -68,148 +61,4 @@ impl VisitMut for OperationTransformVisitor {
 
     // cancel visit child blocks
     fn visit_mut_block_stmt(&mut self, _n: &mut BlockStmt) {}
-}
-
-fn to_dd_binary_expr(expr: &Expr, opv: &mut OperationTransformVisitor) -> Expr {
-    match expr {
-        Expr::Bin(binary) => {
-            let mut binary_clone = binary.clone();
-
-            let mut assignations = Vec::new();
-            let mut arguments = Vec::new();
-            replace_expressions_in_binary(
-                &mut binary_clone,
-                &mut assignations,
-                &mut arguments,
-                opv,
-            );
-
-            // if all arguments are literals we can skip expression replacement
-            if must_replace_binary_expression(&arguments) {
-                let plus_operator_call = get_dd_call_plus_operator_expr(binary_clone, &arguments);
-
-                // if there are 0 assign expressions we can return just call expression without parentheses
-                // else wrap them all with a sequence of comma separated expressions inside parentheses
-                if assignations.len() == 0 {
-                    return plus_operator_call;
-                } else {
-                    let span = binary.span;
-                    assignations.push(Box::new(plus_operator_call));
-                    return Expr::Paren(ParenExpr {
-                        span,
-                        expr: Box::new(Expr::Seq(SeqExpr {
-                            span,
-                            exprs: assignations.clone(),
-                        })),
-                    });
-                }
-            }
-        }
-        _ => {}
-    }
-    expr.clone()
-}
-
-fn must_replace_binary_expression(argument_exprs: &Vec<Expr>) -> bool {
-    // only literals are filtered by now but may be other cases.
-    argument_exprs.iter().any(|arg| match arg {
-        Expr::Lit(_) => false,
-        _ => true,
-    })
-}
-
-fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (AssignExpr, Ident) {
-    let id = Ident {
-        span,
-        sym: JsWord::from(get_dd_local_variable_name(index)),
-        optional: false,
-    };
-    (
-        AssignExpr {
-            span,
-            left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
-                id: id.clone(),
-                type_ann: None,
-            }))),
-            right: Box::new(expr),
-            op: AssignOp::Assign,
-        },
-        id,
-    )
-}
-
-fn replace_expressions_in_binary(
-    binary: &mut BinExpr,
-    assignations: &mut Vec<Box<Expr>>,
-    arguments: &mut Vec<Expr>,
-    opv: &mut OperationTransformVisitor,
-) {
-    let left = binary.left.deref_mut();
-    replace_expressions_in_binary_operand(left, assignations, arguments, binary.span, opv);
-
-    let right = binary.right.deref_mut();
-    replace_expressions_in_binary_operand(right, assignations, arguments, binary.span, opv);
-}
-
-fn replace_expressions_in_binary_operand(
-    operand: &mut Expr,
-    assignations: &mut Vec<Box<Expr>>,
-    arguments: &mut Vec<Expr>,
-    span: Span,
-    opv: &mut OperationTransformVisitor,
-) {
-    match operand {
-        Expr::Bin(binary) => {
-            if binary.op == BinaryOp::Add {
-                replace_expressions_in_binary(binary, assignations, arguments, opv);
-            } else {
-                arguments.push(operand.clone())
-            }
-        }
-        Expr::Call(_) | Expr::Paren(_) => {
-            // visit_mut_children_with maybe only needed by Paren but...
-            operand.visit_mut_children_with(opv);
-
-            let (assign, id) = create_assign_expression(opv.next_ident(), operand.clone(), span);
-
-            // store ident and assignation expression
-            opv.idents.push(id.to_owned());
-
-            assignations.push(Box::new(Expr::Assign(assign)));
-
-            // store ident as argument
-            arguments.push(Expr::Ident(id.clone()));
-
-            // replace operand with new ident
-            operand.map_with_mut(|_| Expr::Ident(id));
-        }
-        _ => arguments.push(operand.clone()),
-    }
-}
-
-fn get_dd_call_plus_operator_expr(binary: BinExpr, arguments: &Vec<Expr>) -> Expr {
-    let mut args: Vec<ExprOrSpread> = Vec::new();
-    let span = binary.span;
-
-    args.push(ExprOrSpread {
-        expr: Box::new(Expr::Bin(binary)),
-        spread: None,
-    });
-
-    args.append(
-        &mut arguments
-            .iter()
-            .map(|expr| ExprOrSpread {
-                expr: Box::new(expr.to_owned()),
-                spread: None,
-            })
-            .collect::<Vec<_>>(),
-    );
-
-    Expr::Call(CallExpr {
-        span,
-        callee: get_plus_operator_based_on_num_of_args_for_span(args.len() - 1, span),
-        args,
-        type_args: None,
-    })
 }
