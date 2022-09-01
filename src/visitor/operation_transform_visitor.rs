@@ -1,4 +1,4 @@
-use std::ops::DerefMut;
+use std::{collections::HashSet, ops::DerefMut};
 use swc::{
     atoms::JsWord,
     common::{util::take::Take, Span},
@@ -12,8 +12,27 @@ use crate::visitor::{
 };
 
 pub struct OperationTransformVisitor {
-    pub assign_visitor: AssignTransformVisitor,
+    pub ident_counter: usize,
     pub idents: Vec<Ident>,
+    pub variable_decl: HashSet<Ident>,
+    pub assign_transform_visitor: AssignTransformVisitor,
+}
+
+impl OperationTransformVisitor {
+    pub fn default() -> OperationTransformVisitor {
+        OperationTransformVisitor {
+            ident_counter: 0,
+            assign_transform_visitor: AssignTransformVisitor {},
+            idents: Vec::new(),
+            variable_decl: HashSet::new(),
+        }
+    }
+
+    pub fn next_ident(&mut self) -> usize {
+        let counter = self.ident_counter;
+        self.ident_counter += 1;
+        return counter;
+    }
 }
 
 impl Visit for OperationTransformVisitor {}
@@ -24,14 +43,13 @@ impl VisitMut for OperationTransformVisitor {
             Expr::Bin(binary) => {
                 if binary.op == BinaryOp::Add {
                     expr.map_with_mut(|bin| to_dd_binary_expr(&bin, self));
-                    return;
                 } else {
                     expr.visit_mut_children_with(self);
                 }
             }
             Expr::Assign(assign) => {
                 assign.visit_mut_children_with(self);
-                self.assign_visitor.visit_mut_assign_expr(assign);
+                self.assign_transform_visitor.visit_mut_assign_expr(assign);
             }
             _ => {
                 expr.visit_mut_children_with(self);
@@ -39,10 +57,17 @@ impl VisitMut for OperationTransformVisitor {
         }
     }
 
+    fn visit_mut_ident(&mut self, ident: &mut Ident) {
+        self.variable_decl.insert(ident.to_owned());
+    }
+
     fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
         if_stmt.test.visit_mut_children_with(self);
+        if_stmt.cons.visit_mut_children_with(self);
     }
-    fn visit_mut_block_stmt(&mut self, _expr: &mut BlockStmt) {}
+
+    // cancel visit child blocks
+    fn visit_mut_block_stmt(&mut self, _n: &mut BlockStmt) {}
 }
 
 fn to_dd_binary_expr(expr: &Expr, opv: &mut OperationTransformVisitor) -> Expr {
@@ -86,21 +111,21 @@ fn to_dd_binary_expr(expr: &Expr, opv: &mut OperationTransformVisitor) -> Expr {
 }
 
 fn must_replace_binary_expression(argument_exprs: &Vec<Expr>) -> bool {
-    // by now only literals a filtered but may be other cases.
+    // only literals are filtered by now but may be other cases.
     argument_exprs.iter().any(|arg| match arg {
         Expr::Lit(_) => false,
         _ => true,
     })
 }
 
-fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (Expr, Ident) {
+fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (AssignExpr, Ident) {
     let id = Ident {
         span,
         sym: JsWord::from(get_dd_local_variable_name(index)),
         optional: false,
     };
     (
-        Expr::Assign(AssignExpr {
+        AssignExpr {
             span,
             left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
                 id: id.clone(),
@@ -108,7 +133,7 @@ fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (Expr, Iden
             }))),
             right: Box::new(expr),
             op: AssignOp::Assign,
-        }),
+        },
         id,
     )
 }
@@ -145,17 +170,18 @@ fn replace_expressions_in_binary_operand(
             // visit_mut_children_with maybe only needed by Paren but...
             operand.visit_mut_children_with(opv);
 
-            let (assign, id) = create_assign_expression(assignations.len(), operand.clone(), span);
+            let (assign, id) = create_assign_expression(opv.next_ident(), operand.clone(), span);
 
             // store ident and assignation expression
-            opv.idents.push(id.clone());
-            assignations.push(Box::new(assign));
+            opv.idents.push(id.to_owned());
 
-            // replace operand with new ident
-            operand.map_with_mut(|_| Expr::Ident(id.clone()));
+            assignations.push(Box::new(Expr::Assign(assign)));
 
             // store ident as argument
-            arguments.push(Expr::Ident(id));
+            arguments.push(Expr::Ident(id.clone()));
+
+            // replace operand with new ident
+            operand.map_with_mut(|_| Expr::Ident(id));
         }
         _ => arguments.push(operand.clone()),
     }

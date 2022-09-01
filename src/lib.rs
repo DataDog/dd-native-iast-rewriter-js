@@ -34,7 +34,7 @@ impl Rewriter {
 
 #[cfg(test)]
 mod tests {
-    use spectral::{assert_that, string::StrAssertions};
+    use spectral::{assert_that, prelude::ContainingIntoIterAssertions, string::StrAssertions};
 
     use anyhow::Error;
     use std::env;
@@ -202,7 +202,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("global._ddiast.plusOperator(__datadog_test_0 + c, __datadog_test_0, c)");
+            .contains("global._ddiast.plusOperator(__datadog_test_2 + c, __datadog_test_2, c)");
         Ok(())
     }
 
@@ -227,7 +227,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("return (__datadog_test_0 = fn2(a), __datadog_test_1 = fn3(c), global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
+            .contains("return (__datadog_test_2 = fn2(a), __datadog_test_3 = fn3(c), global._ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3))");
         Ok(())
     }
 
@@ -286,6 +286,58 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("const a = Object.assign({\n        [prop]: global._ddiast.plusOperator(a + b, a, b)\n    })");
+        Ok(())
+    }
+
+    #[test]
+    fn test_match_declared_variables_same_block() -> Result<(), String> {
+        let original_code = "{const __datadog_test_0 = 666; const c = a + b();}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string());
+        assert!(&rewritten.is_err());
+        assert_that!(&rewritten.err()).contains(
+            "Cancelling test.js file rewrite. Reason: Variable name duplicated".to_string(),
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_match_declared_variables_different_block() -> Result<(), String> {
+        let original_code =
+            "{const __datadog_test_0 = 666; function z(){const c = a + b();}}{const d = e + f()}"
+                .to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string());
+        assert!(&rewritten.is_err());
+        assert_that!(&rewritten.err()).contains(
+            "Cancelling test.js file rewrite. Reason: Variable name duplicated".to_string(),
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_match_declared_function_param_block() -> Result<(), String> {
+        let original_code = "{function z(__datadog_test_0){const c = a + b();}}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string());
+        assert!(&rewritten.is_err());
+        assert_that!(&rewritten.err()).contains(
+            "Cancelling test.js file rewrite. Reason: Variable name duplicated".to_string(),
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_match_declared_function_param_child_block() -> Result<(), String> {
+        let original_code =
+            "{const a = b + c(); function z(__datadog_test_0){const d = e + f;}}{const d = e + f()}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string());
+
+        assert!(&rewritten.is_err());
+        assert_that!(&rewritten.err()).contains(
+            "Cancelling test.js file rewrite. Reason: Variable name duplicated".to_string(),
+        );
         Ok(())
     }
 }

@@ -26,6 +26,12 @@ const rewriteAndExpect = (code, expect, block) => {
   expectAst(rewrited, expect)
 }
 
+const rewriteAndExpectError = (code) => {
+  expect(() => {
+    rewriteAndExpect(code, code)
+  }).to.throw(Error, /Variable name duplicated/)
+}
+
 const expectAst = (received, expected) => {
   const rLines = received
     .split('\n') // it seems that rewriter do not take into account OS line endings
@@ -281,6 +287,63 @@ __datadog_test_0 + "c" + d + __datadog_test_1 + "f", a, __datadog_test_0, "c", d
         let __datadog_test_0;
         if ((result = ((__datadog_test_0 = a(), global._ddiast.plusOperator(__datadog_test_0 + b\
 , __datadog_test_0, b)))) > 100) {}
+        }
+      }`
+    )
+  })
+
+  it('does fail rewrite if duplicate variable name is found', () => {
+    const js = 'const __datadog_test_0 = 0; const c = a + b();'
+    rewriteAndExpectError(js)
+  })
+
+  it('does fail rewrite if duplicate variable name is found inside a child function', () => {
+    const js = 'const __datadog_test_0 = 0; function z(){const c = a + b();}'
+    rewriteAndExpectError(js)
+  })
+
+  it('does fail rewrite if duplicate variable name is found in a function parameter', () => {
+    const js = 'const a = 0; function z(__datadog_test_0){const c = a + b();}'
+    rewriteAndExpectError(js)
+  })
+
+  it('does not fail rewrite if duplicate variable name is found in a function parameter', () => {
+    const js = 'const a = b() + c; function z(__datadog_test_0){const d = a + c;}'
+    rewriteAndExpectError(js)
+  })
+
+  it('does not fail rewrite if duplicate variable name is found inside a child function', () => {
+    const js = 'const a = b() + c; function z(){const __datadog_test_0 = a + c;}'
+    rewriteAndExpectError(js)
+  })
+
+  it('does modify add in a "if" clause without block', () => {
+    const js = `
+      function b(){if ((result = (a() + b)) > 100) return c + d();}`
+    rewriteAndExpect(
+      js,
+      `{
+        function b() {
+          let __datadog_test_0, __datadog_test_1;
+        if ((result = ((__datadog_test_0 = a(), global._ddiast.plusOperator(__datadog_test_0 + b\
+, __datadog_test_0, b)))) > 100) return (__datadog_test_1 = d(), global._ddiast.plusOperator(c + \
+__datadog_test_1, c, __datadog_test_1));
+        }
+      }`
+    )
+  })
+
+  it('does modify add in a "if" clause with block', () => {
+    const js = `
+      function b(){if ((result = (a() + b)) > 100) {return c + d();}}`
+    rewriteAndExpect(
+      js,
+      `{
+        function b() {
+          let __datadog_test_0;
+        if ((result = ((__datadog_test_0 = a(), global._ddiast.plusOperator(__datadog_test_0 + b\
+, __datadog_test_0, b)))) > 100) {\nlet __datadog_test_0;\nreturn (__datadog_test_0 = d(), \
+global._ddiast.plusOperator(c + __datadog_test_0, c, __datadog_test_0));\n}
         }
       }`
     )

@@ -1,8 +1,9 @@
 use crate::{
     util::{create_file, file_name, parse_source_map},
-    visitor::block_transform_visitor::BlockTransformVisitor,
+    visitor::block_transform_visitor::{BlockTransformVisitor, TransformStatus},
 };
 use anyhow::{Error, Result};
+use napi::Status;
 use std::{
     borrow::Borrow,
     collections::HashMap,
@@ -39,8 +40,9 @@ pub fn rewrite_js(code: String, file: String) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let program = parse_js(code, file.as_str(), handler, compiler.borrow())?;
-        let transformed = transform_js(program, file.as_str(), compiler.borrow())?;
-        Ok(RewrittenOutput {
+        let result = transform_js(program, file.as_str(), compiler.borrow());
+
+        result.map(|transformed| RewrittenOutput {
             code: transformed.code,
             source_map: transformed.map.unwrap(),
             original_map: extract_source_map(
@@ -84,20 +86,33 @@ fn parse_js(source: String, file: &str, handler: &Handler, compiler: &Compiler) 
     )
 }
 
-fn transform_js(mut program: Program, file: &str, compiler: &Compiler) -> Result<TransformOutput> {
-    program.visit_mut_with(&mut BlockTransformVisitor {});
-    compiler.print(
-        &program,
-        file_name(file),
-        None,
-        false,
-        EsVersion::Es2020,
-        SourceMapsConfig::Bool(true),
-        &Default::default(),
-        None,
-        false,
-        None,
-    )
+fn transform_js(
+    mut program: Program,
+    file: &str,
+    compiler: &Compiler,
+) -> Result<TransformOutput, Error> {
+    let mut transform_status = TransformStatus::ok();
+    let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status);
+    program.visit_mut_with(&mut block_transform_visitor);
+
+    match transform_status.status {
+        Status::Ok => compiler.print(
+            &program,
+            file_name(file),
+            None,
+            false,
+            EsVersion::Es2020,
+            SourceMapsConfig::Bool(true),
+            &Default::default(),
+            None,
+            false,
+            None,
+        ),
+        _ => Err(Error::msg(format!(
+            "Cancelling {} file rewrite. Reason: {}",
+            file, transform_status.msg
+        ))),
+    }
 }
 
 fn chain_source_map(

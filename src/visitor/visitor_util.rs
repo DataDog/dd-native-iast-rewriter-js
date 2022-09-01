@@ -23,7 +23,11 @@ pub fn get_dd_local_var_name_hash() -> String {
 }
 
 pub fn get_dd_local_variable_name(n: usize) -> String {
-    format!("__datadog_{}_{}", get_dd_local_var_name_hash(), n)
+    format!("{}{}", get_dd_local_variable_prefix(), n)
+}
+
+pub fn get_dd_local_variable_prefix() -> String {
+    format!("__datadog_{}_", get_dd_local_var_name_hash())
 }
 
 pub const DD_METHODS: &[&str] = &[DD_PLUS_OPERATOR];
