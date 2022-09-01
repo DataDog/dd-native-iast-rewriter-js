@@ -43,14 +43,16 @@ mod tests {
     use anyhow::Error;
     use std::env;
 
-    use crate::{rewrite_js, rewriter::debug_js};
+    use crate::{
+        rewrite_js, rewriter::debug_js, visitor::visitor_util::DD_LOCAL_VAR_NAME_HASH_ENV_NAME,
+    };
 
     #[cfg(test)]
     #[ctor::ctor]
     fn init() {
-        match env::var("DD_LOCAL_VAR_NAME_HASH") {
+        match env::var(DD_LOCAL_VAR_NAME_HASH_ENV_NAME) {
             Err(_) => {
-                env::set_var("DD_LOCAL_VAR_NAME_HASH", "test");
+                env::set_var(DD_LOCAL_VAR_NAME_HASH_ENV_NAME, "test");
             }
             Ok(_) => {}
         }

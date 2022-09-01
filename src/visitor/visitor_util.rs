@@ -9,12 +9,13 @@ use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
 pub const NODE_GLOBAL: &str = "global";
 pub const DD_GLOBAL_NAMESPACE: &str = "_ddiast";
 const DD_PLUS_OPERATOR: &str = "plusOperator";
+pub const DD_LOCAL_VAR_NAME_HASH_ENV_NAME: &str = "DD_LOCAL_VAR_NAME_HASH";
 
 static mut DD_LOCAL_VAR_NAME_HASH: String = String::new();
 static DD_LOCAL_VAR_NAME_HASH_INIT: Once = Once::new();
 pub fn get_dd_local_var_name_hash() -> String {
     unsafe {
-        DD_LOCAL_VAR_NAME_HASH_INIT.call_once(|| match env::var("DD_LOCAL_VAR_NAME_HASH") {
+        DD_LOCAL_VAR_NAME_HASH_INIT.call_once(|| match env::var(DD_LOCAL_VAR_NAME_HASH_ENV_NAME) {
             Ok(val) => {
                 DD_LOCAL_VAR_NAME_HASH = val;
             }
