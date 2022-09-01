@@ -21,15 +21,12 @@ impl BinaryAddTransform {
 
                 let mut assignations = Vec::new();
                 let mut arguments = Vec::new();
-                replace_expressions_in_binary(
+                if replace_expressions_in_binary(
                     &mut binary_clone,
                     &mut assignations,
                     &mut arguments,
                     opv,
-                );
-
-                // if all arguments are literals we can skip expression replacement
-                if must_replace_binary_expression(&arguments) {
+                ) {
                     let plus_operator_call =
                         get_dd_call_plus_operator_expr(binary_clone, &arguments);
 
@@ -56,14 +53,6 @@ impl BinaryAddTransform {
     }
 }
 
-fn must_replace_binary_expression(argument_exprs: &Vec<Expr>) -> bool {
-    // only literals are filtered by now but may be other cases.
-    argument_exprs.iter().any(|arg| match arg {
-        Expr::Lit(_) => false,
-        _ => true,
-    })
-}
-
 fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (AssignExpr, Ident) {
     let id = Ident {
         span,
@@ -84,17 +73,28 @@ fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (AssignExpr
     )
 }
 
+fn must_replace_binary_expression(argument_exprs: &Vec<Expr>) -> bool {
+    // only literals are filtered by now but may be other cases.
+    argument_exprs.iter().any(|arg| match arg {
+        Expr::Lit(_) => false,
+        _ => true,
+    })
+}
+
 fn replace_expressions_in_binary(
     binary: &mut BinExpr,
     assignations: &mut Vec<Box<Expr>>,
     arguments: &mut Vec<Expr>,
     opv: &mut OperationTransformVisitor,
-) {
+) -> bool {
     let left = binary.left.deref_mut();
     replace_expressions_in_binary_operand(left, assignations, arguments, binary.span, opv);
 
     let right = binary.right.deref_mut();
     replace_expressions_in_binary_operand(right, assignations, arguments, binary.span, opv);
+
+    // if all arguments are literals we can skip expression replacement
+    return must_replace_binary_expression(&arguments);
 }
 
 fn replace_expressions_in_binary_operand(

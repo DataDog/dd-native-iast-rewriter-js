@@ -69,14 +69,6 @@ pub fn any_items_plus_operator(span: Span) -> MemberProp {
     })
 }
 
-pub fn template_literal_operator(span: Span) -> MemberProp {
-    MemberProp::Ident(Ident {
-        span,
-        sym: JsWord::from("templateLiteralOperator"),
-        optional: false,
-    })
-}
-
 pub fn is_dd_method(call: &CallExpr) -> bool {
     is_call_one_of_the_dd_methods_provided(call, DD_METHODS.to_vec())
 }
