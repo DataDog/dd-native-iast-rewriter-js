@@ -8,11 +8,16 @@ base. If you would like support for a module that is not listed, [contact suppor
 
 ## Local setup
 
-To set up the project locally, you can install it with:
+To set up the project locally, you should install `cargo`:
+
+```
+curl https://sh.rustup.rs -sSf | sh
+```
+
+and project dependencies:
 
 ```
 $ npm install
-
 ```
 
 ### Build
