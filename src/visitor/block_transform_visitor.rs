@@ -1,3 +1,7 @@
+/**
+* Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
+* This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+**/
 use crate::visitor::{
     operation_transform_visitor::OperationTransformVisitor,
     visitor_util::get_dd_local_variable_prefix,
