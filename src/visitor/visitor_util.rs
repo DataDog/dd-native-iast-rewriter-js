@@ -143,3 +143,53 @@ pub fn extract_call_arguments(right: &Expr, args: &mut Vec<ExprOrSpread>) -> Exp
         _ => right.clone(),
     };
 }
+
+pub fn get_dd_call_plus_operator_expr(expr: Expr, arguments: &Vec<Expr>, span: Span) -> Expr {
+    let mut args: Vec<ExprOrSpread> = Vec::new();
+
+    args.push(ExprOrSpread {
+        expr: Box::new(expr),
+        spread: None,
+    });
+
+    args.append(
+        &mut arguments
+            .iter()
+            .map(|expr| ExprOrSpread {
+                expr: Box::new(expr.to_owned()),
+                spread: None,
+            })
+            .collect::<Vec<_>>(),
+    );
+
+    Expr::Call(CallExpr {
+        span,
+        callee: get_plus_operator_based_on_num_of_args_for_span(args.len() - 1, span),
+        args,
+        type_args: None,
+    })
+}
+
+pub fn get_dd_plus_operator_paren_expr(
+    expr: Expr,
+    arguments: &Vec<Expr>,
+    assignations: &mut Vec<Box<Expr>>,
+    span: Span,
+) -> Expr {
+    let plus_operator_call = get_dd_call_plus_operator_expr(expr, &arguments, span);
+
+    // if there are 0 assign expressions we can return just call expression without parentheses
+    // else wrap them all with a sequence of comma separated expressions inside parentheses
+    if assignations.len() == 0 {
+        return plus_operator_call;
+    } else {
+        assignations.push(Box::new(plus_operator_call));
+        return Expr::Paren(ParenExpr {
+            span,
+            expr: Box::new(Expr::Seq(SeqExpr {
+                span,
+                exprs: assignations.clone(),
+            })),
+        });
+    }
+}

@@ -346,4 +346,36 @@ mod tests {
         );
         Ok(())
     }
+
+    #[test]
+    fn test_template_literal() -> Result<(), String> {
+        let original_code = "{const a = `He${b}llo`}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("const a = global._ddiast.plusOperator(`He${b}llo`, `He`, b, `llo`);");
+        Ok(())
+    }
+
+    // FIXME: very ugly result
+    #[test]
+    fn test_template_literal_with_binary() -> Result<(), String> {
+        let original_code = "{const a = `He${b + c}llo`}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("const a = global._ddiast.plusOperator(`He${global._ddiast.plusOperator(b + c, b, c)}llo`, `He`, global._ddiast.plusOperator(b + c, b, c), `llo`)");
+        Ok(())
+    }
+
+    // FIXME: very ugly result
+    #[test]
+    fn test_template_literal_with_binary_and_call() -> Result<(), String> {
+        let original_code = "{const a = `He${b + c()}llo`}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0;\n    const a = global._ddiast.plusOperator(`He${(__datadog_test_0 = c(), global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0))}llo`, `He`, (__datadog_test_0 = c(), global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0)), `llo`);");
+        Ok(())
+    }
 }

@@ -12,7 +12,7 @@ use swc_ecma_visit::VisitMutWith;
 
 use super::{
     operation_transform_visitor::OperationTransformVisitor,
-    visitor_util::{get_dd_local_variable_name, get_plus_operator_based_on_num_of_args_for_span},
+    visitor_util::{get_dd_local_variable_name, get_dd_plus_operator_paren_expr},
 };
 
 pub struct BinaryAddTransform {}
@@ -31,58 +31,18 @@ impl BinaryAddTransform {
                     &mut arguments,
                     opv,
                 ) {
-                    let plus_operator_call =
-                        get_dd_call_plus_operator_expr(binary_clone, &arguments);
-
-                    // if there are 0 assign expressions we can return just call expression without parentheses
-                    // else wrap them all with a sequence of comma separated expressions inside parentheses
-                    if assignations.len() == 0 {
-                        return plus_operator_call;
-                    } else {
-                        let span = binary.span;
-                        assignations.push(Box::new(plus_operator_call));
-                        return Expr::Paren(ParenExpr {
-                            span,
-                            expr: Box::new(Expr::Seq(SeqExpr {
-                                span,
-                                exprs: assignations.clone(),
-                            })),
-                        });
-                    }
+                    return get_dd_plus_operator_paren_expr(
+                        Expr::Bin(binary_clone),
+                        &arguments,
+                        &mut assignations,
+                        binary.span,
+                    );
                 }
             }
             _ => {}
         }
         expr.clone()
     }
-}
-
-fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (AssignExpr, Ident) {
-    let id = Ident {
-        span,
-        sym: JsWord::from(get_dd_local_variable_name(index)),
-        optional: false,
-    };
-    (
-        AssignExpr {
-            span,
-            left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
-                id: id.clone(),
-                type_ann: None,
-            }))),
-            right: Box::new(expr),
-            op: AssignOp::Assign,
-        },
-        id,
-    )
-}
-
-fn must_replace_binary_expression(argument_exprs: &Vec<Expr>) -> bool {
-    // only literals are filtered by now but may be other cases.
-    argument_exprs.iter().any(|arg| match arg {
-        Expr::Lit(_) => false,
-        _ => true,
-    })
 }
 
 fn prepare_replace_expressions_in_binary(
@@ -99,6 +59,14 @@ fn prepare_replace_expressions_in_binary(
 
     // if all arguments are literals we can skip expression replacement
     return must_replace_binary_expression(&arguments);
+}
+
+fn must_replace_binary_expression(argument_exprs: &Vec<Expr>) -> bool {
+    // only literals are filtered by now but may be other cases.
+    argument_exprs.iter().any(|arg| match arg {
+        Expr::Lit(_) => false,
+        _ => true,
+    })
 }
 
 fn replace_expressions_in_binary_operand(
@@ -137,29 +105,22 @@ fn replace_expressions_in_binary_operand(
     }
 }
 
-fn get_dd_call_plus_operator_expr(binary: BinExpr, arguments: &Vec<Expr>) -> Expr {
-    let mut args: Vec<ExprOrSpread> = Vec::new();
-    let span = binary.span;
-
-    args.push(ExprOrSpread {
-        expr: Box::new(Expr::Bin(binary)),
-        spread: None,
-    });
-
-    args.append(
-        &mut arguments
-            .iter()
-            .map(|expr| ExprOrSpread {
-                expr: Box::new(expr.to_owned()),
-                spread: None,
-            })
-            .collect::<Vec<_>>(),
-    );
-
-    Expr::Call(CallExpr {
+fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (AssignExpr, Ident) {
+    let id = Ident {
         span,
-        callee: get_plus_operator_based_on_num_of_args_for_span(args.len() - 1, span),
-        args,
-        type_args: None,
-    })
+        sym: JsWord::from(get_dd_local_variable_name(index)),
+        optional: false,
+    };
+    (
+        AssignExpr {
+            span,
+            left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
+                id: id.clone(),
+                type_ann: None,
+            }))),
+            right: Box::new(expr),
+            op: AssignOp::Assign,
+        },
+        id,
+    )
 }

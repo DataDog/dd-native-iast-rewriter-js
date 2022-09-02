@@ -6,9 +6,10 @@ use std::collections::HashSet;
 use swc::{common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use crate::visitor::binary_add_transform::BinaryAddTransform;
-
-use super::assign_add_transform::AssignAddTransform;
+use super::{
+    assign_add_transform::AssignAddTransform, binary_add_transform::BinaryAddTransform,
+    template_transform::TemplateTransform,
+};
 
 pub struct OperationTransformVisitor {
     pub ident_counter: usize,
@@ -47,6 +48,12 @@ impl VisitMut for OperationTransformVisitor {
             Expr::Assign(assign) => {
                 assign.visit_mut_children_with(self);
                 assign.map_with_mut(|assign| AssignAddTransform::to_dd_assign_expr(assign));
+            }
+            Expr::Tpl(tpl) => {
+                if !tpl.exprs.is_empty() {
+                    tpl.exprs.visit_mut_children_with(self);
+                    expr.map_with_mut(|tpl| TemplateTransform::to_dd_tpl_expr(&tpl, self));
+                }
             }
             _ => {
                 expr.visit_mut_children_with(self);
