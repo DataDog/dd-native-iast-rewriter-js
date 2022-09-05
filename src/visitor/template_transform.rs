@@ -53,22 +53,21 @@ fn prepare_replace_expressions_in_template(
 ) -> bool {
     // if there are assignations we have to replace original template expression
     if extract_arguments_in_template(tpl, assignations, arguments, opv, span) {
-        if assignations.len() > 0 {
-            let mut quasis = Vec::new();
-            let mut exprs = Vec::new();
+        let mut quasis = Vec::new();
+        let mut exprs = Vec::new();
 
-            arguments.iter().for_each(|a| match a {
-                Expr::Tpl(tpl) => quasis.append(&mut tpl.quasis.clone()),
-                expr => exprs.push(Box::new(expr.clone())),
-            });
+        arguments.iter().for_each(|a| match a {
+            Expr::Tpl(tpl) => quasis.append(&mut tpl.quasis.clone()),
+            expr => exprs.push(Box::new(expr.clone())),
+        });
 
-            tpl.quasis = quasis;
-            tpl.exprs = exprs;
-        }
+        tpl.quasis = quasis;
+        tpl.exprs = exprs;
 
-        return true;
+        true
+    } else {
+        false
     }
-    false
 }
 
 fn extract_arguments_in_template(
