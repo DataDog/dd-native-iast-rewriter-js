@@ -1,0 +1,36 @@
+Component,Origin,License,Copyright
+require,napi,MIT,Copyright (c) 2020-present LongYinan
+require,napi-derive,MIT,Copyright (c) 2020-present LongYinan
+require,swc,Apache-2.0,Copyright 강동윤
+require,swc_ecma_visit,Apache-2.0,Copyright 강동윤
+require,swc_ecma_parser,Apache-2.0,Copyright 강동윤
+require,swc_visit_macros,Apache-2.0,Copyright 강동윤
+require,anyhow,MIT OR Apache-2.0,Copyright (c) 2018 David Tolnay
+require,fastrand,Apache-2.0 OR MIT, Copyright 2020 Stjepan Glavina
+dev,tempfile,MIT OR Apache-2.0,Copyright (c) 2015 Steven Allen
+dev,spectral,Apache-2.0,Copyright (c) cfrancia
+dev,ctor,Apache-2.0 OR MIT,Copyright (c) 2018 Matt Mastracci
+dev,@babel/core,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
+dev,@babel/types,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
+dev,@napi-rs/cli,MIT,Copyright (c) 2020 LongYinan
+dev,@swc-node/register,MIT,Copyright (c) 2020-present LongYinan
+dev,chai,MIT,Copyright (c) 2017 Chai.js Assertion Library
+dev,cross-env,MIT,Copyright (c) 2017 Kent C. Dodds
+dev,dotenv-cli,MIT,Copyright Jens Claes
+dev,eslint-config-standard,MIT,Copyright (c) Feross Aboukhadijeh
+dev,eslint-plugin-import,MIT,Copyright (c) 2015 Ben Mosher
+dev,eslint-plugin-node,MIT,Copyright (c) 2015 Toru Nagashima
+dev,eslint-plugin-promise,ISC,Copyright (c) 2020
+dev,eslint-plugin-standard,MIT,Copyright (c) 2015 Jamund Ferguson
+dev,eslint,MIT,Copyright JS Foundation and other contributors
+dev,husky,MIT,Copyright (c) 2021 typicode
+dev,lint-staged,MIT,Copyright (c) 2016 Andrey Okonetchnikov
+dev,mocha,MIT,Copyright (c) 2011-2021 OpenJS Foundation and contributors
+dev,mocha-it-each,MIT,Copyright (c) 2013 Mikejsdev
+dev,mocha-junit-reporter,MIT,Copyright (c) 2015 Michael Allen
+dev,npm-run-all,MIT,Copyright (c) 2015 Toru Nagashima
+dev,prettier,MIT,Copyright © James Long and contributors
+dev,sorcery,MIT,Copyright 2014 Rich-Harris
+dev,source-map,BSD-3-Clause,Copyright (c) 2009-2011 Mozilla Foundation and contributors
+dev,tap-junit,MIT,Copyright (c) 2018 Dustin Hershman
+dev,tmp,MIT,Copyright (c) 2014 KARASZI István

@@ -20,10 +20,7 @@
     "type": "git",
     "url": "git+https://github.com/DataDog/dd-native-iast-rewriter-js.git"
   },
-  "keywords": [
-    "datadog",
-    "iast"
-  ],
+  "keywords": ["datadog", "iast"],
   "author": "Datadog Inc. <info@datadoghq.com>",
   "license": "Apache-2.0",
   "bugs": {
@@ -35,6 +32,7 @@
     "@napi-rs/cli": "^2.0.0",
     "@swc-node/register": "^1.4.2",
     "chai": "^4.3.6",
+    "cross-env": "^7.0.3",
     "dotenv-cli": "^5.0.0",
     "eslint": "^7.31.0",
     "eslint-config-standard": "^16.0.3",
@@ -78,29 +76,19 @@
     "format:prettier": "prettier . -w",
     "format:rs": "cargo fmt",
     "lint": "eslint . -c ./.eslintrc.json",
+    "rustfmt": "rustfmt --config imports_granularity=Crate src/*.rs",
     "prepublishOnly": "run-p artifacts:prepare artifacts:prepublish",
     "version": "napi version",
-    "test": "mocha",
-    "test:junit": "mocha --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
+    "test": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js'",
+    "test:junit": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
     "prepare": "husky install"
   },
   "lint-staged": {
-    "*.@(js|ts|tsx)": [
-      "prettier --write",
-      "eslint -c .eslintrc.json --fix"
-    ],
-    "*.@(yml|yaml)": [
-      "prettier --parser yaml --write"
-    ],
-    "*.md": [
-      "prettier --parser markdown --write"
-    ],
-    "*.json": [
-      "prettier --parser json --write"
-    ],
-    "*.rs": [
-      "rustfmt"
-    ]
+    "*.@(js|ts|tsx)": ["prettier --write", "eslint -c .eslintrc.json --fix"],
+    "*.@(yml|yaml)": ["prettier --parser yaml --write"],
+    "*.md": ["prettier --parser markdown --write"],
+    "*.json": ["prettier --parser json --write"],
+    "*.rs": ["rustfmt --config imports_granularity=Crate"]
   },
   "prettier": {
     "printWidth": 120,
