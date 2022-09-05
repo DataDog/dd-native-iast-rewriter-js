@@ -4,7 +4,6 @@
 **/
 use std::ops::DerefMut;
 use swc::{
-    atoms::JsWord,
     common::{util::take::Take, Span},
     ecmascript::ast::*,
 };
@@ -12,7 +11,7 @@ use swc_ecma_visit::VisitMutWith;
 
 use super::{
     operation_transform_visitor::OperationTransformVisitor,
-    visitor_util::{get_dd_local_variable_name, get_dd_plus_operator_paren_expr},
+    visitor_util::{create_assign_expression, get_dd_plus_operator_paren_expr},
 };
 
 pub struct BinaryAddTransform {}
@@ -103,24 +102,4 @@ fn replace_expressions_in_binary_operand(
         }
         _ => arguments.push(operand.clone()),
     }
-}
-
-fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (AssignExpr, Ident) {
-    let id = Ident {
-        span,
-        sym: JsWord::from(get_dd_local_variable_name(index)),
-        optional: false,
-    };
-    (
-        AssignExpr {
-            span,
-            left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
-                id: id.clone(),
-                type_ann: None,
-            }))),
-            right: Box::new(expr),
-            op: AssignOp::Assign,
-        },
-        id,
-    )
 }
