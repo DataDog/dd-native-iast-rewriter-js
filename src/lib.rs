@@ -349,11 +349,11 @@ mod tests {
 
     #[test]
     fn test_template_literal() -> Result<(), String> {
-        let original_code = "{const a = `He${b}llo`}".to_string();
+        let original_code = "{const a = `${b}Hello`}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("const a = global._ddiast.plusOperator(`He${b}llo`, `He`, b, `llo`);");
+            .contains("const a = global._ddiast.plusOperator(`${b}Hello`, b, `Hello`);");
         Ok(())
     }
 

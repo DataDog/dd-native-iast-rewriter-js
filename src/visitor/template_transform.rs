@@ -45,24 +45,32 @@ impl TemplateTransform {
 }
 
 fn prepare_replace_expressions_in_template(
-    tpl: &mut Tpl,
+    original_tpl: &mut Tpl,
     assignations: &mut Vec<Box<Expr>>,
     arguments: &mut Vec<Expr>,
     opv: &mut OperationTransformVisitor,
     span: Span,
 ) -> bool {
-    // if there are assignations we have to replace original template expression
-    if extract_arguments_in_template(tpl, assignations, arguments, opv, span) {
-        let mut quasis = Vec::new();
-        let mut exprs = Vec::new();
+    let mut arguments_all = Vec::new();
+    if extract_arguments_in_template(original_tpl, assignations, &mut arguments_all, opv, span) {
+        // replace original template expression with new expressions
+        original_tpl.quasis.clear();
+        original_tpl.exprs.clear();
 
-        arguments.iter().for_each(|a| match a {
-            Expr::Tpl(tpl) => quasis.append(&mut tpl.quasis.clone()),
-            expr => exprs.push(Box::new(expr.clone())),
+        // we have to filter empty template arguments
+        arguments_all.iter().for_each(|a| match a {
+            Expr::Tpl(tpl) => {
+                // here tpl always have a single quasis
+                if tpl.quasis[0].cooked.clone().unwrap() != JsWord::from("") {
+                    arguments.push(a.clone());
+                }
+                original_tpl.quasis.append(&mut tpl.quasis.clone())
+            }
+            expr => {
+                arguments.push(a.clone());
+                original_tpl.exprs.push(Box::new(expr.clone()))
+            }
         });
-
-        tpl.quasis = quasis;
-        tpl.exprs = exprs;
 
         true
     } else {
@@ -78,7 +86,6 @@ fn extract_arguments_in_template(
     span: Span,
 ) -> bool {
     let mut index = 0;
-    //let mut exprs = tpl.exprs;
     let mut all_literals: bool = true;
     for quasi in &tpl.quasis {
         let mut expr_args = Vec::new();
@@ -93,9 +100,8 @@ fn extract_arguments_in_template(
             quasis: expr_args,
             exprs: Vec::new(),
         };
-        if quasi.cooked.clone().unwrap() != JsWord::from("") {
-            arguments.push(Expr::Tpl(expr));
-        }
+        arguments.push(Expr::Tpl(expr));
+
         if !quasi.tail {
             match *tpl.exprs[index] {
                 Expr::Lit(_) => {

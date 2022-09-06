@@ -3,51 +3,9 @@
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
 /* eslint-disable no-multi-str */
-
 const { itEach } = require('mocha-it-each')
-const os = require('os')
-const path = require('path')
 
-const { Rewriter } = require('../index')
-
-const rewriteAst = (code, opts) => {
-  opts = opts || {}
-  const rewriter = opts.rewriter ?? new Rewriter()
-  const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
-  const sourceMap = opts.sourceMap
-  return rewriter.rewrite(code, file, sourceMap)
-}
-
-const wrapBlock = (code) => `{${os.EOL}${code}${os.EOL}}`
-
-const rewriteAndExpectNoTransformation = (code) => {
-  rewriteAndExpect(wrapBlock(code), wrapBlock(code), true)
-}
-
-const rewriteAndExpect = (code, expect, block) => {
-  code = !block ? `{${code}}` : code
-  const rewrited = rewriteAst(code)
-  expectAst(rewrited, expect)
-}
-
-const rewriteAndExpectError = (code) => {
-  expect(() => {
-    rewriteAndExpect(code, code)
-  }).to.throw(Error, /Variable name duplicated/)
-}
-
-const expectAst = (received, expected) => {
-  const rLines = received
-    .split('\n') // it seems that rewriter do not take into account OS line endings
-    .map((l) => l.trim())
-    .join('\n')
-  const eLines = expected
-    .split('\n')
-    .map((l) => l.trim())
-    .join('\n')
-
-  expect(rLines).to.be.eq(eLines)
-}
+const { rewriteAndExpectNoTransformation, rewriteAndExpect, rewriteAndExpectError, wrapBlock } = require('./util')
 
 describe('binary expression', () => {
   it('does not modify sub', () => {
