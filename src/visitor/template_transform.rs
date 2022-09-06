@@ -52,16 +52,19 @@ fn prepare_replace_expressions_in_template(
     span: Span,
 ) -> bool {
     let mut arguments_all = Vec::new();
-    if extract_arguments_in_template(original_tpl, assignations, &mut arguments_all, opv, span) {
-        // replace original template expression with new expressions
+    let replace_original_tpl =
+        extract_arguments_in_template(original_tpl, assignations, &mut arguments_all, opv, span);
+    if replace_original_tpl {
+        // replace original template quasis and exprs with new expressions
         original_tpl.quasis.clear();
         original_tpl.exprs.clear();
 
         // we have to filter empty template arguments
         arguments_all.iter().for_each(|a| match a {
             Expr::Tpl(tpl) => {
-                // here tpl always have a single quasis
-                if tpl.quasis[0].cooked.clone().unwrap() != JsWord::from("") {
+                // here tpl always have a single quasi
+                if tpl.quasis.len() > 0 && tpl.quasis[0].cooked.clone().unwrap() != JsWord::from("")
+                {
                     arguments.push(a.clone());
                 }
                 original_tpl.quasis.append(&mut tpl.quasis.clone())
@@ -71,11 +74,8 @@ fn prepare_replace_expressions_in_template(
                 original_tpl.exprs.push(Box::new(expr.clone()))
             }
         });
-
-        true
-    } else {
-        false
     }
+    replace_original_tpl
 }
 
 fn extract_arguments_in_template(
