@@ -4,10 +4,9 @@
 **/
 use crate::{
     util::{create_file, file_name, parse_source_map},
-    visitor::block_transform_visitor::{BlockTransformVisitor, TransformStatus},
+    visitor::block_transform_visitor::{BlockTransformVisitor, Status, TransformStatus},
 };
 use anyhow::{Error, Result};
-use napi::Status;
 use std::{
     borrow::Borrow,
     collections::HashMap,
