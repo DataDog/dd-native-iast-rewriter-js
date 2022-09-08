@@ -35,24 +35,43 @@ impl OperationTransformVisitor {
         return counter;
     }
 
-    pub fn get_ident_assignation_to_replace_operand(
+    pub fn get_ident_used_in_assignation(
         &mut self,
         operand: Expr,
         assignations: &mut Vec<Box<Expr>>,
         arguments: &mut Vec<Expr>,
         span: Span,
-    ) -> Expr {
+    ) -> Ident {
+        self.get_ident_used_in_assignation_with_definitive(
+            operand,
+            assignations,
+            arguments,
+            span,
+            true,
+        )
+    }
+
+    pub fn get_ident_used_in_assignation_with_definitive(
+        &mut self,
+        operand: Expr,
+        assignations: &mut Vec<Box<Expr>>,
+        arguments: &mut Vec<Expr>,
+        span: Span,
+        definitive: bool,
+    ) -> Ident {
         let (assign, id) = create_assign_expression(self.next_ident(), operand, span);
 
         // store ident and assignation expression
-        self.idents.push(id.to_owned());
+        if definitive {
+            self.idents.push(id.to_owned());
+        }
 
         assignations.push(Box::new(Expr::Assign(assign)));
 
         // store ident as argument
         arguments.push(Expr::Ident(id.clone()));
 
-        Expr::Ident(id)
+        id
     }
 }
 

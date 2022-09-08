@@ -119,6 +119,20 @@ global._ddiast.plusOperator(`Hello World!${__datadog_test_1}`, `Hello World!`, _
     )
   })
 
+  it('typeof is considered literal', () => {
+    const js = 'const a = `He${typeof b}llo`;'
+    rewriteAndExpectNoTransformation(js)
+  })
+
+  it('typeof among variables is replaced by a variable', () => {
+    const js = 'const a = `He${typeof b}llo wor${a}ld`'
+    rewriteAndExpect(
+      js,
+      '{\nlet __datadog_test_0;\n    const a = (__datadog_test_0 = typeof b, global._ddiast.plusOperator(\
+`He${__datadog_test_0}llo wor${a}ld`, `He`, __datadog_test_0, `llo wor`, a, `ld`));\n}'
+    )
+  })
+
   it('tagged are not mofified', () => {
     const js = 'const a = func`Hello${b}World`;'
     rewriteAndExpectNoTransformation(js)

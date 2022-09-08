@@ -310,4 +310,16 @@ global._ddiast.plusOperator(c + __datadog_test_0, c, __datadog_test_0));\n}
       }`
     )
   })
+
+  it('does modify add with typeof operand', () => {
+    const js = 'const result = a + typeof a;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+        const result = (__datadog_test_0 = typeof a, global._ddiast.plusOperator(a + __datadog_test_0, \
+a, __datadog_test_0));
+      }`
+    )
+  })
 })

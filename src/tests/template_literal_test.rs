@@ -54,4 +54,23 @@ mod tests {
             .contains("let __datadog_test_0, __datadog_test_1;\n    const a = (__datadog_test_1 = (__datadog_test_0 = c(), global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0)), global._ddiast.plusOperator(`He${__datadog_test_1}llo`, `He`, __datadog_test_1, `llo`))");
         Ok(())
     }
+
+    #[test]
+    fn test_template_literal_with_typeof_is_not_modified() -> Result<(), String> {
+        let original_code = "{const a = `He${typeof b}llo`}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const a = `He${typeof b}llo`");
+        Ok(())
+    }
+
+    #[test]
+    fn test_template_literal_with_typeof_and_more_is_modified() -> Result<(), String> {
+        let original_code = "{const a = `He${typeof b}llo wor${a}ld`}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = typeof b, global._ddiast.plusOperator(`He${__datadog_test_0}llo wor${a}ld`, `He`, __datadog_test_0, `llo wor`, a, `ld`))");
+        Ok(())
+    }
 }

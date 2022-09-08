@@ -9,6 +9,8 @@ use swc::{
 };
 use swc_ecma_visit::VisitMutWith;
 
+use crate::visitor::visitor_util::is_typeof;
+
 use super::{
     operation_transform_visitor::OperationTransformVisitor,
     visitor_util::get_dd_plus_operator_paren_expr,
@@ -88,12 +90,24 @@ fn replace_expressions_in_binary_operand(
             operand.visit_mut_children_with(opv);
 
             operand.map_with_mut(|op| {
-                opv.get_ident_assignation_to_replace_operand(op, assignations, arguments, span)
+                Expr::Ident(opv.get_ident_used_in_assignation(op, assignations, arguments, span))
             })
         }
         Expr::Member(_) => operand.map_with_mut(|op| {
-            opv.get_ident_assignation_to_replace_operand(op, assignations, arguments, span)
+            Expr::Ident(opv.get_ident_used_in_assignation(op, assignations, arguments, span))
         }),
+        Expr::Unary(unary) => {
+            if is_typeof(&unary) {
+                operand.map_with_mut(|op| {
+                    Expr::Ident(opv.get_ident_used_in_assignation(
+                        op,
+                        assignations,
+                        arguments,
+                        span,
+                    ))
+                })
+            }
+        }
         _ => arguments.push(operand.clone()),
     }
 }

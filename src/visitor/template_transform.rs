@@ -10,7 +10,7 @@ use swc::{
 
 use super::{
     operation_transform_visitor::OperationTransformVisitor,
-    visitor_util::get_dd_plus_operator_paren_expr,
+    visitor_util::{get_dd_plus_operator_paren_expr, is_typeof},
 };
 
 pub struct TemplateTransform {}
@@ -87,6 +87,7 @@ fn extract_arguments_in_template(
 ) -> bool {
     let mut index = 0;
     let mut all_literals: bool = true;
+    let mut pending_idents = Vec::new();
     for quasi in &tpl.quasis {
         let mut expr_args = Vec::new();
         expr_args.push(TplElement {
@@ -103,31 +104,52 @@ fn extract_arguments_in_template(
         arguments.push(Expr::Tpl(expr));
 
         if !quasi.tail {
-            match *tpl.exprs[index] {
+            let expr = &*tpl.exprs[index];
+            match expr {
                 Expr::Lit(_) => {
-                    arguments.push(*tpl.exprs[index].take());
+                    arguments.push(expr.clone());
                 }
                 Expr::Call(_) | Expr::Paren(_) => {
-                    let ident = opv.get_ident_assignation_to_replace_operand(
-                        *tpl.exprs[index].clone(),
+                    let ident = opv.get_ident_used_in_assignation(
+                        expr.clone(),
                         assignations,
                         arguments,
                         span,
                     );
 
                     // replace operand with new ident
-                    tpl.exprs[index] = Box::new(ident);
+                    tpl.exprs[index] = Box::new(Expr::Ident(ident));
 
                     all_literals = false;
                 }
+                Expr::Unary(unary) => {
+                    if is_typeof(&unary) {
+                        let ident = opv.get_ident_used_in_assignation_with_definitive(
+                            expr.clone(),
+                            assignations,
+                            arguments,
+                            span,
+                            false,
+                        );
+
+                        pending_idents.push(ident.clone());
+
+                        // replace operand with new ident
+                        tpl.exprs[index] = Box::new(Expr::Ident(ident));
+                    }
+                }
                 _ => {
-                    arguments.push(*tpl.exprs[index].take());
+                    arguments.push(expr.clone());
 
                     all_literals = false;
                 }
             }
             index += 1;
         }
+    }
+
+    if !all_literals {
+        opv.idents.append(&mut pending_idents);
     }
 
     !all_literals
