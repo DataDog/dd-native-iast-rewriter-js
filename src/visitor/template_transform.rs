@@ -10,7 +10,7 @@ use swc::{
 
 use super::{
     operation_transform_visitor::OperationTransformVisitor,
-    visitor_util::{create_assign_expression, get_dd_plus_operator_paren_expr},
+    visitor_util::get_dd_plus_operator_paren_expr,
 };
 
 pub struct TemplateTransform {}
@@ -105,27 +105,27 @@ fn extract_arguments_in_template(
         if !quasi.tail {
             match *tpl.exprs[index] {
                 Expr::Lit(_) => {
-                    //Nothing to do here
+                    arguments.push(*tpl.exprs[index].take());
                 }
                 Expr::Call(_) | Expr::Paren(_) => {
-                    let (assign, id) =
-                        create_assign_expression(opv.next_ident(), *tpl.exprs[index].clone(), span);
-
-                    // store ident and assignation expression
-                    opv.idents.push(id.to_owned());
-
-                    assignations.push(Box::new(Expr::Assign(assign)));
+                    let ident = opv.get_ident_assignation_to_replace_operand(
+                        *tpl.exprs[index].clone(),
+                        assignations,
+                        arguments,
+                        span,
+                    );
 
                     // replace operand with new ident
-                    tpl.exprs[index] = Box::new(Expr::Ident(id));
+                    tpl.exprs[index] = Box::new(ident);
 
                     all_literals = false;
                 }
                 _ => {
+                    arguments.push(*tpl.exprs[index].take());
+
                     all_literals = false;
                 }
             }
-            arguments.push(*tpl.exprs[index].take());
             index += 1;
         }
     }

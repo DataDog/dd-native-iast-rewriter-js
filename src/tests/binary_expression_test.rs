@@ -45,7 +45,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains(
-            "global._ddiast.plusOperator(this.height + this.width, this.height, this.width)",
+            "return (__datadog_test_0 = this.height, __datadog_test_1 = this.width, global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));",
         );
         Ok(())
     }
@@ -68,7 +68,7 @@ mod tests {
         .to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("(__datadog_test_0 = this.w(), global._ddiast.plusOperator(this.height + __datadog_test_0, this.height, __datadog_test_0))");
+        assert_that(&rewritten.code).contains("(__datadog_test_0 = this.height, __datadog_test_1 = this.w(), global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
         Ok(())
     }
 
@@ -304,6 +304,17 @@ mod tests {
         assert_that!(&rewritten.err()).contains(
             "Cancelling test.js file rewrite. Reason: Variable name duplicated".to_string(),
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_property_access_inside_binary_operation() -> Result<(), String> {
+        let original_code = "{const a = b + c.x}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = c.x, global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0));");
         Ok(())
     }
 }

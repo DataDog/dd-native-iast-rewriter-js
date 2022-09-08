@@ -3,12 +3,15 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use std::collections::HashSet;
-use swc::{common::util::take::Take, ecmascript::ast::*};
+use swc::{
+    common::{util::take::Take, Span},
+    ecmascript::ast::*,
+};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use super::{
     assign_add_transform::AssignAddTransform, binary_add_transform::BinaryAddTransform,
-    template_transform::TemplateTransform,
+    template_transform::TemplateTransform, visitor_util::create_assign_expression,
 };
 
 pub struct OperationTransformVisitor {
@@ -30,6 +33,26 @@ impl OperationTransformVisitor {
         let counter = self.ident_counter;
         self.ident_counter += 1;
         return counter;
+    }
+
+    pub fn get_ident_assignation_to_replace_operand(
+        &mut self,
+        operand: Expr,
+        assignations: &mut Vec<Box<Expr>>,
+        arguments: &mut Vec<Expr>,
+        span: Span,
+    ) -> Expr {
+        let (assign, id) = create_assign_expression(self.next_ident(), operand, span);
+
+        // store ident and assignation expression
+        self.idents.push(id.to_owned());
+
+        assignations.push(Box::new(Expr::Assign(assign)));
+
+        // store ident as argument
+        arguments.push(Expr::Ident(id.clone()));
+
+        Expr::Ident(id)
     }
 }
 

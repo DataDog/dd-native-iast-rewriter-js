@@ -11,7 +11,7 @@ use swc_ecma_visit::VisitMutWith;
 
 use super::{
     operation_transform_visitor::OperationTransformVisitor,
-    visitor_util::{create_assign_expression, get_dd_plus_operator_paren_expr},
+    visitor_util::get_dd_plus_operator_paren_expr,
 };
 
 pub struct BinaryAddTransform {}
@@ -87,19 +87,13 @@ fn replace_expressions_in_binary_operand(
             // visit_mut_children_with maybe only needed by Paren but...
             operand.visit_mut_children_with(opv);
 
-            let (assign, id) = create_assign_expression(opv.next_ident(), operand.clone(), span);
-
-            // store ident and assignation expression
-            opv.idents.push(id.to_owned());
-
-            assignations.push(Box::new(Expr::Assign(assign)));
-
-            // store ident as argument
-            arguments.push(Expr::Ident(id.clone()));
-
-            // replace operand with new ident
-            operand.map_with_mut(|_| Expr::Ident(id));
+            operand.map_with_mut(|op| {
+                opv.get_ident_assignation_to_replace_operand(op, assignations, arguments, span)
+            })
         }
+        Expr::Member(_) => operand.map_with_mut(|op| {
+            opv.get_ident_assignation_to_replace_operand(op, assignations, arguments, span)
+        }),
         _ => arguments.push(operand.clone()),
     }
 }

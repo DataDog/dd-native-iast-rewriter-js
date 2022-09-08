@@ -95,9 +95,9 @@ global._ddiast.plusOperator(`Hello World!${__datadog_test_1}`, `Hello World!`, _
     const js = 'const result = `Hello World!${a + b.x}`;'
     rewriteAndExpect(
       js,
-      '{\nlet __datadog_test_0;\nconst result = (__datadog_test_0 = \
-global._ddiast.plusOperator(a + b.x, a, b.x), global._ddiast.plusOperator(`Hello World!${__datadog_test_0}`, \
-`Hello World!`, __datadog_test_0));\n}'
+      '{\nlet __datadog_test_0, __datadog_test_1;\nconst result = \
+(__datadog_test_1 = (__datadog_test_0 = b.x, global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0))\
+, global._ddiast.plusOperator(`Hello World!${__datadog_test_1}`, `Hello World!`, __datadog_test_1));\n}'
     )
   })
 
