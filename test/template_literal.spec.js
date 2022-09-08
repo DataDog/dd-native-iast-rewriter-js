@@ -118,4 +118,14 @@ global._ddiast.plusOperator(a + b.x, a, b.x), global._ddiast.plusOperator(`Hello
 `World `, b) : "Moon";\n}'
     )
   })
+
+  it('tagged are not mofified', () => {
+    const js = 'const a = func`Hello${b}World`;'
+    rewriteAndExpectNoTransformation(js)
+  })
+
+  it('tagged with child expressions are mofified', () => {
+    const js = 'const a = func`Hello${b + c}World`;'
+    rewriteAndExpect(js, '{\nconst a = func`Hello${global._ddiast.plusOperator(b + c, b, c)}World`;\n}')
+  })
 })
