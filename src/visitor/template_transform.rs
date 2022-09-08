@@ -2,11 +2,7 @@
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
-use swc::{
-    atoms::JsWord,
-    common::{util::take::Take, Span},
-    ecmascript::ast::*,
-};
+use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
 
 use super::{
     operation_transform_visitor::OperationTransformVisitor,
