@@ -85,7 +85,7 @@ fn replace_expressions_in_binary_operand(
                 arguments.push(operand.clone())
             }
         }
-        Expr::Call(_) | Expr::Paren(_) => {
+        Expr::Call(_) | Expr::Paren(_) | Expr::Tpl(_) => {
             // visit_mut_children_with maybe only needed by Paren but...
             operand.visit_mut_children_with(opv);
 

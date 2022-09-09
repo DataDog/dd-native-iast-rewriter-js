@@ -142,4 +142,15 @@ global._ddiast.plusOperator(`Hello World!${__datadog_test_1}`, `Hello World!`, _
     const js = 'const a = func`Hello${b + c}World`;'
     rewriteAndExpect(js, '{\nconst a = func`Hello${global._ddiast.plusOperator(b + c, b, c)}World`;\n}')
   })
+
+  it('nested template literal with +', () => {
+    const js = "const a = `Hello ${c} ${'how are u ' + `${'bye ' + d}`} world`;"
+    rewriteAndExpect(
+      js,
+      "{\nlet __datadog_test_0, __datadog_test_1;\nconst a = (__datadog_test_1 = (__datadog_test_0 \
+= `${global._ddiast.plusOperator('bye ' + d, 'bye ', d)}`, global._ddiast.plusOperator('how are u ' + \
+__datadog_test_0, 'how are u ', __datadog_test_0)), global._ddiast.plusOperator(`Hello ${c} ${__datadog_test_1} \
+world`, `Hello `, c, ` `, __datadog_test_1, ` world`));\n}"
+    )
+  })
 })
