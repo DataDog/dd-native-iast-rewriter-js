@@ -3,6 +3,7 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use swc::ecmascript::ast::*;
+use swc_ecma_visit::VisitMutWith;
 
 use crate::visitor::assign_add_transform::AssignOp::Assign;
 
@@ -15,19 +16,22 @@ pub struct AssignAddTransform {}
 
 impl AssignAddTransform {
     pub fn to_dd_assign_expr(
-        assign: &AssignExpr,
+        assign: &mut AssignExpr,
         opv: &mut OperationTransformVisitor,
     ) -> AssignExpr {
         let span = assign.span;
         let op = assign.op;
 
         return match &assign.left {
-            PatOrExpr::Pat(_) => AssignExpr {
-                span,
-                op,
-                left: assign.left.clone(),
-                right: assign.right.clone(),
-            },
+            PatOrExpr::Pat(_) => {
+                assign.visit_mut_children_with(opv);
+                AssignExpr {
+                    span,
+                    op,
+                    left: assign.left.clone(),
+                    right: assign.right.clone(),
+                }
+            }
             PatOrExpr::Expr(left_expr) => {
                 let binary = Expr::Bin(BinExpr {
                     span,

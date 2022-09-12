@@ -89,8 +89,8 @@ impl VisitMut for OperationTransformVisitor {
             }
             Expr::Assign(assign) => {
                 if assign.op == AssignOp::AddAssign {
-                    assign.map_with_mut(|assign| {
-                        AssignAddTransform::to_dd_assign_expr(&assign, self)
+                    assign.map_with_mut(|mut assign| {
+                        AssignAddTransform::to_dd_assign_expr(&mut assign, self)
                     });
                 }
             }
