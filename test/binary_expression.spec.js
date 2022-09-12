@@ -339,4 +339,40 @@ a, __datadog_test_0));
       }`
     )
   })
+
+  it('does modify add with await', () => {
+    const js = 'const result = a + await fs.readFile();'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+        const result = (__datadog_test_0 = await fs.readFile(), global._ddiast.plusOperator(a + __datadog_test_0, \
+a, __datadog_test_0));
+      }`
+    )
+  })
+
+  it('does modify add with await and nested add', () => {
+    const js = 'const result = a + await fs.readFile(c + d);'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+        const result = (__datadog_test_0 = await fs.readFile(global._ddiast.plusOperator(c + d, c, d)), \
+global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
+      }`
+    )
+  })
+
+  it('does modify add with await and nested add with call', () => {
+    const js = 'const result = a + await fs.readFile(c + d());'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0, __datadog_test_1;
+        const result = (__datadog_test_1 = await fs.readFile((__datadog_test_0 = d(), global._ddiast.plusOperator(\
+c + __datadog_test_0, c, __datadog_test_0))), global._ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1));
+      }`
+    )
+  })
 })
