@@ -216,6 +216,23 @@ __datadog_test_0 + "c" + d + __datadog_test_1 + "f", a, __datadog_test_0, "c", d
     }
   )
 
+  it('does change + operator with assignation', () => {
+    const js = `for (let i = 0; i < buf.length; i++) {
+      res1[i] += s.write(buf.slice(i, i + 1));
+    }`
+    rewriteAndExpect(
+      js,
+      `{
+for(let i = 0; i < buf.length; i++){
+  let __datadog_test_0, __datadog_test_1;
+  res1[i] = (__datadog_test_0 = res1[i], __datadog_test_1 = s.write(buf.slice(i, \
+global._ddiast.plusOperator(i + 1, i, 1))), global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, \
+__datadog_test_0, __datadog_test_1));
+}
+}`
+    )
+  })
+
   it('does modify add inside if assignation', () => {
     const js = 'if ((result = (a + b)) > 100) {}'
     rewriteAndExpect(

@@ -92,6 +92,8 @@ impl VisitMut for OperationTransformVisitor {
                     assign.map_with_mut(|mut assign| {
                         AssignAddTransform::to_dd_assign_expr(&mut assign, self)
                     });
+                } else {
+                    assign.visit_mut_children_with(self);
                 }
             }
             Expr::Tpl(tpl) => {
