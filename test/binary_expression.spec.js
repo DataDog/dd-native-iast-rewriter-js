@@ -233,6 +233,24 @@ __datadog_test_0, __datadog_test_1));
     )
   })
 
+  it('does not change assignation', () => {
+    const js = `let a = 0;
+    a -= b;`
+    rewriteAndExpectNoTransformation(js)
+  })
+
+  it('does change assignation child', () => {
+    const js = `let a = 0;
+    a -= b + c;`
+    rewriteAndExpect(
+      js,
+      `{
+      let a = 0;
+      a -= global._ddiast.plusOperator(b + c, b, c);
+    }`
+    )
+  })
+
   it('does modify add inside if assignation', () => {
     const js = 'if ((result = (a + b)) > 100) {}'
     rewriteAndExpect(
@@ -372,6 +390,51 @@ global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
         let __datadog_test_0, __datadog_test_1;
         const result = (__datadog_test_1 = await fs.readFile((__datadog_test_0 = d(), global._ddiast.plusOperator(\
 c + __datadog_test_0, c, __datadog_test_0))), global._ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1));
+      }`
+    )
+  })
+
+  it('does modify add with increment last', () => {
+    const js = 'const a = b + c++;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+  const a = (__datadog_test_0 = c++, global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0));
+      }`
+    )
+  })
+
+  it('does modify add with increment first', () => {
+    const js = 'const a = b++ + c;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+  const a = (__datadog_test_0 = b++, global._ddiast.plusOperator(__datadog_test_0 + c, __datadog_test_0, c));
+      }`
+    )
+  })
+
+  it('does modify add with increment first', () => {
+    const js = 'const a = b++ + c++;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0, __datadog_test_1;
+  const a = (__datadog_test_0 = b++, __datadog_test_1 = c++, global._ddiast.plusOperator(__datadog_test_0 + \
+__datadog_test_1, __datadog_test_0, __datadog_test_1));
+      }`
+    )
+  })
+
+  it('does modify add with decrement last', () => {
+    const js = 'const a = b + c--;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+  const a = (__datadog_test_0 = c--, global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0));
       }`
     )
   })
