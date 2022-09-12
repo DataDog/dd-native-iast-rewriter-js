@@ -207,25 +207,6 @@ mod tests {
     }
 
     #[test]
-    fn test_simple_assignation() -> Result<(), String> {
-        let original_code = "{a += b;}".to_string();
-        let js_file = "test.js".to_string();
-        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("a = global._ddiast.plusOperator(a + b, a, b)");
-        Ok(())
-    }
-
-    #[test]
-    fn test_plus_and_assignation() -> Result<(), String> {
-        let original_code = "{a += b + c;}".to_string();
-        let js_file = "test.js".to_string();
-        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code)
-            .contains("a = global._ddiast.plusOperator(a + b + c, a, b, c)");
-        Ok(())
-    }
-
-    #[test]
     fn test_plus_and_block() -> Result<(), String> {
         let original_code = "{let b;const a = 'a' + (b = '_b_', b + c);}".to_string();
         let js_file = "test.js".to_string();

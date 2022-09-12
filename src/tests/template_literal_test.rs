@@ -73,4 +73,14 @@ mod tests {
             .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = typeof b, global._ddiast.plusOperator(`He${__datadog_test_0}llo wor${a}ld`, `He`, __datadog_test_0, `llo wor`, a, `ld`))");
         Ok(())
     }
+
+    #[test]
+    fn test_template_literal_with_property_access() -> Result<(), String> {
+        let original_code = "{const a = `Hello world ${b.x}`}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = b.x, global._ddiast.plusOperator(`Hello world ${__datadog_test_0}`, `Hello world `, __datadog_test_0));");
+        Ok(())
+    }
 }

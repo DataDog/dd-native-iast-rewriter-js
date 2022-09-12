@@ -5,6 +5,7 @@ use crate::visitor::visitor_util::DD_LOCAL_VAR_NAME_HASH_ENV_NAME;
 **/
 use std::env;
 
+mod binary_assignation_test;
 mod binary_expression_test;
 mod template_literal_test;
 

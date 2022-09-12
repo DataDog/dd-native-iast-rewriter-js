@@ -105,7 +105,7 @@ fn extract_arguments_in_template(
                 Expr::Lit(_) => {
                     arguments.push(expr.clone());
                 }
-                Expr::Call(_) | Expr::Paren(_) => {
+                Expr::Call(_) | Expr::Paren(_) | Expr::Member(_) => {
                     let ident = opv.get_ident_used_in_assignation(
                         expr.clone(),
                         assignations,
