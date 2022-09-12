@@ -39,20 +39,21 @@ describe('template literal', () => {
 </html>\`);
 });`
     const expected = `{\nrouter.get('/xss', function(req, res) {
+    let __datadog_test_0;
     res.header('content-type', 'text/html');
-    res.send(global._ddiast.plusOperator(\`<html lang="en">
+    res.send((__datadog_test_0 = req.query.param, global._ddiast.plusOperator(\`<html lang="en">
     <body>
         <h1>XSS vulnerability</h1>
-        <p>Received param: \${req.query.param}</p>
+        <p>Received param: \${__datadog_test_0}</p>
     </body>
 </body>
 </html>\`, \`<html lang="en">
     <body>
         <h1>XSS vulnerability</h1>
-        <p>Received param: \`, req.query.param, \`</p>
+        <p>Received param: \`, __datadog_test_0, \`</p>
     </body>
 </body>
-</html>\`));
+</html>\`)));
 });\n}`
     rewriteAndExpect(js, expected)
   })

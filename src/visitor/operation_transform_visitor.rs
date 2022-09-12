@@ -88,8 +88,11 @@ impl VisitMut for OperationTransformVisitor {
                 }
             }
             Expr::Assign(assign) => {
-                assign.visit_mut_children_with(self);
-                assign.map_with_mut(|assign| AssignAddTransform::to_dd_assign_expr(assign));
+                if assign.op == AssignOp::AddAssign {
+                    assign.map_with_mut(|assign| {
+                        AssignAddTransform::to_dd_assign_expr(&assign, self)
+                    });
+                }
             }
             Expr::Tpl(tpl) => {
                 if !tpl.exprs.is_empty() {
