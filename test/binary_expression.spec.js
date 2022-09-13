@@ -3,51 +3,9 @@
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
 /* eslint-disable no-multi-str */
-
 const { itEach } = require('mocha-it-each')
-const os = require('os')
-const path = require('path')
 
-const { Rewriter } = require('../index')
-
-const rewriteAst = (code, opts) => {
-  opts = opts || {}
-  const rewriter = opts.rewriter ?? new Rewriter()
-  const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
-  const sourceMap = opts.sourceMap
-  return rewriter.rewrite(code, file, sourceMap)
-}
-
-const wrapBlock = (code) => `{${os.EOL}${code}${os.EOL}}`
-
-const rewriteAndExpectNoTransformation = (code) => {
-  rewriteAndExpect(wrapBlock(code), wrapBlock(code), true)
-}
-
-const rewriteAndExpect = (code, expect, block) => {
-  code = !block ? `{${code}}` : code
-  const rewrited = rewriteAst(code)
-  expectAst(rewrited, expect)
-}
-
-const rewriteAndExpectError = (code) => {
-  expect(() => {
-    rewriteAndExpect(code, code)
-  }).to.throw(Error, /Variable name duplicated/)
-}
-
-const expectAst = (received, expected) => {
-  const rLines = received
-    .split('\n') // it seems that rewriter do not take into account OS line endings
-    .map((l) => l.trim())
-    .join('\n')
-  const eLines = expected
-    .split('\n')
-    .map((l) => l.trim())
-    .join('\n')
-
-  expect(rLines).to.be.eq(eLines)
-}
+const { rewriteAndExpectNoTransformation, rewriteAndExpect, rewriteAndExpectError, wrapBlock } = require('./util')
 
 describe('binary expression', () => {
   it('does not modify sub', () => {
@@ -258,6 +216,41 @@ __datadog_test_0 + "c" + d + __datadog_test_1 + "f", a, __datadog_test_0, "c", d
     }
   )
 
+  it('does change + operator with assignation', () => {
+    const js = `for (let i = 0; i < buf.length; i++) {
+      res1[i] += s.write(buf.slice(i, i + 1));
+    }`
+    rewriteAndExpect(
+      js,
+      `{
+for(let i = 0; i < buf.length; i++){
+  let __datadog_test_0, __datadog_test_1;
+  res1[i] = (__datadog_test_0 = res1[i], __datadog_test_1 = s.write(buf.slice(i, \
+global._ddiast.plusOperator(i + 1, i, 1))), global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, \
+__datadog_test_0, __datadog_test_1));
+}
+}`
+    )
+  })
+
+  it('does not change assignation', () => {
+    const js = `let a = 0;
+    a -= b;`
+    rewriteAndExpectNoTransformation(js)
+  })
+
+  it('does change assignation child', () => {
+    const js = `let a = 0;
+    a -= b + c;`
+    rewriteAndExpect(
+      js,
+      `{
+      let a = 0;
+      a -= global._ddiast.plusOperator(b + c, b, c);
+    }`
+    )
+  })
+
   it('does modify add inside if assignation', () => {
     const js = 'if ((result = (a + b)) > 100) {}'
     rewriteAndExpect(
@@ -349,6 +342,99 @@ __datadog_test_1, c, __datadog_test_1));
 , __datadog_test_0, b)))) > 100) {\nlet __datadog_test_0;\nreturn (__datadog_test_0 = d(), \
 global._ddiast.plusOperator(c + __datadog_test_0, c, __datadog_test_0));\n}
         }
+      }`
+    )
+  })
+
+  it('does modify add with typeof operand', () => {
+    const js = 'const result = a + typeof a;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+        const result = (__datadog_test_0 = typeof a, global._ddiast.plusOperator(a + __datadog_test_0, \
+a, __datadog_test_0));
+      }`
+    )
+  })
+
+  it('does modify add with await', () => {
+    const js = 'const result = a + await fs.readFile();'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+        const result = (__datadog_test_0 = await fs.readFile(), global._ddiast.plusOperator(a + __datadog_test_0, \
+a, __datadog_test_0));
+      }`
+    )
+  })
+
+  it('does modify add with await and nested add', () => {
+    const js = 'const result = a + await fs.readFile(c + d);'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+        const result = (__datadog_test_0 = await fs.readFile(global._ddiast.plusOperator(c + d, c, d)), \
+global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
+      }`
+    )
+  })
+
+  it('does modify add with await and nested add with call', () => {
+    const js = 'const result = a + await fs.readFile(c + d());'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0, __datadog_test_1;
+        const result = (__datadog_test_1 = await fs.readFile((__datadog_test_0 = d(), global._ddiast.plusOperator(\
+c + __datadog_test_0, c, __datadog_test_0))), global._ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1));
+      }`
+    )
+  })
+
+  it('does modify add with increment last', () => {
+    const js = 'const a = b + c++;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+  const a = (__datadog_test_0 = c++, global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0));
+      }`
+    )
+  })
+
+  it('does modify add with increment first', () => {
+    const js = 'const a = b++ + c;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+  const a = (__datadog_test_0 = b++, global._ddiast.plusOperator(__datadog_test_0 + c, __datadog_test_0, c));
+      }`
+    )
+  })
+
+  it('does modify add with increment first', () => {
+    const js = 'const a = b++ + c++;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0, __datadog_test_1;
+  const a = (__datadog_test_0 = b++, __datadog_test_1 = c++, global._ddiast.plusOperator(__datadog_test_0 + \
+__datadog_test_1, __datadog_test_0, __datadog_test_1));
+      }`
+    )
+  })
+
+  it('does modify add with decrement last', () => {
+    const js = 'const a = b + c--;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+  const a = (__datadog_test_0 = c--, global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0));
       }`
     )
   })

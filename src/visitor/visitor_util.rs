@@ -3,7 +3,7 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use crate::util::rnd_string;
-use std::{env, ops::Deref, sync::Once};
+use std::{env, sync::Once};
 use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
 
 pub const NODE_GLOBAL: &str = "global";
@@ -34,8 +34,6 @@ pub fn get_dd_local_variable_name(n: usize) -> String {
 pub fn get_dd_local_variable_prefix() -> String {
     format!("__datadog_{}_", get_dd_local_var_name_hash())
 }
-
-pub const DD_METHODS: &[&str] = &[DD_PLUS_OPERATOR];
 
 pub fn get_plus_operator_based_on_num_of_args_for_span(arguments_len: usize, span: Span) -> Callee {
     match arguments_len {
@@ -74,72 +72,79 @@ pub fn any_items_plus_operator(span: Span) -> MemberProp {
     })
 }
 
-pub fn is_dd_method(call: &CallExpr) -> bool {
-    is_call_one_of_the_dd_methods_provided(call, DD_METHODS.to_vec())
+pub fn get_dd_call_plus_operator_expr(expr: Expr, arguments: &Vec<Expr>, span: Span) -> Expr {
+    let mut args: Vec<ExprOrSpread> = Vec::new();
+
+    args.push(ExprOrSpread {
+        expr: Box::new(expr),
+        spread: None,
+    });
+
+    args.append(
+        &mut arguments
+            .iter()
+            .map(|expr| ExprOrSpread {
+                expr: Box::new(expr.to_owned()),
+                spread: None,
+            })
+            .collect::<Vec<_>>(),
+    );
+
+    Expr::Call(CallExpr {
+        span,
+        callee: get_plus_operator_based_on_num_of_args_for_span(args.len() - 1, span),
+        args,
+        type_args: None,
+    })
 }
 
-fn is_call_one_of_the_dd_methods_provided(call: &CallExpr, dd_methods: Vec<&str>) -> bool {
-    let global_string = JsWord::from(NODE_GLOBAL);
-    let dd_global_string = JsWord::from(DD_GLOBAL_NAMESPACE);
-    let mut is_dd_method = false;
-    let mut is_dd_global = false;
-    let mut is_node_global = false;
-    let mut coded_methods = Vec::new();
-    let dd_methods_iter = dd_methods.iter();
-    let callee: &MemberExpr;
+pub fn get_dd_plus_operator_paren_expr(
+    expr: Expr,
+    arguments: &Vec<Expr>,
+    assignations: &mut Vec<Box<Expr>>,
+    span: Span,
+) -> Expr {
+    let plus_operator_call = get_dd_call_plus_operator_expr(expr, &arguments, span);
 
-    match &call.callee {
-        Callee::Expr(call_calle) => {
-            if let Expr::Member(c) = &**call_calle {
-                callee = c;
-            } else {
-                return false;
-            }
-        }
-        _ => {
-            return false;
-        }
+    // if there are 0 assign expressions we can return just call expression without parentheses
+    // else wrap them all with a sequence of comma separated expressions inside parentheses
+    if assignations.len() == 0 {
+        return plus_operator_call;
+    } else {
+        assignations.push(Box::new(plus_operator_call));
+        return Expr::Paren(ParenExpr {
+            span,
+            expr: Box::new(Expr::Seq(SeqExpr {
+                span,
+                exprs: assignations.clone(),
+            })),
+        });
     }
-
-    for method in dd_methods_iter {
-        coded_methods.push(JsWord::from(*method));
-    }
-
-    let x = callee.deref();
-    if let MemberProp::Ident(ident) = &x.prop {
-        if coded_methods.contains(&ident.sym) {
-            is_dd_method = true;
-        }
-    }
-
-    if let Expr::Member(member) = &x.obj.deref() {
-        if let MemberProp::Ident(ident) = &member.prop {
-            is_dd_global = ident.sym == dd_global_string;
-        }
-
-        if let Expr::Ident(ident) = &member.obj.deref() {
-            is_node_global = ident.sym == global_string;
-        }
-    }
-
-    return is_dd_method && is_dd_global && is_node_global;
 }
 
-pub fn right_is_a_call_to_dd_method(right: &Expr) -> bool {
-    match right {
-        Expr::Call(call) => is_dd_method(call),
+pub fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (AssignExpr, Ident) {
+    let id = Ident {
+        span,
+        sym: JsWord::from(get_dd_local_variable_name(index)),
+        optional: false,
+    };
+    (
+        AssignExpr {
+            span,
+            left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
+                id: id.clone(),
+                type_ann: None,
+            }))),
+            right: Box::new(expr),
+            op: AssignOp::Assign,
+        },
+        id,
+    )
+}
+
+pub fn is_typeof(unary: &UnaryExpr) -> bool {
+    match unary.op {
+        UnaryOp::TypeOf => true,
         _ => false,
     }
-}
-
-pub fn extract_call_arguments(right: &Expr, args: &mut Vec<ExprOrSpread>) -> Expr {
-    return match right {
-        Expr::Call(call) => {
-            call.args.iter().skip(1).for_each(|a| {
-                args.push(a.clone());
-            });
-            *call.args[0].expr.clone()
-        }
-        _ => right.clone(),
-    };
 }

@@ -7,10 +7,14 @@ use crate::visitor::{
     visitor_util::get_dd_local_variable_prefix,
 };
 use std::collections::HashSet;
-
-use napi::Status;
 use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
+
+#[derive(PartialEq)]
+pub enum Status {
+    Ok,
+    Cancelled,
+}
 
 pub struct TransformStatus {
     pub status: Status,

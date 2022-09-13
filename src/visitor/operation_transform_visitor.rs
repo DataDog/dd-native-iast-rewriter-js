@@ -3,12 +3,16 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use std::collections::HashSet;
-use swc::{common::util::take::Take, ecmascript::ast::*};
+use swc::{
+    common::{util::take::Take, Span},
+    ecmascript::ast::*,
+};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use crate::visitor::binary_add_transform::BinaryAddTransform;
-
-use super::assign_add_transform::AssignAddTransform;
+use super::{
+    assign_add_transform::AssignAddTransform, binary_add_transform::BinaryAddTransform,
+    template_transform::TemplateTransform, visitor_util::create_assign_expression,
+};
 
 pub struct OperationTransformVisitor {
     pub ident_counter: usize,
@@ -30,6 +34,45 @@ impl OperationTransformVisitor {
         self.ident_counter += 1;
         return counter;
     }
+
+    pub fn get_ident_used_in_assignation(
+        &mut self,
+        operand: Expr,
+        assignations: &mut Vec<Box<Expr>>,
+        arguments: &mut Vec<Expr>,
+        span: Span,
+    ) -> Ident {
+        self.get_ident_used_in_assignation_with_definitive(
+            operand,
+            assignations,
+            arguments,
+            span,
+            true,
+        )
+    }
+
+    pub fn get_ident_used_in_assignation_with_definitive(
+        &mut self,
+        operand: Expr,
+        assignations: &mut Vec<Box<Expr>>,
+        arguments: &mut Vec<Expr>,
+        span: Span,
+        definitive: bool,
+    ) -> Ident {
+        let (assign, id) = create_assign_expression(self.next_ident(), operand, span);
+
+        // store ident and assignation expression
+        if definitive {
+            self.idents.push(id.to_owned());
+        }
+
+        assignations.push(Box::new(Expr::Assign(assign)));
+
+        // store ident as argument
+        arguments.push(Expr::Ident(id.clone()));
+
+        id
+    }
 }
 
 impl Visit for OperationTransformVisitor {}
@@ -45,8 +88,19 @@ impl VisitMut for OperationTransformVisitor {
                 }
             }
             Expr::Assign(assign) => {
-                assign.visit_mut_children_with(self);
-                assign.map_with_mut(|assign| AssignAddTransform::to_dd_assign_expr(assign));
+                if assign.op == AssignOp::AddAssign {
+                    assign.map_with_mut(|mut assign| {
+                        AssignAddTransform::to_dd_assign_expr(&mut assign, self)
+                    });
+                } else {
+                    assign.visit_mut_children_with(self);
+                }
+            }
+            Expr::Tpl(tpl) => {
+                if !tpl.exprs.is_empty() {
+                    tpl.exprs.visit_mut_children_with(self);
+                    expr.map_with_mut(|tpl| TemplateTransform::to_dd_tpl_expr(&tpl, self));
+                }
             }
             _ => {
                 expr.visit_mut_children_with(self);
