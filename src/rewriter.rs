@@ -39,11 +39,11 @@ pub struct RewrittenOutput {
     pub original_map: Option<SourceMap>,
 }
 
-pub fn rewrite_js(code: String, file: String) -> Result<RewrittenOutput> {
+pub fn rewrite_js(code: String, file: String, comments: bool) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let program = parse_js(code, file.as_str(), handler, compiler.borrow())?;
-        let result = transform_js(program, file.as_str(), compiler.borrow());
+        let result = transform_js(program, file.as_str(), comments, compiler.borrow());
 
         result.map(|transformed| RewrittenOutput {
             code: transformed.code,
@@ -93,6 +93,7 @@ fn parse_js(source: String, file: &str, handler: &Handler, compiler: &Compiler) 
 fn transform_js(
     mut program: Program,
     file: &str,
+    comments: bool,
     compiler: &Compiler,
 ) -> Result<TransformOutput, Error> {
     let mut transform_status = TransformStatus::ok();
@@ -110,7 +111,7 @@ fn transform_js(
             &Default::default(),
             None,
             false,
-            None,
+            comments.then_some(compiler.comments() as &dyn Comments),
         ),
         _ => Err(Error::msg(format!(
             "Cancelling {} file rewrite. Reason: {}",

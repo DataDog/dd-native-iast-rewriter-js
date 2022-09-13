@@ -7,7 +7,7 @@
 mod tests {
     use spectral::{assert_that, string::StrAssertions};
 
-    use crate::{rewrite_js, tests::set_local_var};
+    use crate::tests::{rewrite_js, set_local_var};
 
     #[cfg(test)]
     #[ctor::ctor]

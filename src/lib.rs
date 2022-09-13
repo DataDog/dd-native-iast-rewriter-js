@@ -20,11 +20,15 @@ use napi::{Error, Status};
 #[napi(object)]
 pub struct RewriterConfig {
     pub chain_source_map: bool,
+#[derive(Debug)]
+pub struct RewriterConfig {
+    pub comments: bool,
 }
 
 #[napi]
 pub struct Rewriter {
     config: RewriterConfig,
+    config: Option<RewriterConfig>,
 }
 
 #[napi]
@@ -44,5 +48,25 @@ impl Rewriter {
         return rewrite_js(code, file)
             .map(|result| print_js(result, self.config.chain_source_map))
             .map_err(|e| Error::new(Status::Unknown, format!("{}", e)));
+        Rewriter { config }
+    }
+
+    #[napi]
+    pub fn rewrite(
+        &self,
+        code: String,
+        file: String,
+        source_map: Option<String>,
+    ) -> napi::Result<String> {
+        return rewrite_js(
+            code,
+            file,
+            self.config
+                .as_ref()
+                .and_then(|c| Some(c.comments))
+                .unwrap_or_else(|| false),
+        )
+        .map(|result| print_js(result, source_map))
+        .map_err(|e| Error::new(Status::Unknown, format!("{}", e)));
     }
 }

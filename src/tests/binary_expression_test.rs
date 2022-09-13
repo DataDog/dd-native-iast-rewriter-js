@@ -10,7 +10,10 @@ mod tests {
 
     use anyhow::Error;
 
-    use crate::{rewrite_js, rewriter::debug_js, tests::set_local_var};
+    use crate::{
+        rewriter::debug_js,
+        tests::{rewrite_js, set_local_var},
+    };
 
     #[cfg(test)]
     #[ctor::ctor]

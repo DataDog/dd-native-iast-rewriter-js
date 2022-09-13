@@ -9,4 +9,9 @@ export interface RewriterConfig {
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)
   rewrite(code: string, file: string): string
+  comments: boolean
+}
+export class Rewriter {
+  constructor(config?: RewriterConfig | undefined | null)
+  rewrite(code: string, file: string, sourceMap?: string | undefined | null): string
 }
