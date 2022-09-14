@@ -251,6 +251,40 @@ __datadog_test_0, __datadog_test_1));
     )
   })
 
+  it('does change assignation with conditional value', () => {
+    const js = 'a += b ? c : d;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+        a = (__datadog_test_0 = b ? c : d, global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
+    }`
+    )
+  })
+
+  it('does change assignation with conditional value and call', () => {
+    const js = 'a += b ? c() : d;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+        a = (__datadog_test_0 = b ? c() : d, global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
+    }`
+    )
+  })
+
+  it('does change assignation with conditional value and call and child add', () => {
+    const js = 'a += b ? c(e() + f) : d;'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0, __datadog_test_1;
+        a = (__datadog_test_1 = b ? c((__datadog_test_0 = e(), global._ddiast.plusOperator(__datadog_test_0 + f, \
+__datadog_test_0, f))) : d, global._ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1));
+    }`
+    )
+  })
+
   it('does modify add inside if assignation', () => {
     const js = 'if ((result = (a + b)) > 100) {}'
     rewriteAndExpect(
@@ -435,6 +469,18 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1));
       `{
         let __datadog_test_0;
   const a = (__datadog_test_0 = c--, global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0));
+      }`
+    )
+  })
+
+  it('does modify add with call and another add inside', () => {
+    const js = 'const a = e + b.c(d + c--);'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0, __datadog_test_1;
+        const a = (__datadog_test_1 = b.c((__datadog_test_0 = c--, global._ddiast.plusOperator(d + \
+__datadog_test_0, d, __datadog_test_0))), global._ddiast.plusOperator(e + __datadog_test_1, e, __datadog_test_1));
       }`
     )
   })

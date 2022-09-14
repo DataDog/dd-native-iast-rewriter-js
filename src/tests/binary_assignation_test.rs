@@ -48,4 +48,37 @@ mod tests {
     res1 = (__datadog_test_0 = s.write(buf.slice(i, global._ddiast.plusOperator(i + 1, i, 1))), global._ddiast.plusOperator(res1 + __datadog_test_0, res1, __datadog_test_0));\n}");
         Ok(())
     }
+
+    #[test]
+    fn test_conditional_and_assignation() -> Result<(), String> {
+        let original_code = "{a += b ? c : d;}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0;
+    a = (__datadog_test_0 = b ? c : d, global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0))");
+        Ok(())
+    }
+
+    #[test]
+    fn test_conditional_with_call_and_assignation() -> Result<(), String> {
+        let original_code = "{a += b ? c() : d;}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0;
+    a = (__datadog_test_0 = b ? c() : d, global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0))");
+        Ok(())
+    }
+
+    #[test]
+    fn test_conditional_with_call_add_and_assignation() -> Result<(), String> {
+        let original_code = "{a += b ? c(e() + f) : d;}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0, __datadog_test_1;
+    a = (__datadog_test_1 = b ? c((__datadog_test_0 = e(), global._ddiast.plusOperator(__datadog_test_0 + f, __datadog_test_0, f))) : d, global._ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1))");
+        Ok(())
+    }
 }

@@ -12,11 +12,12 @@ const REWRITTEN_FILE_TOKEN_NAME = '___rewritten'
 const REWRITTEN_FILE_BACKUP_NAME = REWRITTEN_FILE_TOKEN_NAME + '_original'
 const DD_IAST_GLOBAL_METHODS_FILE_ENV = 'DD_IAST_GLOBAL_METHODS_FILE'
 
-const GLOBAL_METHODS = 'global._ddiast = global._ddiast || {plusOperator(res) {return res;}};'
+const GLOBAL_METHODS = 'let global = {}; global._ddiast = global._ddiast || {plusOperator(res) {return res;}};'
 
 const DEFAULT_OPTIONS = {
   restore: false,
   rootPath: null,
+  filePattern: '.*',
   override: false,
   globals: true,
   globalsFile: null,
@@ -49,7 +50,7 @@ const crawl = (dirPath, options, visitor) => {
     } else {
       if (options.restore) {
         restore(dirPath, file, options)
-      } else {
+      } else if (file.match(options.filePattern)) {
         visit(dirPath, file, options, visitor)
       }
     }
@@ -106,7 +107,11 @@ const parseOptions = (args) => {
       key = value ? key : key.substring('no-'.length)
       options[key] = value
     } else {
-      options.rootPath = arg
+      if (!options.rootPath) {
+        options.rootPath = arg
+      } else {
+        options.filePattern = arg
+      }
     }
   }
 
@@ -118,7 +123,7 @@ const parseOptions = (args) => {
 }
 
 const showHelp = () => {
-  console.log('Usage: node crawler.js [path/to/crawl]', '\n')
+  console.log('Usage: node crawler.js path/to/crawl [file_name_pattern]', '\n')
 
   console.log('Options:')
   console.log('  --override                          Original file is overrided with rewritten modifications')
@@ -146,6 +151,14 @@ if (!options.rootPath) {
   red('Error. Missing path!', '\n')
   showHelp()
   exit()
+}
+if (options.filePattern) {
+  try {
+    options.filePattern = new RegExp(options.filePattern)
+  } catch (e) {
+    red(e)
+    exit()
+  }
 }
 crawl(options.rootPath, options, {
   visit (code, fileName, path) {

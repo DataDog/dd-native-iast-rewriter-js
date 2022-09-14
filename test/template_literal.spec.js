@@ -155,7 +155,7 @@ world`, `Hello `, c, ` `, __datadog_test_1, ` world`));\n}"
     )
   })
 
-  it('template literal with update expression ++', () => {
+  it('with update expression ++', () => {
     const js = 'const a = `Hello ${c++}`;'
     rewriteAndExpect(
       js,
@@ -164,7 +164,7 @@ ${__datadog_test_0}`, `Hello `, __datadog_test_0));\n}'
     )
   })
 
-  it('template literal with update expression --', () => {
+  it('with update expression --', () => {
     const js = 'const a = `Hello ${--c}`;'
     rewriteAndExpect(
       js,
@@ -173,7 +173,7 @@ ${__datadog_test_0}`, `Hello `, __datadog_test_0));\n}'
     )
   })
 
-  it('template literal with await expression', () => {
+  it('with await expression', () => {
     const js = 'const a = `Hello ${await b()}`;'
     rewriteAndExpect(
       js,
@@ -182,13 +182,22 @@ ${__datadog_test_0}`, `Hello `, __datadog_test_0));\n}'
     )
   })
 
-  it('template literal with await expression inside +', () => {
+  it('with await expression inside +', () => {
     const js = 'const a = `Hello ${b + await c()}`;'
     rewriteAndExpect(
       js,
       '{\nlet __datadog_test_0, __datadog_test_1;\nconst a = (__datadog_test_1 = (__datadog_test_0 = await c(), \
 global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0)), global._ddiast.plusOperator(`Hello \
 ${__datadog_test_1}`, `Hello `, __datadog_test_1));\n}'
+    )
+  })
+
+  it('with conditional', () => {
+    const js = 'const a = `Hello ${b + c ? d : e}`;'
+    rewriteAndExpect(
+      js,
+      '{\nlet __datadog_test_0;\nconst a = (__datadog_test_0 = global._ddiast.plusOperator(b + c, b, c) ? d : e, \
+global._ddiast.plusOperator(`Hello ${__datadog_test_0}`, `Hello `, __datadog_test_0));\n}'
     )
   })
 })

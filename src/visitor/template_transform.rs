@@ -109,7 +109,8 @@ fn extract_arguments_in_template(
                 | Expr::Paren(_)
                 | Expr::Member(_)
                 | Expr::Update(_)
-                | Expr::Await(_) => {
+                | Expr::Await(_)
+                | Expr::Cond(_) => {
                     let ident = opv.get_ident_used_in_assignation(
                         expr.clone(),
                         assignations,
