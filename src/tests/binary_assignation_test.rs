@@ -20,7 +20,7 @@ mod tests {
         let original_code = "{a += b;}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("a = global._ddiast.plusOperator(a + b, a, b)");
+        assert_that(&rewritten.code).contains("a = _ddiast.plusOperator(a + b, a, b)");
         Ok(())
     }
 
@@ -29,8 +29,7 @@ mod tests {
         let original_code = "{a += b + c;}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code)
-            .contains("a = global._ddiast.plusOperator(a + b + c, a, b, c)");
+        assert_that(&rewritten.code).contains("a = _ddiast.plusOperator(a + b + c, a, b, c)");
         Ok(())
     }
 
@@ -45,7 +44,7 @@ mod tests {
         assert_that(&rewritten.code)
             .contains("for(let i = 0; i < buf.length; i++){
     let __datadog_test_0;
-    res1 = (__datadog_test_0 = s.write(buf.slice(i, global._ddiast.plusOperator(i + 1, i, 1))), global._ddiast.plusOperator(res1 + __datadog_test_0, res1, __datadog_test_0));\n}");
+    res1 = (__datadog_test_0 = s.write(buf.slice(i, _ddiast.plusOperator(i + 1, i, 1))), _ddiast.plusOperator(res1 + __datadog_test_0, res1, __datadog_test_0));\n}");
         Ok(())
     }
 
@@ -56,7 +55,7 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("let __datadog_test_0;
-    a = (__datadog_test_0 = b ? c : d, global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0))");
+    a = (__datadog_test_0 = b ? c : d, _ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0))");
         Ok(())
     }
 
@@ -67,7 +66,7 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("let __datadog_test_0;
-    a = (__datadog_test_0 = b ? c() : d, global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0))");
+    a = (__datadog_test_0 = b ? c() : d, _ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0))");
         Ok(())
     }
 
@@ -78,7 +77,7 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("let __datadog_test_0, __datadog_test_1;
-    a = (__datadog_test_1 = b ? c((__datadog_test_0 = e(), global._ddiast.plusOperator(__datadog_test_0 + f, __datadog_test_0, f))) : d, global._ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1))");
+    a = (__datadog_test_1 = b ? c((__datadog_test_0 = e(), _ddiast.plusOperator(__datadog_test_0 + f, __datadog_test_0, f))) : d, _ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1))");
         Ok(())
     }
 }

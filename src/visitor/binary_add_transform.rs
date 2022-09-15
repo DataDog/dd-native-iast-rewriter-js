@@ -92,7 +92,7 @@ fn replace_expressions_in_binary_operand(
                 Expr::Ident(opv.get_ident_used_in_assignation(op, assignations, arguments, span))
             })
         }
-        Expr::Member(_) | Expr::Update(_) => operand.map_with_mut(|op| {
+        Expr::Member(_) | Expr::Update(_) | Expr::New(_) => operand.map_with_mut(|op| {
             Expr::Ident(opv.get_ident_used_in_assignation(op, assignations, arguments, span))
         }),
         Expr::Unary(unary) => {

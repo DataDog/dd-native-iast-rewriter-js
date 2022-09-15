@@ -78,7 +78,14 @@ const visit = (dirPath, file, options, visitor) => {
   if (file.match(INCLUDED_FILES) && file.indexOf(REWRITTEN_FILE_TOKEN_NAME) === -1) {
     try {
       let filePath = path.join(dirPath, '/', file)
-      const fileContentOriginal = fs.readFileSync(filePath, ENCODING)
+      let readFilePath = filePath
+
+      // if backup file exists take its content to avoid rewriting a rewritten file
+      if (fs.existsSync(filePath + REWRITTEN_FILE_BACKUP_NAME)) {
+        readFilePath = filePath + REWRITTEN_FILE_BACKUP_NAME
+      }
+
+      const fileContentOriginal = fs.readFileSync(readFilePath, ENCODING)
       const fileContent = visitor.visit(fileContentOriginal, file, filePath)
       if (!fileContent) {
         return

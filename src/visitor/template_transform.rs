@@ -110,7 +110,8 @@ fn extract_arguments_in_template(
                 | Expr::Member(_)
                 | Expr::Update(_)
                 | Expr::Await(_)
-                | Expr::Cond(_) => {
+                | Expr::Cond(_)
+                | Expr::New(_) => {
                     let ident = opv.get_ident_used_in_assignation(
                         expr.clone(),
                         assignations,
@@ -134,7 +135,7 @@ fn extract_arguments_in_template(
                         );
 
                         // the result of `typeof obj` is always a literal string so the ident is not replaced until we
-                        // know that tpl contains any other not literal expression
+                        // know that tpl contains some other not literal expression
                         pending_idents.push(ident.clone());
 
                         // replace operand with new ident

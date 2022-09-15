@@ -18,7 +18,7 @@ describe('binary expression', () => {
     rewriteAndExpect(
       js,
       `{
-        const result = global._ddiast.plusOperator(a + " hey!", a, " hey!");
+        const result = _ddiast.plusOperator(a + " hey!", a, " hey!");
     }`
     )
   })
@@ -30,7 +30,7 @@ describe('binary expression', () => {
       '{\n\
         let __datadog_test_0;\n\
 const result = (__datadog_test_0 = otherMethod(2), \
-global._ddiast.plusOperator(1 + __datadog_test_0, 1, __datadog_test_0));\n\
+_ddiast.plusOperator(1 + __datadog_test_0, 1, __datadog_test_0));\n\
       }'
     )
   })
@@ -41,8 +41,8 @@ const a = "a" + (c = "_b_", c + message);'
     rewriteAndExpect(
       js,
       '{\n    let __datadog_test_0;\n\
-let c;\n    const a = (__datadog_test_0 = (c = "_b_", global._ddiast.plusOperator(c + message, c, message)), \
-global._ddiast.plusOperator("a" + __datadog_test_0, "a", __datadog_test_0));\n}'
+let c;\n    const a = (__datadog_test_0 = (c = "_b_", _ddiast.plusOperator(c + message, c, message)), \
+_ddiast.plusOperator("a" + __datadog_test_0, "a", __datadog_test_0));\n}'
     )
   })
 
@@ -51,7 +51,7 @@ global._ddiast.plusOperator("a" + __datadog_test_0, "a", __datadog_test_0));\n}'
     rewriteAndExpect(
       js,
       `{
-        const result = a || global._ddiast.plusOperator(b + c, b, c);
+        const result = a || _ddiast.plusOperator(b + c, b, c);
     }`
     )
   })
@@ -61,7 +61,7 @@ global._ddiast.plusOperator("a" + __datadog_test_0, "a", __datadog_test_0));\n}'
     rewriteAndExpect(
       js,
       `{
-        const result = global._ddiast.plusOperator(a + b, a, b) || c;
+        const result = _ddiast.plusOperator(a + b, a, b) || c;
     }`
     )
   })
@@ -81,18 +81,15 @@ global._ddiast.plusOperator("a" + __datadog_test_0, "a", __datadog_test_0));\n}'
   )
 
   itEach(
-    'does change + operator with datadog global._ddiast.*plusOperator functions',
+    'does change + operator with datadog _ddiast.*plusOperator functions',
     [
-      ['const result = a + b;', 'const result = global._ddiast.plusOperator(a + b, a, b);'],
-      ['const result = a + b + c;', 'const result = global._ddiast.plusOperator(a + b + c, a, b, c);'],
-      ['const result = a + b + c + d;', 'const result = global._ddiast.plusOperator(a + b + c + d, a, b, c, d);'],
-      [
-        'const result = a + b + c + d + e;',
-        'const result = global._ddiast.plusOperator(a + b + c + d + e, a, b, c, d, e);'
-      ],
+      ['const result = a + b;', 'const result = _ddiast.plusOperator(a + b, a, b);'],
+      ['const result = a + b + c;', 'const result = _ddiast.plusOperator(a + b + c, a, b, c);'],
+      ['const result = a + b + c + d;', 'const result = _ddiast.plusOperator(a + b + c + d, a, b, c, d);'],
+      ['const result = a + b + c + d + e;', 'const result = _ddiast.plusOperator(a + b + c + d + e, a, b, c, d, e);'],
       [
         'const result = a + b + c + d + e + f;',
-        'const result = global._ddiast.plusOperator(a + b + c + d + e + f, a, b, c, d, e, f);'
+        'const result = _ddiast.plusOperator(a + b + c + d + e + f, a, b, c, d, e, f);'
       ]
     ],
     (value) => {
@@ -103,33 +100,33 @@ global._ddiast.plusOperator("a" + __datadog_test_0, "a", __datadog_test_0));\n}'
   )
 
   itEach(
-    'does change + operator with datadog global._ddiast.*plusOperator functions extracting local variables',
+    'does change + operator with datadog _ddiast.*plusOperator functions extracting local variables',
     [
       [
         'const result = a() + b();',
         'let __datadog_test_0, __datadog_test_1;\n\
       const result = (__datadog_test_0 = a(), __datadog_test_1 = b(), \
-global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));'
+_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));'
       ],
       [
         'const result = a() + b() + c();',
         'let __datadog_test_0, __datadog_test_1, __datadog_test_2;\n\
 const result = (__datadog_test_0 = a(), __datadog_test_1 = b(), __datadog_test_2 = c(), \
-global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2, \
+_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2, \
 __datadog_test_0, __datadog_test_1, __datadog_test_2));'
       ],
       [
         'const result = a() + b() + c() + d();',
         'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;\n\
       const result = (__datadog_test_0 = a(), __datadog_test_1 = b(), __datadog_test_2 = c(), __datadog_test_3 = d(), \
-global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2 + __datadog_test_3, \
+_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2 + __datadog_test_3, \
 __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3));'
       ],
       [
         'const result = a() + b() + c() + d() + e();',
         'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4;\n\
 const result = (__datadog_test_0 = a(), __datadog_test_1 = b(), __datadog_test_2 = c(), __datadog_test_3 = d(), \
-__datadog_test_4 = e(), global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2 + \
+__datadog_test_4 = e(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + __datadog_test_2 + \
 __datadog_test_3 + __datadog_test_4, __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, \
 __datadog_test_4));'
       ],
@@ -138,7 +135,7 @@ __datadog_test_4));'
         'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, \
 __datadog_test_5;\n\
 const result = (__datadog_test_0 = a(), __datadog_test_1 = b(), __datadog_test_2 = c(), __datadog_test_3 = d(), \
-__datadog_test_4 = e(), __datadog_test_5 = f(), global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + \
+__datadog_test_4 = e(), __datadog_test_5 = f(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1 + \
 __datadog_test_2 + __datadog_test_3 + __datadog_test_4 + __datadog_test_5, __datadog_test_0, __datadog_test_1, \
 __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5));'
       ]
@@ -151,63 +148,63 @@ __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5));'
   )
 
   itEach(
-    'does change + operator with datadog global._ddiast.plusOperator function extracting mixed variables',
+    'does change + operator with datadog _ddiast.plusOperator function extracting mixed variables',
     [
       //
       // Literals expanding from the beginning
       //
-      ['const result = "a" + b;', 'const result = global._ddiast.plusOperator("a" + b, "a", b);'],
-      ['const result = "a" + b + c;', 'const result = global._ddiast.plusOperator("a" + b + c, "a", b, c);'],
-      ['const result = "a" + b + c + d;', 'const result = global._ddiast.plusOperator("a" + b + c + d, "a", b, c, d);'],
+      ['const result = "a" + b;', 'const result = _ddiast.plusOperator("a" + b, "a", b);'],
+      ['const result = "a" + b + c;', 'const result = _ddiast.plusOperator("a" + b + c, "a", b, c);'],
+      ['const result = "a" + b + c + d;', 'const result = _ddiast.plusOperator("a" + b + c + d, "a", b, c, d);'],
       [
         'const result = "a" + b + c + d + e;',
-        'const result = global._ddiast.plusOperator("a" + b + c + d + e, "a", b, c, d, e);'
+        'const result = _ddiast.plusOperator("a" + b + c + d + e, "a", b, c, d, e);'
       ],
       [
         'const result = "a" + b + c + d + e + f;',
-        'const result = global._ddiast.plusOperator("a" + b + c + d + e + f, "a", b, c, d, e, f);'
+        'const result = _ddiast.plusOperator("a" + b + c + d + e + f, "a", b, c, d, e, f);'
       ],
 
       //
       // Literals expanding from the end
       //
-      ['const result = a + "b";', 'const result = global._ddiast.plusOperator(a + "b", a, "b");'],
-      ['const result = a + b + "c";', 'const result = global._ddiast.plusOperator(a + b + "c", a, b, "c");'],
-      ['const result = a + b + c + "d";', 'const result = global._ddiast.plusOperator(a + b + c + "d", a, b, c, "d");'],
+      ['const result = a + "b";', 'const result = _ddiast.plusOperator(a + "b", a, "b");'],
+      ['const result = a + b + "c";', 'const result = _ddiast.plusOperator(a + b + "c", a, b, "c");'],
+      ['const result = a + b + c + "d";', 'const result = _ddiast.plusOperator(a + b + c + "d", a, b, c, "d");'],
       [
         'const result = a + b + c + d + "e";',
-        'const result = global._ddiast.plusOperator(a + b + c + d + "e", a, b, c, d, "e");'
+        'const result = _ddiast.plusOperator(a + b + c + d + "e", a, b, c, d, "e");'
       ],
 
       //
       // Literals expanding Middle positions
       //
-      ['const result = a + "b" + c;', 'const result = global._ddiast.plusOperator(a + "b" + c, a, "b", c);'],
-      ['const result = a + "b" + c + d;', 'const result = global._ddiast.plusOperator(a + "b" + c + d, a, "b", c, d);'],
-      ['const result = a + b + "c" + d;', 'const result = global._ddiast.plusOperator(a + b + "c" + d, a, b, "c", d);'],
+      ['const result = a + "b" + c;', 'const result = _ddiast.plusOperator(a + "b" + c, a, "b", c);'],
+      ['const result = a + "b" + c + d;', 'const result = _ddiast.plusOperator(a + "b" + c + d, a, "b", c, d);'],
+      ['const result = a + b + "c" + d;', 'const result = _ddiast.plusOperator(a + b + "c" + d, a, b, "c", d);'],
 
       //
       // Mix combinations
       //
-      ['const result = a + b * c;', 'const result = global._ddiast.plusOperator(a + b * c, a, b * c);'],
-      ['const result = a * b + c;', 'const result = global._ddiast.plusOperator(a * b + c, a * b, c);'],
+      ['const result = a + b * c;', 'const result = _ddiast.plusOperator(a + b * c, a, b * c);'],
+      ['const result = a * b + c;', 'const result = _ddiast.plusOperator(a * b + c, a * b, c);'],
       [
         'const result = a + b + "c" + d + e + "f";',
-        'const result = global._ddiast.plusOperator(a + b + "c" + d + e + "f", a, b, "c", d, e, "f");'
+        'const result = _ddiast.plusOperator(a + b + "c" + d + e + "f", a, b, "c", d, e, "f");'
       ],
       [
         'const result = a + b() + "c" + d + e() + "f";',
         'let __datadog_test_0, __datadog_test_1;\n\
-const result = (__datadog_test_0 = b(), __datadog_test_1 = e(), global._ddiast.plusOperator(a + \
+const result = (__datadog_test_0 = b(), __datadog_test_1 = e(), _ddiast.plusOperator(a + \
 __datadog_test_0 + "c" + d + __datadog_test_1 + "f", a, __datadog_test_0, "c", d, __datadog_test_1, "f"));'
       ],
 
       // Assignations
-      ['a += b;', 'a = global._ddiast.plusOperator(a + b, a, b);'],
-      ['a += b + c;', 'a = global._ddiast.plusOperator(a + b + c, a, b, c);'],
-      ['a += b + c + d;', 'a = global._ddiast.plusOperator(a + b + c + d, a, b, c, d);'],
-      ['a += b + c + d + e;', 'a = global._ddiast.plusOperator(a + b + c + d + e, a, b, c, d, e);'],
-      ['a += b + c + d + e + f;', 'a = global._ddiast.plusOperator(a + b + c + d + e + f, a, b, c, d, e, f);']
+      ['a += b;', 'a = _ddiast.plusOperator(a + b, a, b);'],
+      ['a += b + c;', 'a = _ddiast.plusOperator(a + b + c, a, b, c);'],
+      ['a += b + c + d;', 'a = _ddiast.plusOperator(a + b + c + d, a, b, c, d);'],
+      ['a += b + c + d + e;', 'a = _ddiast.plusOperator(a + b + c + d + e, a, b, c, d, e);'],
+      ['a += b + c + d + e + f;', 'a = _ddiast.plusOperator(a + b + c + d + e + f, a, b, c, d, e, f);']
     ],
     (value) => {
       const input = value[0]
@@ -226,7 +223,7 @@ __datadog_test_0 + "c" + d + __datadog_test_1 + "f", a, __datadog_test_0, "c", d
 for(let i = 0; i < buf.length; i++){
   let __datadog_test_0, __datadog_test_1;
   res1[i] = (__datadog_test_0 = res1[i], __datadog_test_1 = s.write(buf.slice(i, \
-global._ddiast.plusOperator(i + 1, i, 1))), global._ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, \
+_ddiast.plusOperator(i + 1, i, 1))), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, \
 __datadog_test_0, __datadog_test_1));
 }
 }`
@@ -246,7 +243,7 @@ __datadog_test_0, __datadog_test_1));
       js,
       `{
       let a = 0;
-      a -= global._ddiast.plusOperator(b + c, b, c);
+      a -= _ddiast.plusOperator(b + c, b, c);
     }`
     )
   })
@@ -257,7 +254,7 @@ __datadog_test_0, __datadog_test_1));
       js,
       `{
         let __datadog_test_0;
-        a = (__datadog_test_0 = b ? c : d, global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
+        a = (__datadog_test_0 = b ? c : d, _ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
     }`
     )
   })
@@ -268,7 +265,7 @@ __datadog_test_0, __datadog_test_1));
       js,
       `{
         let __datadog_test_0;
-        a = (__datadog_test_0 = b ? c() : d, global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
+        a = (__datadog_test_0 = b ? c() : d, _ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
     }`
     )
   })
@@ -279,8 +276,8 @@ __datadog_test_0, __datadog_test_1));
       js,
       `{
         let __datadog_test_0, __datadog_test_1;
-        a = (__datadog_test_1 = b ? c((__datadog_test_0 = e(), global._ddiast.plusOperator(__datadog_test_0 + f, \
-__datadog_test_0, f))) : d, global._ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1));
+        a = (__datadog_test_1 = b ? c((__datadog_test_0 = e(), _ddiast.plusOperator(__datadog_test_0 + f, \
+__datadog_test_0, f))) : d, _ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1));
     }`
     )
   })
@@ -290,7 +287,7 @@ __datadog_test_0, f))) : d, global._ddiast.plusOperator(a + __datadog_test_1, a,
     rewriteAndExpect(
       js,
       `{
-        if ((result = (global._ddiast.plusOperator(a + b, a, b))) > 100) {}
+        if ((result = (_ddiast.plusOperator(a + b, a, b))) > 100) {}
       }`
     )
   })
@@ -301,7 +298,7 @@ __datadog_test_0, f))) : d, global._ddiast.plusOperator(a + __datadog_test_1, a,
       js,
       `{
         let __datadog_test_0;
-        if ((result = ((__datadog_test_0 = b(), global._ddiast.plusOperator(a + __datadog_test_0, a\
+        if ((result = ((__datadog_test_0 = b(), _ddiast.plusOperator(a + __datadog_test_0, a\
 , __datadog_test_0)))) > 100) {}
       }`
     )
@@ -316,7 +313,7 @@ __datadog_test_0, f))) : d, global._ddiast.plusOperator(a + __datadog_test_1, a,
         function a() {}
         function b() {
         let __datadog_test_0;
-        if ((result = ((__datadog_test_0 = a(), global._ddiast.plusOperator(__datadog_test_0 + b\
+        if ((result = ((__datadog_test_0 = a(), _ddiast.plusOperator(__datadog_test_0 + b\
 , __datadog_test_0, b)))) > 100) {}
         }
       }`
@@ -356,8 +353,8 @@ __datadog_test_0, f))) : d, global._ddiast.plusOperator(a + __datadog_test_1, a,
       `{
         function b() {
           let __datadog_test_0, __datadog_test_1;
-        if ((result = ((__datadog_test_0 = a(), global._ddiast.plusOperator(__datadog_test_0 + b\
-, __datadog_test_0, b)))) > 100) return (__datadog_test_1 = d(), global._ddiast.plusOperator(c + \
+        if ((result = ((__datadog_test_0 = a(), _ddiast.plusOperator(__datadog_test_0 + b\
+, __datadog_test_0, b)))) > 100) return (__datadog_test_1 = d(), _ddiast.plusOperator(c + \
 __datadog_test_1, c, __datadog_test_1));
         }
       }`
@@ -372,9 +369,9 @@ __datadog_test_1, c, __datadog_test_1));
       `{
         function b() {
           let __datadog_test_0;
-        if ((result = ((__datadog_test_0 = a(), global._ddiast.plusOperator(__datadog_test_0 + b\
+        if ((result = ((__datadog_test_0 = a(), _ddiast.plusOperator(__datadog_test_0 + b\
 , __datadog_test_0, b)))) > 100) {\nlet __datadog_test_0;\nreturn (__datadog_test_0 = d(), \
-global._ddiast.plusOperator(c + __datadog_test_0, c, __datadog_test_0));\n}
+_ddiast.plusOperator(c + __datadog_test_0, c, __datadog_test_0));\n}
         }
       }`
     )
@@ -386,7 +383,7 @@ global._ddiast.plusOperator(c + __datadog_test_0, c, __datadog_test_0));\n}
       js,
       `{
         let __datadog_test_0;
-        const result = (__datadog_test_0 = typeof a, global._ddiast.plusOperator(a + __datadog_test_0, \
+        const result = (__datadog_test_0 = typeof a, _ddiast.plusOperator(a + __datadog_test_0, \
 a, __datadog_test_0));
       }`
     )
@@ -398,7 +395,7 @@ a, __datadog_test_0));
       js,
       `{
         let __datadog_test_0;
-        const result = (__datadog_test_0 = await fs.readFile(), global._ddiast.plusOperator(a + __datadog_test_0, \
+        const result = (__datadog_test_0 = await fs.readFile(), _ddiast.plusOperator(a + __datadog_test_0, \
 a, __datadog_test_0));
       }`
     )
@@ -410,8 +407,8 @@ a, __datadog_test_0));
       js,
       `{
         let __datadog_test_0;
-        const result = (__datadog_test_0 = await fs.readFile(global._ddiast.plusOperator(c + d, c, d)), \
-global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
+        const result = (__datadog_test_0 = await fs.readFile(_ddiast.plusOperator(c + d, c, d)), \
+_ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
       }`
     )
   })
@@ -422,8 +419,8 @@ global._ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));
       js,
       `{
         let __datadog_test_0, __datadog_test_1;
-        const result = (__datadog_test_1 = await fs.readFile((__datadog_test_0 = d(), global._ddiast.plusOperator(\
-c + __datadog_test_0, c, __datadog_test_0))), global._ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1));
+        const result = (__datadog_test_1 = await fs.readFile((__datadog_test_0 = d(), _ddiast.plusOperator(\
+c + __datadog_test_0, c, __datadog_test_0))), _ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1));
       }`
     )
   })
@@ -434,7 +431,7 @@ c + __datadog_test_0, c, __datadog_test_0))), global._ddiast.plusOperator(a + __
       js,
       `{
         let __datadog_test_0;
-  const a = (__datadog_test_0 = c++, global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0));
+  const a = (__datadog_test_0 = c++, _ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0));
       }`
     )
   })
@@ -445,7 +442,7 @@ c + __datadog_test_0, c, __datadog_test_0))), global._ddiast.plusOperator(a + __
       js,
       `{
         let __datadog_test_0;
-  const a = (__datadog_test_0 = b++, global._ddiast.plusOperator(__datadog_test_0 + c, __datadog_test_0, c));
+  const a = (__datadog_test_0 = b++, _ddiast.plusOperator(__datadog_test_0 + c, __datadog_test_0, c));
       }`
     )
   })
@@ -456,7 +453,7 @@ c + __datadog_test_0, c, __datadog_test_0))), global._ddiast.plusOperator(a + __
       js,
       `{
         let __datadog_test_0, __datadog_test_1;
-  const a = (__datadog_test_0 = b++, __datadog_test_1 = c++, global._ddiast.plusOperator(__datadog_test_0 + \
+  const a = (__datadog_test_0 = b++, __datadog_test_1 = c++, _ddiast.plusOperator(__datadog_test_0 + \
 __datadog_test_1, __datadog_test_0, __datadog_test_1));
       }`
     )
@@ -468,7 +465,7 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1));
       js,
       `{
         let __datadog_test_0;
-  const a = (__datadog_test_0 = c--, global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0));
+  const a = (__datadog_test_0 = c--, _ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0));
       }`
     )
   })
@@ -479,8 +476,20 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1));
       js,
       `{
         let __datadog_test_0, __datadog_test_1;
-        const a = (__datadog_test_1 = b.c((__datadog_test_0 = c--, global._ddiast.plusOperator(d + \
-__datadog_test_0, d, __datadog_test_0))), global._ddiast.plusOperator(e + __datadog_test_1, e, __datadog_test_1));
+        const a = (__datadog_test_1 = b.c((__datadog_test_0 = c--, _ddiast.plusOperator(d + \
+__datadog_test_0, d, __datadog_test_0))), _ddiast.plusOperator(e + __datadog_test_1, e, __datadog_test_1));
+      }`
+    )
+  })
+
+  it('does modify add with paren', () => {
+    const js = 'const a = b + (c + d);'
+    rewriteAndExpect(
+      js,
+      `{
+        let __datadog_test_0;
+        const a = (__datadog_test_0 = (_ddiast.plusOperator(c + d, c, d)), _ddiast.plusOperator(b + \
+__datadog_test_0, b, __datadog_test_0));
       }`
     )
   })
