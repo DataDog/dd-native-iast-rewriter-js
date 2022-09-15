@@ -28,34 +28,13 @@ mod tests {
         TokenChecking {
             dst_line: 9,
             dst_col: 49,
-            src_line: 9,
-            src_col: 33,
-        },
-        TokenChecking {
-            dst_line: 12,
-            dst_col: 17,
-            src_line: 12,
-            src_col: 17,
-        },
-        TokenChecking {
-            dst_line: 15,
-            dst_col: 50,
-            src_line: 15,
-            src_col: 15,
-        },
-    ];
-
-    const CHAINED_TOKENS: [TokenChecking; 3] = [
-        TokenChecking {
-            dst_line: 9,
-            dst_col: 49,
-            src_line: 6,
+            src_line: 8,
             src_col: 29,
         },
         TokenChecking {
             dst_line: 12,
             dst_col: 17,
-            src_line: 10,
+            src_line: 11,
             src_col: 13,
         },
         TokenChecking {
@@ -63,6 +42,27 @@ mod tests {
             dst_col: 50,
             src_line: 14,
             src_col: 11,
+        },
+    ];
+
+    const CHAINED_TOKENS: [TokenChecking; 3] = [
+        TokenChecking {
+            dst_line: 9,
+            dst_col: 49,
+            src_line: 5,
+            src_col: 15,
+        },
+        TokenChecking {
+            dst_line: 12,
+            dst_col: 17,
+            src_line: 9,
+            src_col: 9,
+        },
+        TokenChecking {
+            dst_line: 15,
+            dst_col: 50,
+            src_line: 13,
+            src_col: 9,
         },
     ];
 
