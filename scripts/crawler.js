@@ -12,7 +12,7 @@ const REWRITTEN_FILE_TOKEN_NAME = '___rewritten'
 const REWRITTEN_FILE_BACKUP_NAME = REWRITTEN_FILE_TOKEN_NAME + '_original'
 const DD_IAST_GLOBAL_METHODS_FILE_ENV = 'DD_IAST_GLOBAL_METHODS_FILE'
 
-const GLOBAL_METHODS = 'let global = {}; global._ddiast = global._ddiast || {plusOperator(res) {return res;}};'
+const GLOBAL_METHODS = "if (typeof _ddiast === 'undefined' ){_ddiast = {plusOperator(res) {return res;}};}"
 
 const DEFAULT_OPTIONS = {
   restore: false,
