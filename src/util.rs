@@ -2,24 +2,8 @@
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
-use anyhow::{Error, Result};
-use std::{
-    fs::{File, OpenOptions},
-    path::Path,
-};
+use std::path::Path;
 use swc::sourcemap::SourceMap;
-
-pub fn create_file(file: &Path) -> Result<File> {
-    std::fs::create_dir_all(file.parent().unwrap())
-        .and_then(|_| {
-            OpenOptions::new()
-                .create(true)
-                .truncate(true)
-                .write(true)
-                .open(file)
-        })
-        .map_err(Error::new)
-}
 
 pub fn file_name(file: &str) -> Option<&str> {
     Path::new(file).file_name().and_then(|s| s.to_str())

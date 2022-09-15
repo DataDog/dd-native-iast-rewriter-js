@@ -3,7 +3,7 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use crate::{
-    util::{create_file, file_name, parse_source_map},
+    util::{file_name, parse_source_map},
     visitor::block_transform_visitor::{BlockTransformVisitor, Status, TransformStatus},
 };
 use anyhow::{Error, Result};
@@ -11,8 +11,8 @@ use std::{
     borrow::Borrow,
     collections::HashMap,
     fs::File,
-    io::Write,
     path::{Path, PathBuf},
+    str,
     sync::Arc,
 };
 use swc::{
@@ -56,16 +56,17 @@ pub fn rewrite_js(code: String, file: String) -> Result<RewrittenOutput> {
     });
 }
 
-pub fn print_js(output: RewrittenOutput, source_map: Option<String>) -> String {
-    match source_map {
-        Some(target_path) => create_file(Path::new(target_path.as_str()))
-            .and_then(|target_file| {
-                chain_source_map(target_file, output.source_map, output.original_map)
-            })
-            .map(|()| format!("{}\n//# sourceMappingURL={}", output.code, target_path))
-            .unwrap_or(output.code),
-        None => output.code,
+pub fn print_js(output: RewrittenOutput, chain_source_map: bool) -> String {
+    let mut final_source_map: String = String::from(&output.source_map);
+    if chain_source_map {
+        final_source_map = chain_source_maps(&output.source_map, output.original_map)
+            .unwrap_or(String::from(&output.source_map));
     }
+    format!(
+        "{}\n//# sourceMappingURL=data:application/json;base64,{}",
+        output.code,
+        base64::encode(final_source_map)
+    )
 }
 
 fn default_handler_opts() -> HandlerOpts {
@@ -118,11 +119,10 @@ fn transform_js(
     }
 }
 
-fn chain_source_map(
-    mut target_file: File,
-    source_map: String,
+fn chain_source_maps(
+    source_map: &String,
     original_map: Option<SourceMap>,
-) -> Result<()> {
+) -> Result<String, Error> {
     if let Some(new_source) = parse_source_map(Some(source_map.as_str())) {
         match original_map {
             Some(original_source) => {
@@ -162,25 +162,26 @@ fn chain_source_map(
                         );
                     }
                 }
+                let mut source_map_output: Vec<u8> = vec![];
                 builder
                     .into_sourcemap()
-                    .to_writer(target_file)
+                    .to_writer(&mut source_map_output)
+                    .map(|_| String::from_utf8(source_map_output).unwrap())
                     .map_err(Error::new)
             }
-            None => target_file
-                .write_all(source_map.as_bytes())
-                .map_err(Error::new),
+            None => Result::Ok(String::from(source_map)),
         }
     } else {
-        Result::Ok(())
+        Result::Ok(String::from(source_map))
     }
 }
 
 fn extract_source_map(folder: &Path, comments: &SwcComments) -> Option<SourceMap> {
     for trailing in comments.trailing.iter() {
         for comment in trailing.iter() {
-            if comment.text.starts_with(SOURCE_MAP_URL) {
-                let url = comment.text.get(SOURCE_MAP_URL.len()..).unwrap();
+            let trim_comment = comment.text.trim();
+            if trim_comment.starts_with(SOURCE_MAP_URL) {
+                let url = trim_comment.get(SOURCE_MAP_URL.len()..).unwrap();
                 return decode_data_url(url)
                     .map_err(Error::new)
                     .or_else(|_| {
