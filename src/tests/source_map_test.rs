@@ -95,6 +95,21 @@ mod tests {
         .map_err(|e| e.to_string())
     }
 
+    fn check_sourcemap_tokens(js_code: String, tokens_to_check: Vec<TokenChecking>) {
+        match get_sourcemap_from_printed_js(js_code) {
+            Some(sourcemap) => {
+                for check_token in tokens_to_check {
+                    let token = sourcemap
+                        .lookup_token(check_token.dst_line, check_token.dst_col)
+                        .unwrap();
+                    assert_that(&token.get_src_line()).is_equal_to(check_token.src_line);
+                    assert_that(&token.get_src_col()).is_equal_to(check_token.src_col);
+                }
+            }
+            None => panic!("No sourcemap"),
+        }
+    }
+
     #[cfg(test)]
     #[ctor::ctor]
     fn init() {
@@ -106,19 +121,7 @@ mod tests {
         let rewritten = get_rewritten_js("StrUtil_embedded.js")?;
         let result = print_js(rewritten, false);
         assert_that(&result).contains(SOURCE_MAP_URL);
-
-        match get_sourcemap_from_printed_js(result) {
-            Some(sourcemap) => {
-                for check_token in UNCHAINED_TOKENS {
-                    let token = sourcemap
-                        .lookup_token(check_token.dst_line, check_token.dst_col)
-                        .unwrap();
-                    assert_that(&token.get_src_line()).is_equal_to(check_token.src_line);
-                    assert_that(&token.get_src_col()).is_equal_to(check_token.src_col);
-                }
-            }
-            None => panic!("No sourcemap"),
-        }
+        check_sourcemap_tokens(result, UNCHAINED_TOKENS.to_vec());
         Ok(())
     }
 
@@ -127,19 +130,7 @@ mod tests {
         let rewritten = get_rewritten_js("StrUtil_external.js")?;
         let result = print_js(rewritten, false);
         assert_that(&result).contains(SOURCE_MAP_URL);
-
-        match get_sourcemap_from_printed_js(result) {
-            Some(sourcemap) => {
-                for check_token in UNCHAINED_TOKENS {
-                    let token = sourcemap
-                        .lookup_token(check_token.dst_line, check_token.dst_col)
-                        .unwrap();
-                    assert_that(&token.get_src_line()).is_equal_to(check_token.src_line);
-                    assert_that(&token.get_src_col()).is_equal_to(check_token.src_col);
-                }
-            }
-            None => panic!("No sourcemap"),
-        }
+        check_sourcemap_tokens(result, UNCHAINED_TOKENS.to_vec());
         Ok(())
     }
 
@@ -148,19 +139,7 @@ mod tests {
         let rewritten = get_rewritten_js("StrUtil_without_sm.js")?;
         let result = print_js(rewritten, false);
         assert_that(&result).contains(SOURCE_MAP_URL);
-
-        match get_sourcemap_from_printed_js(result) {
-            Some(sourcemap) => {
-                for check_token in UNCHAINED_TOKENS {
-                    let token = sourcemap
-                        .lookup_token(check_token.dst_line, check_token.dst_col)
-                        .unwrap();
-                    assert_that(&token.get_src_line()).is_equal_to(check_token.src_line);
-                    assert_that(&token.get_src_col()).is_equal_to(check_token.src_col);
-                }
-            }
-            None => panic!("No sourcemap"),
-        }
+        check_sourcemap_tokens(result, UNCHAINED_TOKENS.to_vec());
         Ok(())
     }
 
@@ -169,19 +148,7 @@ mod tests {
         let rewritten = get_rewritten_js("StrUtil_embedded.js")?;
         let result = print_js(rewritten, true);
         assert_that(&result).contains(SOURCE_MAP_URL);
-
-        match get_sourcemap_from_printed_js(result) {
-            Some(sourcemap) => {
-                for check_token in CHAINED_TOKENS {
-                    let token = sourcemap
-                        .lookup_token(check_token.dst_line, check_token.dst_col)
-                        .unwrap();
-                    assert_that(&token.get_src_line()).is_equal_to(check_token.src_line);
-                    assert_that(&token.get_src_col()).is_equal_to(check_token.src_col);
-                }
-            }
-            None => panic!("No sourcemap"),
-        }
+        check_sourcemap_tokens(result, CHAINED_TOKENS.to_vec());
         Ok(())
     }
 
@@ -190,19 +157,7 @@ mod tests {
         let rewritten = get_rewritten_js("StrUtil_external.js")?;
         let result = print_js(rewritten, true);
         assert_that(&result).contains(SOURCE_MAP_URL);
-
-        match get_sourcemap_from_printed_js(result) {
-            Some(sourcemap) => {
-                for check_token in CHAINED_TOKENS {
-                    let token = sourcemap
-                        .lookup_token(check_token.dst_line, check_token.dst_col)
-                        .unwrap();
-                    assert_that(&token.get_src_line()).is_equal_to(check_token.src_line);
-                    assert_that(&token.get_src_col()).is_equal_to(check_token.src_col);
-                }
-            }
-            None => panic!("No sourcemap"),
-        }
+        check_sourcemap_tokens(result, CHAINED_TOKENS.to_vec());
         Ok(())
     }
 
@@ -211,19 +166,7 @@ mod tests {
         let rewritten = get_rewritten_js("StrUtil_without_sm.js")?;
         let result = print_js(rewritten, true);
         assert_that(&result).contains(SOURCE_MAP_URL);
-
-        match get_sourcemap_from_printed_js(result) {
-            Some(sourcemap) => {
-                for check_token in UNCHAINED_TOKENS {
-                    let token = sourcemap
-                        .lookup_token(check_token.dst_line, check_token.dst_col)
-                        .unwrap();
-                    assert_that(&token.get_src_line()).is_equal_to(check_token.src_line);
-                    assert_that(&token.get_src_col()).is_equal_to(check_token.src_col);
-                }
-            }
-            None => panic!("No sourcemap"),
-        }
+        check_sourcemap_tokens(result, UNCHAINED_TOKENS.to_vec());
         Ok(())
     }
 }
