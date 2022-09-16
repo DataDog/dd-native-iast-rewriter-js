@@ -82,18 +82,18 @@ impl VisitMut for OperationTransformVisitor {
         match expr {
             Expr::Bin(binary) => {
                 if binary.op == BinaryOp::Add {
+                    expr.visit_mut_children_with(self);
                     expr.map_with_mut(|bin| BinaryAddTransform::to_dd_binary_expr(&bin, self));
                 } else {
                     expr.visit_mut_children_with(self);
                 }
             }
             Expr::Assign(assign) => {
+                assign.visit_mut_children_with(self);
                 if assign.op == AssignOp::AddAssign {
                     assign.map_with_mut(|mut assign| {
                         AssignAddTransform::to_dd_assign_expr(&mut assign, self)
                     });
-                } else {
-                    assign.visit_mut_children_with(self);
                 }
             }
             Expr::Tpl(tpl) => {

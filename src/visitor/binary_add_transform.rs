@@ -7,9 +7,6 @@ use swc::{
     common::{util::take::Take, Span},
     ecmascript::ast::*,
 };
-use swc_ecma_visit::VisitMutWith;
-
-use crate::visitor::visitor_util::is_typeof;
 
 use super::{
     operation_transform_visitor::OperationTransformVisitor,
@@ -78,35 +75,9 @@ fn replace_expressions_in_binary_operand(
     opv: &mut OperationTransformVisitor,
 ) {
     match operand {
-        Expr::Bin(binary) => {
-            if binary.op == BinaryOp::Add {
-                prepare_replace_expressions_in_binary(binary, assignations, arguments, opv);
-            } else {
-                arguments.push(operand.clone())
-            }
-        }
-        Expr::Call(_) | Expr::Paren(_) | Expr::Tpl(_) | Expr::Await(_) | Expr::Cond(_) => {
-            operand.visit_mut_children_with(opv);
-
-            operand.map_with_mut(|op| {
-                Expr::Ident(opv.get_ident_used_in_assignation(op, assignations, arguments, span))
-            })
-        }
-        Expr::Member(_) | Expr::Update(_) | Expr::New(_) => operand.map_with_mut(|op| {
+        Expr::Lit(_) => arguments.push(operand.clone()),
+        _ => operand.map_with_mut(|op| {
             Expr::Ident(opv.get_ident_used_in_assignation(op, assignations, arguments, span))
         }),
-        Expr::Unary(unary) => {
-            if is_typeof(&unary) {
-                operand.map_with_mut(|op| {
-                    Expr::Ident(opv.get_ident_used_in_assignation(
-                        op,
-                        assignations,
-                        arguments,
-                        span,
-                    ))
-                })
-            }
-        }
-        _ => arguments.push(operand.clone()),
     }
 }

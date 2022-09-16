@@ -41,7 +41,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = _ddiast.plusOperator(b + c, b, c), _ddiast.plusOperator(`He${__datadog_test_0}llo`, `He`, __datadog_test_0, `llo`))");
+            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+    const a = (__datadog_test_2 = (__datadog_test_0 = b, __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator(`He${__datadog_test_2}llo`, `He`, __datadog_test_2, `llo`));");
         Ok(())
     }
 
@@ -51,7 +52,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1;\n    const a = (__datadog_test_1 = (__datadog_test_0 = c(), _ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0)), _ddiast.plusOperator(`He${__datadog_test_1}llo`, `He`, __datadog_test_1, `llo`))");
+            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+    const a = (__datadog_test_2 = (__datadog_test_0 = b, __datadog_test_1 = c(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator(`He${__datadog_test_2}llo`, `He`, __datadog_test_2, `llo`));");
         Ok(())
     }
 
