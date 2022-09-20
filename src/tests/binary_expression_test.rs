@@ -86,7 +86,7 @@ mod tests {
 
     #[test]
     fn test_simple_3_plus_literal() -> Result<(), String> {
-        let original_code = "{const result = 'a' + 'b' + c}".to_string();
+        let original_code = "{const result = 'a' + 'b' + 'c'}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains("const result = 'a' + 'b' + 'c'");
