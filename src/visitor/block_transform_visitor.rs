@@ -102,6 +102,28 @@ fn insert_var_declaration(ident_expressions: &Vec<Ident>, expr: &mut BlockStmt) 
             declare: false,
             kind: VarDeclKind::Let,
         }));
-        expr.stmts.insert(0, declaration);
+
+        let index = get_variable_insertion_index(&expr.stmts);
+        expr.stmts.insert(index, declaration);
     }
+}
+
+fn get_variable_insertion_index(stmts: &Vec<Stmt>) -> usize {
+    if stmts.len() > 0 {
+        match &stmts[0] {
+            Stmt::Expr(expr) => match &*expr.expr {
+                Expr::Lit(Lit::Str(lit)) => {
+                    if lit.value.eq("use strict") {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                }
+                _ => return 0,
+            },
+            _ => return 0,
+        }
+    }
+
+    0
 }

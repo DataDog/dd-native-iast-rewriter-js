@@ -85,6 +85,15 @@ mod tests {
     }
 
     #[test]
+    fn test_simple_3_plus_literal() -> Result<(), String> {
+        let original_code = "{const result = 'a' + 'b' + c}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const result = 'a' + 'b' + 'c'");
+        Ok(())
+    }
+
+    #[test]
     fn test_variable_plus_literals() -> Result<(), String> {
         let original_code = "{const result = a + 'b' + 'c'}".to_string();
         let js_file = "test.js".to_string();
@@ -289,6 +298,32 @@ mod tests {
         assert_that(&rewritten.code)
             .contains("let __datadog_test_0, __datadog_test_1;
     const a = (__datadog_test_0 = b, __datadog_test_1 = c.x, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
+        Ok(())
+    }
+
+    #[test]
+    fn test_insertion_after_use_strict() -> Result<(), String> {
+        let original_code = "{'use strict'
+        const a = 1 + b}"
+            .to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+
+        assert_that(&rewritten.code)
+            .contains("'use strict';\n    let __datadog_test_0;\n    const a = (__datadog_test_0 = b, _ddiast.plusOperator(1 + __datadog_test_0, 1, __datadog_test_0));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_insertion_after_use_strict_with_semicolon() -> Result<(), String> {
+        let original_code = "{\n\n'use strict';
+        const a = 1 + b}"
+            .to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+
+        assert_that(&rewritten.code)
+            .contains("'use strict';\n    let __datadog_test_0;\n    const a = (__datadog_test_0 = b, _ddiast.plusOperator(1 + __datadog_test_0, 1, __datadog_test_0));");
         Ok(())
     }
 }
