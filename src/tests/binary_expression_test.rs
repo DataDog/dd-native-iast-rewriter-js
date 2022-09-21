@@ -321,9 +321,20 @@ mod tests {
             .to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-
         assert_that(&rewritten.code)
             .contains("'use strict';\n    let __datadog_test_0;\n    const a = (__datadog_test_0 = b, _ddiast.plusOperator(1 + __datadog_test_0, 1, __datadog_test_0));");
+        Ok(())
+    }
+
+    // Is this a swc bug?
+    #[test]
+    #[ignore]
+    fn test_es6_destructuring_swc_bug() -> Result<(), String> {
+        let original_code = "let [a, b, ,] = f();".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+
+        assert_that(&rewritten.code).contains("let [a, b, ,] = f();"); // result after rewrite: let [a, b, ] = f();
         Ok(())
     }
 }

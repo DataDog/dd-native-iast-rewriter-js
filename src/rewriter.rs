@@ -83,7 +83,7 @@ fn parse_js(source: String, file: &str, handler: &Handler, compiler: &Compiler) 
     compiler.parse_js(
         fm,
         handler,
-        EsVersion::Es2020,
+        EsVersion::latest(),
         Syntax::Es(EsConfig::default()),
         IsModule::Unknown,
         Some(compiler.comments() as &dyn Comments),
@@ -106,12 +106,14 @@ fn transform_js(
             file_name(file),
             None,
             false,
-            EsVersion::Es2020,
+            EsVersion::latest(),
             SourceMapsConfig::Bool(true),
             &Default::default(),
             None,
             false,
             comments.then_some(compiler.comments() as &dyn Comments),
+            false,
+            false,
         ),
         _ => Err(Error::msg(format!(
             "Cancelling {} file rewrite. Reason: {}",
@@ -226,6 +228,8 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
             None,
             false,
             None,
+            false,
+            false,
         );
 
         print_result.map(|printed| RewrittenOutput {
