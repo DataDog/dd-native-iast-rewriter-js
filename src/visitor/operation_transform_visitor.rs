@@ -1,3 +1,4 @@
+use hashlink::LinkedHashMap;
 /**
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
@@ -16,7 +17,7 @@ use super::{
 
 pub struct OperationTransformVisitor {
     pub ident_counter: usize,
-    pub idents: Vec<Ident>,
+    pub idents: LinkedHashMap<String, Ident>,
     pub variable_decl: HashSet<Ident>,
 }
 
@@ -24,7 +25,7 @@ impl OperationTransformVisitor {
     pub fn new() -> Self {
         OperationTransformVisitor {
             ident_counter: 0,
-            idents: Vec::new(),
+            idents: LinkedHashMap::new(),
             variable_decl: HashSet::new(),
         }
     }
@@ -63,7 +64,9 @@ impl OperationTransformVisitor {
 
         // store ident and assignation expression
         if definitive {
-            self.idents.push(id.to_owned());
+            //&& !self.idents.contains(&id) {
+
+            self.idents.insert(id.sym.to_string(), id.to_owned());
         }
 
         assignations.push(Box::new(Expr::Assign(assign)));
@@ -82,6 +85,7 @@ impl VisitMut for OperationTransformVisitor {
         match expr {
             Expr::Bin(binary) => {
                 if binary.op == BinaryOp::Add {
+                    self.ident_counter = 0;
                     expr.visit_mut_children_with(self);
                     expr.map_with_mut(|bin| BinaryAddTransform::to_dd_binary_expr(&bin, self));
                 } else {
@@ -89,6 +93,7 @@ impl VisitMut for OperationTransformVisitor {
                 }
             }
             Expr::Assign(assign) => {
+                self.ident_counter = 0;
                 assign.visit_mut_children_with(self);
                 if assign.op == AssignOp::AddAssign {
                     assign.map_with_mut(|mut assign| {
@@ -98,6 +103,7 @@ impl VisitMut for OperationTransformVisitor {
             }
             Expr::Tpl(tpl) => {
                 if !tpl.exprs.is_empty() {
+                    self.ident_counter = 0;
                     tpl.exprs.visit_mut_children_with(self);
                     expr.map_with_mut(|tpl| TemplateTransform::to_dd_tpl_expr(&tpl, self));
                 }

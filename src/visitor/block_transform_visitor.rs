@@ -6,6 +6,7 @@ use crate::visitor::{
     operation_transform_visitor::OperationTransformVisitor,
     visitor_util::get_dd_local_variable_prefix,
 };
+use hashlink::LinkedHashMap;
 use std::collections::HashSet;
 use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
@@ -81,16 +82,16 @@ fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>) -> bool
     variable_decl.iter().any(|var| var.sym.starts_with(&prefix))
 }
 
-fn insert_var_declaration(ident_expressions: &Vec<Ident>, expr: &mut BlockStmt) {
+fn insert_var_declaration(ident_expressions: &LinkedHashMap<String, Ident>, expr: &mut BlockStmt) {
     if ident_expressions.len() > 0 {
         let span = expr.span;
         let mut vec = Vec::new();
-        ident_expressions.iter().for_each(|ident| {
+        ident_expressions.iter().for_each(|kvp| {
             vec.push(VarDeclarator {
                 span,
                 definite: false,
                 name: Pat::Ident(BindingIdent {
-                    id: ident.clone(),
+                    id: kvp.1.clone(),
                     type_ann: None,
                 }),
                 init: None,

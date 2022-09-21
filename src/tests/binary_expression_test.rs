@@ -189,8 +189,11 @@ mod tests {
         assert_that(&rewritten.code)
             .contains("return (__datadog_test_1 = (__datadog_test_0 = a, _ddiast.plusOperator(__datadog_test_0 + '-', __datadog_test_0, '-')), __datadog_test_2 = a, _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, __datadog_test_1, __datadog_test_2))");
 
+        assert_that!(&rewritten.code)
+            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;");
+
         assert_that(&rewritten.code)
-            .contains("const c = a === 'hello' ? (__datadog_test_0 = fn1(b), _ddiast.plusOperator('foo' + __datadog_test_0, 'foo', __datadog_test_0)) : (__datadog_test_1 = fn2(b), _ddiast.plusOperator('bar' + __datadog_test_1, 'bar', __datadog_test_1));\n    return (__datadog_test_2 = fn2(a), __datadog_test_3 = c, _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3))");
+            .contains("const c = a === 'hello' ? (__datadog_test_0 = fn1(b), _ddiast.plusOperator('foo' + __datadog_test_0, 'foo', __datadog_test_0)) : (__datadog_test_0 = fn2(b), _ddiast.plusOperator('bar' + __datadog_test_0, 'bar', __datadog_test_0));\n    return (__datadog_test_0 = fn2(a), __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
         Ok(())
     }
 
@@ -221,7 +224,7 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("const a = [\n        (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)),
-        (__datadog_test_2 = c, __datadog_test_3 = d, _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3))\n    ]");
+        (__datadog_test_0 = c, __datadog_test_1 = d, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))\n    ]");
         Ok(())
     }
 

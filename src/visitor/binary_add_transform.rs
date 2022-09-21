@@ -17,30 +17,29 @@ pub struct BinaryAddTransform {}
 
 impl BinaryAddTransform {
     pub fn to_dd_binary_expr(expr: &Expr, opv: &mut OperationTransformVisitor) -> Expr {
-        match expr {
-            Expr::Bin(binary) => {
-                let mut binary_clone = binary.clone();
-
-                let mut assignations = Vec::new();
-                let mut arguments = Vec::new();
-                if prepare_replace_expressions_in_binary(
-                    &mut binary_clone,
-                    &mut assignations,
-                    &mut arguments,
-                    opv,
-                ) {
-                    return get_dd_plus_operator_paren_expr(
-                        Expr::Bin(binary_clone),
-                        &arguments,
-                        &mut assignations,
-                        binary.span,
-                    );
-                }
+        let expr_clone = expr.clone();
+        match expr_clone {
+            Expr::Bin(mut binary) => {
+                return to_dd_binary_expr_binary(&mut binary, opv);
             }
             _ => {}
         }
-        expr.clone()
+        expr_clone
     }
+}
+
+fn to_dd_binary_expr_binary(binary: &mut BinExpr, opv: &mut OperationTransformVisitor) -> Expr {
+    let mut assignations = Vec::new();
+    let mut arguments = Vec::new();
+    if prepare_replace_expressions_in_binary(binary, &mut assignations, &mut arguments, opv) {
+        return get_dd_plus_operator_paren_expr(
+            Expr::Bin(binary.clone()),
+            &arguments,
+            &mut assignations,
+            binary.span,
+        );
+    }
+    Expr::Bin(binary.clone())
 }
 
 fn prepare_replace_expressions_in_binary(
@@ -63,7 +62,7 @@ fn must_replace_binary_expression(arguments: &Vec<Expr>) -> bool {
     arguments.iter().any(|arg| match arg {
         Expr::Lit(_) => false,
         // filter binary 'literal' add expressions
-        Expr::Bin(binary) => binary.op != BinaryOp::Add,
+        //Expr::Bin(binary) => binary.op != BinaryOp::Add,
         _ => true,
     })
 }
@@ -90,7 +89,8 @@ fn replace_expressions_in_binary_operand(
                 })
             // only filtered binary add ('a' + 'b') operations hit this point, so we add operator as argument to help us to filter it later
             } else {
-                arguments.push(operand.clone());
+                to_dd_binary_expr_binary(binary, opv);
+                //arguments.push(operand.clone());
             }
         }
         _ => operand.map_with_mut(|op| {
