@@ -4,7 +4,11 @@
 **/
 use crate::util::rnd_string;
 use std::{env, sync::Once};
-use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
+use swc::{
+    atoms::JsWord,
+    common::{Span, DUMMY_SP},
+    ecmascript::ast::*,
+};
 
 pub const DD_GLOBAL_NAMESPACE: &str = "_ddiast";
 const DD_PLUS_OPERATOR: &str = "plusOperator";
@@ -115,7 +119,7 @@ pub fn get_dd_plus_operator_paren_expr(
 
 pub fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (AssignExpr, Ident) {
     let id = Ident {
-        span,
+        span: DUMMY_SP,
         sym: JsWord::from(get_dd_local_variable_name(index)),
         optional: false,
     };

@@ -399,10 +399,10 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1)))) > 100) {}
       js,
       `{
         function b() {
-          let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;
+          let __datadog_test_0, __datadog_test_1;
           if ((result = ((__datadog_test_0 = a(), __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + \
-__datadog_test_1, __datadog_test_0, __datadog_test_1)))) > 100) return (__datadog_test_2 = c, __datadog_test_3 = d(), \
-_ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3));
+__datadog_test_1, __datadog_test_0, __datadog_test_1)))) > 100) return (__datadog_test_0 = c, __datadog_test_1 = d(), \
+_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));
         }
       }`
     )

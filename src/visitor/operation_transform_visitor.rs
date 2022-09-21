@@ -1,4 +1,4 @@
-use hashlink::LinkedHashMap;
+use hashlink::LinkedHashSet;
 /**
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
@@ -17,7 +17,7 @@ use super::{
 
 pub struct OperationTransformVisitor {
     pub ident_counter: usize,
-    pub idents: LinkedHashMap<String, Ident>,
+    pub idents: LinkedHashSet<Ident>,
     pub variable_decl: HashSet<Ident>,
 }
 
@@ -25,7 +25,7 @@ impl OperationTransformVisitor {
     pub fn new() -> Self {
         OperationTransformVisitor {
             ident_counter: 0,
-            idents: LinkedHashMap::new(),
+            idents: LinkedHashSet::new(),
             variable_decl: HashSet::new(),
         }
     }
@@ -64,9 +64,7 @@ impl OperationTransformVisitor {
 
         // store ident and assignation expression
         if definitive {
-            //&& !self.idents.contains(&id) {
-
-            self.idents.insert(id.sym.to_string(), id.to_owned());
+            self.idents.insert(id.to_owned());
         }
 
         assignations.push(Box::new(Expr::Assign(assign)));

@@ -61,8 +61,6 @@ fn prepare_replace_expressions_in_binary(
 fn must_replace_binary_expression(arguments: &Vec<Expr>) -> bool {
     arguments.iter().any(|arg| match arg {
         Expr::Lit(_) => false,
-        // filter binary 'literal' add expressions
-        //Expr::Bin(binary) => binary.op != BinaryOp::Add,
         _ => true,
     })
 }
@@ -87,10 +85,8 @@ fn replace_expressions_in_binary_operand(
                         span,
                     ))
                 })
-            // only filtered binary add ('a' + 'b') operations hit this point, so we add operator as argument to help us to filter it later
             } else {
                 to_dd_binary_expr_binary(binary, opv);
-                //arguments.push(operand.clone());
             }
         }
         _ => operand.map_with_mut(|op| {
