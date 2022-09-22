@@ -5,11 +5,28 @@ on:
 
   push:
     branches:
-    - main
-    - feature/iast-chapter-1
+      - main
+      - feature/iast-chapter-1
   pull_request:
 
 jobs:
+  test-native:
+    strategy:
+      matrix:
+        target:
+          - name: linux 64 bits
+            os: ubuntu-latest
+          - name: windows 64 bits
+            os: windows-latest
+          - name: macos 64 bits
+            os: macos-latest
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: test
+        run: |
+          cargo check
+          cargo test
   build-native:
     strategy:
       matrix:
@@ -26,7 +43,7 @@ jobs:
             buildid: darwin
             os: macos-latest
             artifact: iast-rewriter.darwin-x64
-                        
+
     runs-on: ${{ matrix.target.os }}
     steps:
       - uses: actions/checkout@v2
@@ -39,7 +56,7 @@ jobs:
         with:
           name: ${{ matrix.target.artifact }}
           path: ${{ matrix.target.artifact }}.node
-    
+
   build-docker:
     runs-on: ubuntu-latest
     strategy:
@@ -84,19 +101,19 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           path: artifacts
-      - run: npm ci --ignore-scripts          
+      - run: npm ci --ignore-scripts
       - run: npm run artifacts
       - run: npm pack
       - run: npm pack npm/linux-x64-gnu/
       - run: npm pack npm/linux-x64-musl/
       - run: npm pack npm/win32-x64-msvc/
-      - run: npm pack npm/darwin-x64/      
+      - run: npm pack npm/darwin-x64/
       - uses: actions/upload-artifact@v2
         with:
           name: datadog-native-iast-rewriter
           path: '*.tgz'
 
-  test-native:
+  test-native-js:
     needs: ['pack']
     strategy:
       matrix:
@@ -164,7 +181,7 @@ jobs:
           check_name: junit test report ${{ matrix.target.name }}
 
   all-good:
-    needs: ['static-checks', 'test-native', 'test-docker']
+    needs: ['static-checks', 'test-native', 'test-native-js', 'test-docker']
     runs-on: ubuntu-latest
     steps:
       - run: echo '🚀🚀🚀🚀🚀'
