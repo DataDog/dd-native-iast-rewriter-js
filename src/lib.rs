@@ -12,29 +12,37 @@ mod tests;
 
 #[macro_use]
 extern crate napi_derive;
+extern crate base64;
 
 use crate::rewriter::{print_js, rewrite_js};
 use napi::{Error, Status};
 
+#[napi(object)]
+pub struct RewriterConfig {
+    pub chain_source_map: bool,
+}
+
 #[napi]
-pub struct Rewriter {}
+pub struct Rewriter {
+    config: RewriterConfig,
+}
 
 #[napi]
 impl Rewriter {
     #[napi(constructor)]
-    pub fn new() -> Self {
-        Rewriter {}
+    pub fn new(config: Option<RewriterConfig>) -> Self {
+        let rewriter_config: RewriterConfig = config.unwrap_or(RewriterConfig {
+            chain_source_map: false,
+        });
+        Self {
+            config: rewriter_config,
+        }
     }
 
     #[napi]
-    pub fn rewrite(
-        &self,
-        code: String,
-        file: String,
-        source_map: Option<String>,
-    ) -> napi::Result<String> {
+    pub fn rewrite(&self, code: String, file: String) -> napi::Result<String> {
         return rewrite_js(code, file)
-            .map(|result| print_js(result, source_map))
+            .map(|result| print_js(result, self.config.chain_source_map))
             .map_err(|e| Error::new(Status::Unknown, format!("{}", e)));
     }
 }

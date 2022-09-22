@@ -31,6 +31,8 @@
     "@babel/types": "^7.18.10",
     "@napi-rs/cli": "^2.0.0",
     "@swc-node/register": "^1.4.2",
+    "@typescript-eslint/eslint-plugin": "^5.37.0",
+    "@typescript-eslint/parser": "^5.37.0",
     "chai": "^4.3.6",
     "cross-env": "^7.0.3",
     "dotenv-cli": "^5.0.0",

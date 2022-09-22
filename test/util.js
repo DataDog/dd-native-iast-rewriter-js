@@ -8,12 +8,19 @@ const path = require('path')
 
 const { Rewriter } = require('../index')
 
+const removeSourceMap = (code) => {
+  return code
+    .split('\n')
+    .filter((l) => !l.trim().startsWith('//# sourceMappingURL='))
+    .join('\n')
+}
+
 const rewriteAst = (code, opts) => {
   opts = opts || {}
-  const rewriter = opts.rewriter ?? new Rewriter()
+  const rewriter = opts.rewriter ?? new Rewriter({ chainSourceMap: opts.chainSourceMap ?? false })
   const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
-  const sourceMap = opts.sourceMap
-  return rewriter.rewrite(code, file, sourceMap)
+  const rewrited = rewriter.rewrite(code, file)
+  return opts.keepSourceMap ? rewrited : removeSourceMap(rewrited)
 }
 
 const wrapBlock = (code) => `{${os.EOL}${code}${os.EOL}}`

@@ -1,13 +1,11 @@
 {
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 2020
   },
-  "extends": [
-    "eslint:recommended",
-    "standard"
-  ],
+  "extends": ["eslint:recommended", "standard"],
   "env": {
-    "node" : true
+    "node": true
   },
   "rules": {
     "max-len": [2, 120, 2],

@@ -358,6 +358,7 @@ name = "datadog_native-iast-rewriter"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "base64 0.13.0",
  "ctor",
  "fastrand",
  "napi",
