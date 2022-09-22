@@ -26,7 +26,7 @@ pub struct RewriterConfig {
 
 #[napi]
 pub struct Rewriter {
-    config: Option<RewriterConfig>,
+    config: RewriterConfig,
 }
 
 #[napi]
@@ -38,29 +38,14 @@ impl Rewriter {
             comments: false,
         });
         Self {
-            config: Some(rewriter_config),
+            config: rewriter_config,
         }
     }
 
     #[napi]
     pub fn rewrite(&self, code: String, file: String) -> napi::Result<String> {
-        return rewrite_js(
-            code,
-            file,
-            self.config
-                .as_ref()
-                .and_then(|c| Some(c.comments))
-                .unwrap_or_else(|| false),
-        )
-        .map(|result| {
-            print_js(
-                result,
-                self.config
-                    .as_ref()
-                    .and_then(|c| Some(c.chain_source_map))
-                    .unwrap_or_else(|| false),
-            )
-        })
-        .map_err(|e| Error::new(Status::Unknown, format!("{}", e)));
+        return rewrite_js(code, file, self.config.comments)
+            .map(|result| print_js(result, self.config.chain_source_map))
+            .map_err(|e| Error::new(Status::Unknown, format!("{}", e)));
     }
 }
