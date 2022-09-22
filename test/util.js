@@ -17,7 +17,7 @@ const removeSourceMap = (code) => {
 
 const rewriteAst = (code, opts) => {
   opts = opts || {}
-  const rewriter = opts.rewriter ?? new Rewriter({ chainSourceMap: opts.chainSourceMap ?? false })
+  const rewriter = opts.rewriter ?? new Rewriter({ comments: false, chainSourceMap: opts.chainSourceMap ?? false })
   const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
   const rewrited = rewriter.rewrite(code, file)
   return opts.keepSourceMap ? rewrited : removeSourceMap(rewrited)
