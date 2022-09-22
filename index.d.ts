@@ -7,6 +7,6 @@ export interface RewriterConfig {
   chainSourceMap: boolean
 }
 export class Rewriter {
-  constructor(config: RewriterConfig)
+  constructor(config?: RewriterConfig | undefined | null)
   rewrite(code: string, file: string): string
 }

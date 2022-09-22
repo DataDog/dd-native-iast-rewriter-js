@@ -30,8 +30,13 @@ pub struct Rewriter {
 #[napi]
 impl Rewriter {
     #[napi(constructor)]
-    pub fn new(config: RewriterConfig) -> Self {
-        Self { config }
+    pub fn new(config: Option<RewriterConfig>) -> Self {
+        let rewriter_config: RewriterConfig = config.unwrap_or(RewriterConfig {
+            chain_source_map: false,
+        });
+        Self {
+            config: rewriter_config,
+        }
     }
 
     #[napi]
