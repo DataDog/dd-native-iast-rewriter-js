@@ -18,16 +18,14 @@ use crate::rewriter::{print_js, rewrite_js};
 use napi::{Error, Status};
 
 #[napi(object)]
-pub struct RewriterConfig {
-    pub chain_source_map: bool,
 #[derive(Debug)]
 pub struct RewriterConfig {
+    pub chain_source_map: bool,
     pub comments: bool,
 }
 
 #[napi]
 pub struct Rewriter {
-    config: RewriterConfig,
     config: Option<RewriterConfig>,
 }
 
@@ -37,27 +35,15 @@ impl Rewriter {
     pub fn new(config: Option<RewriterConfig>) -> Self {
         let rewriter_config: RewriterConfig = config.unwrap_or(RewriterConfig {
             chain_source_map: false,
+            comments: false,
         });
         Self {
-            config: rewriter_config,
+            config: Some(rewriter_config),
         }
     }
 
     #[napi]
     pub fn rewrite(&self, code: String, file: String) -> napi::Result<String> {
-        return rewrite_js(code, file)
-            .map(|result| print_js(result, self.config.chain_source_map))
-            .map_err(|e| Error::new(Status::Unknown, format!("{}", e)));
-        Rewriter { config }
-    }
-
-    #[napi]
-    pub fn rewrite(
-        &self,
-        code: String,
-        file: String,
-        source_map: Option<String>,
-    ) -> napi::Result<String> {
         return rewrite_js(
             code,
             file,
@@ -66,7 +52,15 @@ impl Rewriter {
                 .and_then(|c| Some(c.comments))
                 .unwrap_or_else(|| false),
         )
-        .map(|result| print_js(result, source_map))
+        .map(|result| {
+            print_js(
+                result,
+                self.config
+                    .as_ref()
+                    .and_then(|c| Some(c.chain_source_map))
+                    .unwrap_or_else(|| false),
+            )
+        })
         .map_err(|e| Error::new(Status::Unknown, format!("{}", e)));
     }
 }

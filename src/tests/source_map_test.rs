@@ -11,9 +11,8 @@ mod tests {
     use swc::sourcemap::{decode_data_url, DecodedMap};
 
     use crate::{
-        rewrite_js,
         rewriter::{print_js, RewrittenOutput},
-        tests::{get_test_resources_folder, set_local_var},
+        tests::{get_test_resources_folder, rewrite_js, set_local_var},
     };
 
     #[derive(Clone)]
