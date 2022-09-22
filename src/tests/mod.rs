@@ -21,6 +21,6 @@ fn set_local_var() {
 
 fn get_test_resources_folder() -> Result<PathBuf, String> {
     std::env::current_dir()
-        .map(|cwd| cwd.join("test/resources"))
+        .map(|cwd| cwd.join("test").join("resources"))
         .map_err(|e| e.to_string())
 }
