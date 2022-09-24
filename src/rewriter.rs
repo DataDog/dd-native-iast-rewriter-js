@@ -39,19 +39,24 @@ pub struct RewrittenOutput {
     pub original_map: Option<SourceMap>,
 }
 
-pub fn rewrite_js(code: String, file: String, comments: bool) -> Result<RewrittenOutput> {
+pub fn rewrite_js(code: String, file: String, print_comments: bool) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let program = parse_js(code, file.as_str(), handler, compiler.borrow())?;
-        let result = transform_js(program, file.as_str(), comments, compiler.borrow());
+
+        // extract sourcemap before printing otherwise comments are consumed
+        // and looks like it is not possible to read them after compiler.print() invocation
+        let original_map = extract_source_map(
+            Path::new(file.as_str()).parent().unwrap(),
+            &compiler.comments().clone(),
+        );
+
+        let result = transform_js(program, file.as_str(), print_comments, compiler.borrow());
 
         result.map(|transformed| RewrittenOutput {
             code: transformed.code,
             source_map: transformed.map.unwrap(),
-            original_map: extract_source_map(
-                Path::new(file.as_str()).parent().unwrap(),
-                compiler.comments(),
-            ),
+            original_map,
         })
     });
 }
@@ -62,9 +67,14 @@ pub fn print_js(output: RewrittenOutput, chain_source_map: bool) -> String {
         final_source_map = chain_source_maps(&output.source_map, output.original_map)
             .unwrap_or(String::from(&output.source_map));
     }
+    let final_code: String = match output.code.rfind(SOURCE_MAP_URL) {
+        Some(index) => output.code.split_at(index).0.to_string(),
+        None => output.code,
+    };
     format!(
-        "{}\n//# sourceMappingURL=data:application/json;base64,{}",
-        output.code,
+        "{}\n//{}data:application/json;base64,{}",
+        final_code,
+        SOURCE_MAP_URL,
         base64::encode(final_source_map)
     )
 }
@@ -86,7 +96,7 @@ fn parse_js(source: String, file: &str, handler: &Handler, compiler: &Compiler) 
         EsVersion::latest(),
         Syntax::Es(EsConfig::default()),
         IsModule::Unknown,
-        Some(compiler.comments() as &dyn Comments),
+        Some(&compiler.comments().clone() as &dyn Comments),
     )
 }
 
@@ -111,8 +121,8 @@ fn transform_js(
             &Default::default(),
             None,
             false,
-            comments.then_some(compiler.comments() as &dyn Comments),
-            false,
+            comments.then_some(&compiler.comments().clone() as &dyn Comments),
+            true,
             false,
         ),
         _ => Err(Error::msg(format!(
@@ -180,7 +190,7 @@ fn chain_source_maps(
 }
 
 fn extract_source_map(folder: &Path, comments: &SwcComments) -> Option<SourceMap> {
-    for trailing in comments.trailing.iter() {
+    for trailing in comments.trailing.iter_mut() {
         for comment in trailing.iter() {
             let trim_comment = comment.text.trim();
             if trim_comment.starts_with(SOURCE_MAP_URL) {
@@ -217,28 +227,30 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
 
         print!("{:#?}", program);
 
+        let original_map = extract_source_map(
+            Path::new(js_file.as_str()).parent().unwrap(),
+            &compiler.comments().clone(),
+        );
+
         let print_result = compiler.print(
             &program,
             file_name(&js_file),
             None,
             false,
-            EsVersion::Es2020,
+            EsVersion::latest(),
             SourceMapsConfig::Bool(true),
             &Default::default(),
             None,
             false,
-            None,
-            false,
+            Some(compiler.comments() as &dyn Comments),
+            true,
             false,
         );
 
         print_result.map(|printed| RewrittenOutput {
             code: printed.code,
             source_map: printed.map.unwrap(),
-            original_map: extract_source_map(
-                Path::new(js_file.as_str()).parent().unwrap(),
-                compiler.comments(),
-            ),
+            original_map,
         })
     });
 }

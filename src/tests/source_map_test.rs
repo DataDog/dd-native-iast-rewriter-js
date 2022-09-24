@@ -25,20 +25,20 @@ mod tests {
 
     const UNCHAINED_TOKENS: [TokenChecking; 3] = [
         TokenChecking {
-            dst_line: 9,
-            dst_col: 49,
+            dst_line: 10,
+            dst_col: 71,
             src_line: 8,
             src_col: 29,
         },
         TokenChecking {
-            dst_line: 12,
+            dst_line: 13,
             dst_col: 17,
             src_line: 11,
             src_col: 13,
         },
         TokenChecking {
-            dst_line: 15,
-            dst_col: 50,
+            dst_line: 17,
+            dst_col: 15,
             src_line: 14,
             src_col: 11,
         },
@@ -46,20 +46,20 @@ mod tests {
 
     const CHAINED_TOKENS: [TokenChecking; 3] = [
         TokenChecking {
-            dst_line: 9,
-            dst_col: 49,
+            dst_line: 10,
+            dst_col: 71,
             src_line: 5,
             src_col: 15,
         },
         TokenChecking {
-            dst_line: 12,
+            dst_line: 13,
             dst_col: 17,
             src_line: 9,
             src_col: 9,
         },
         TokenChecking {
-            dst_line: 15,
-            dst_col: 50,
+            dst_line: 17,
+            dst_col: 15,
             src_line: 13,
             src_col: 9,
         },
