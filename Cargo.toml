@@ -25,7 +25,7 @@ spectral = "0.6.0"
 ctor = "0.1.23"
 
 [build-dependencies]
-napi-build = "1.2.1"
+napi-build = "2.0.1"
 
 [profile.release]
 lto = true
