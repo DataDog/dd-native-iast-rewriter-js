@@ -1,4 +1,3 @@
-use hashlink::LinkedHashSet;
 /**
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
@@ -11,22 +10,27 @@ use swc::{
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use super::{
-    assign_add_transform::AssignAddTransform, binary_add_transform::BinaryAddTransform,
-    template_transform::TemplateTransform, visitor_util::create_assign_expression,
+    assign_add_transform::AssignAddTransform,
+    binary_add_transform::BinaryAddTransform,
+    template_transform::TemplateTransform,
+    visitor_util::create_assign_expression,
+    visitor_with_context::{Ctx, VisitorWithContext, WithCtx},
 };
 
 pub struct OperationTransformVisitor {
     pub ident_counter: usize,
-    pub idents: LinkedHashSet<Ident>,
+    pub idents: Vec<Ident>,
     pub variable_decl: HashSet<Ident>,
+    ctx: Ctx,
 }
 
 impl OperationTransformVisitor {
     pub fn new() -> Self {
         OperationTransformVisitor {
             ident_counter: 0,
-            idents: LinkedHashSet::new(),
+            idents: Vec::new(),
             variable_decl: HashSet::new(),
+            ctx: Ctx::root(),
         }
     }
 
@@ -63,8 +67,9 @@ impl OperationTransformVisitor {
         let (assign, id) = create_assign_expression(self.next_ident(), operand, span);
 
         // store ident and assignation expression
-        if definitive {
-            self.idents.insert(id.to_owned());
+        let id_clone = id.to_owned();
+        if definitive && !self.idents.contains(&id_clone) {
+            self.idents.push(id_clone);
         }
 
         assignations.push(Box::new(Expr::Assign(assign)));
@@ -73,6 +78,35 @@ impl OperationTransformVisitor {
         arguments.push(Expr::Ident(id.clone()));
 
         id
+    }
+
+    fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, OperationTransformVisitor> {
+        let orig_ctx = self.ctx;
+        self.ctx = ctx;
+        WithCtx {
+            reducer: self,
+            orig_ctx,
+        }
+    }
+
+    fn with_child_ctx(&mut self) -> WithCtx<'_, OperationTransformVisitor> {
+        self.with_ctx(self.ctx.child(false))
+    }
+}
+
+impl VisitorWithContext for OperationTransformVisitor {
+    fn get_ctx(&self) -> Ctx {
+        self.ctx
+    }
+
+    fn set_ctx(&mut self, ctx: Ctx) {
+        self.ctx = ctx;
+    }
+
+    fn reset(&mut self) {
+        if self.ctx.root {
+            self.ident_counter = 0;
+        }
     }
 }
 
@@ -83,27 +117,28 @@ impl VisitMut for OperationTransformVisitor {
         match expr {
             Expr::Bin(binary) => {
                 if binary.op == BinaryOp::Add {
-                    self.ident_counter = 0;
-                    expr.visit_mut_children_with(self);
+                    expr.visit_mut_children_with(&mut *self.with_child_ctx());
                     expr.map_with_mut(|bin| BinaryAddTransform::to_dd_binary_expr(&bin, self));
+                    self.reset();
                 } else {
                     expr.visit_mut_children_with(self);
                 }
             }
             Expr::Assign(assign) => {
-                self.ident_counter = 0;
-                assign.visit_mut_children_with(self);
+                assign.visit_mut_children_with(&mut *self.with_child_ctx());
                 if assign.op == AssignOp::AddAssign {
                     assign.map_with_mut(|mut assign| {
                         AssignAddTransform::to_dd_assign_expr(&mut assign, self)
                     });
                 }
+                self.reset();
             }
             Expr::Tpl(tpl) => {
                 if !tpl.exprs.is_empty() {
-                    self.ident_counter = 0;
-                    tpl.exprs.visit_mut_children_with(self);
+                    tpl.exprs
+                        .visit_mut_children_with(&mut *self.with_child_ctx());
                     expr.map_with_mut(|tpl| TemplateTransform::to_dd_tpl_expr(&tpl, self));
+                    self.reset();
                 }
             }
             _ => {

@@ -351,7 +351,6 @@ dependencies = [
  "base64 0.13.0",
  "ctor",
  "fastrand",
- "hashlink",
  "napi",
  "napi-build",
  "napi-derive",
@@ -484,18 +483,6 @@ name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
-dependencies = [
- "ahash",
-]
-
-[[package]]
-name = "hashlink"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69fe1fcf8b4278d860ad0548329f892a3631fb63f82574df68275f34cdbe0ffa"
-dependencies = [
- "hashbrown 0.12.3",
-]
 
 [[package]]
 name = "hermit-abi"

@@ -80,4 +80,17 @@ mod tests {
     a = (__datadog_test_2 = a, __datadog_test_3 = b ? c((__datadog_test_0 = e(), __datadog_test_1 = f, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))) : d, _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3))");
         Ok(())
     }
+
+    #[test]
+    fn test_assignation_with_same_variable() -> Result<(), String> {
+        let original_code =
+            "{x += (x+((tmp = -3, tmp)+((tmp = -3, tmp)*(tmp = 6, tmp))))}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5;
+    x = (__datadog_test_4 = x, __datadog_test_5 = ((__datadog_test_2 = x, __datadog_test_3 = ((__datadog_test_0 = (tmp = -3, tmp), __datadog_test_1 = ((tmp = -3, tmp) * (tmp = 6, tmp)), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))), _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3))), _ddiast.plusOperator(__datadog_test_4 + __datadog_test_5, __datadog_test_4, __datadog_test_5));");
+
+        Ok(())
+    }
 }

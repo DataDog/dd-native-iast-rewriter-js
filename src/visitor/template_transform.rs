@@ -154,7 +154,9 @@ fn extract_arguments_in_template(
 
     if !all_literals {
         pending_idents.iter().for_each(|id| {
-            opv.idents.insert(id.clone()); // another clone :(
+            if !opv.idents.contains(id) {
+                opv.idents.push(id.clone()); // another clone :(
+            }
         });
     }
 

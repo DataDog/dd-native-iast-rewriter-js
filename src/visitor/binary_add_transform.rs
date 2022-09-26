@@ -31,6 +31,7 @@ impl BinaryAddTransform {
 fn to_dd_binary_expr_binary(binary: &mut BinExpr, opv: &mut OperationTransformVisitor) -> Expr {
     let mut assignations = Vec::new();
     let mut arguments = Vec::new();
+
     if prepare_replace_expressions_in_binary(binary, &mut assignations, &mut arguments, opv) {
         return get_dd_plus_operator_paren_expr(
             Expr::Bin(binary.clone()),
