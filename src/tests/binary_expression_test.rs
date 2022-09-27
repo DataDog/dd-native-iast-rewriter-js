@@ -340,15 +340,4 @@ mod tests {
         assert_that(&rewritten.code).contains("let [a, b, ,] = f();"); // result after rewrite: let [a, b, ] = f();
         Ok(())
     }
-
-    #[test]
-    #[ignore]
-    fn test_v8_numops_fuzz() -> Result<(), String> {
-        let original_code = "{const a = b + (c + d);}".to_string();
-        let js_file = "test.js".to_string();
-        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-
-        assert_that(&rewritten.code).contains("let [a, b, ,] = f();"); // result after rewrite: let [a, b, ] = f();
-        Ok(())
-    }
 }
