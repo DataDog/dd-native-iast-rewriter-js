@@ -29,7 +29,7 @@ impl Ctx {
 pub trait VisitorWithContext {
     fn get_ctx(&self) -> Ctx;
     fn set_ctx(&mut self, ctx: Ctx);
-    fn reset(&mut self);
+    fn reset_ctx(&mut self);
 }
 
 pub struct WithCtx<'a, V>
@@ -59,7 +59,7 @@ impl<V: VisitorWithContext> Drop for WithCtx<'_, V> {
         let auto_reset = self.reducer.get_ctx().auto_reset;
         self.reducer.set_ctx(self.orig_ctx);
         if self.reducer.get_ctx().root & auto_reset {
-            self.reducer.reset();
+            self.reducer.reset_ctx();
         }
     }
 }

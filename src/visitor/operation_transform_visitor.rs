@@ -92,6 +92,21 @@ impl OperationTransformVisitor {
     fn with_child_ctx(&mut self) -> WithCtx<'_, OperationTransformVisitor> {
         self.with_ctx(self.ctx.child(false))
     }
+
+    // TODO: make it work
+    // this function is in charge of calling visit_mut_children_with creating a new child Ctx, calling delegate function and reseting ctx at the end.
+    // It should be used in the different match cases but it changes the behavior of the block codes. I guess the delegate expr object is cloned
+    // and expr.map_with_mut() has no effect in the real AST.
+    #[allow(dead_code)]
+    fn visit_mut_children_with_child_ctx<E, F>(&mut self, expr: &mut E, op: F)
+    where
+        E: VisitMutWith<OperationTransformVisitor>,
+        F: FnOnce(&mut E, &mut OperationTransformVisitor),
+    {
+        expr.visit_mut_children_with(&mut *self.with_child_ctx());
+        op(expr, self);
+        self.reset_ctx();
+    }
 }
 
 impl VisitorWithContext for OperationTransformVisitor {
@@ -103,7 +118,7 @@ impl VisitorWithContext for OperationTransformVisitor {
         self.ctx = ctx;
     }
 
-    fn reset(&mut self) {
+    fn reset_ctx(&mut self) {
         if self.ctx.root {
             self.ident_counter = 0;
         }
@@ -116,13 +131,11 @@ impl VisitMut for OperationTransformVisitor {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
         match expr {
             Expr::Bin(binary) => {
+                binary.visit_mut_children_with(&mut *self.with_child_ctx());
                 if binary.op == BinaryOp::Add {
-                    expr.visit_mut_children_with(&mut *self.with_child_ctx());
                     expr.map_with_mut(|bin| BinaryAddTransform::to_dd_binary_expr(&bin, self));
-                    self.reset();
-                } else {
-                    expr.visit_mut_children_with(self);
                 }
+                self.reset_ctx();
             }
             Expr::Assign(assign) => {
                 assign.visit_mut_children_with(&mut *self.with_child_ctx());
@@ -131,14 +144,14 @@ impl VisitMut for OperationTransformVisitor {
                         AssignAddTransform::to_dd_assign_expr(&mut assign, self)
                     });
                 }
-                self.reset();
+                self.reset_ctx();
             }
             Expr::Tpl(tpl) => {
                 if !tpl.exprs.is_empty() {
                     tpl.exprs
                         .visit_mut_children_with(&mut *self.with_child_ctx());
                     expr.map_with_mut(|tpl| TemplateTransform::to_dd_tpl_expr(&tpl, self));
-                    self.reset();
+                    self.reset_ctx();
                 }
             }
             _ => {
