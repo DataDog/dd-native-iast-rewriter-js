@@ -3,6 +3,7 @@
 
 const fs = require('fs')
 const path = require('path')
+const os = require('os')
 const { exit } = require('process')
 const { Rewriter } = require('../index')
 
@@ -11,6 +12,10 @@ const ENCODING = 'utf8'
 const REWRITTEN_FILE_TOKEN_NAME = '___rewritten'
 const REWRITTEN_FILE_BACKUP_NAME = REWRITTEN_FILE_TOKEN_NAME + '_original'
 const DD_IAST_GLOBAL_METHODS_FILE_ENV = 'DD_IAST_GLOBAL_METHODS_FILE'
+const V8_NATIVE_CALL_REGEX = /%(\w+\(\S*?|\s*\))/gm
+const V8_NATIVE_CALL_REPLACEMENT_PREFIX = '__v8_native_remainder'
+const V8_NATIVE_CALL_REPLACEMENT_REGEX = /__v8_native_remainder(\w+\(\S*?|\s*\))/gm
+const V8_NATIVE_CALL_FLAGS_COMMENT_REGEX = /\/\/\s*Flags:.*(--allow-natives-syntax)+/gm
 
 const GLOBAL_METHODS = "if (typeof _ddiast === 'undefined' ){_ddiast = {plusOperator(res) {return res;}};}"
 
@@ -23,6 +28,7 @@ const DEFAULT_OPTIONS = {
   globalsFile: null,
   rewrite: true,
   modules: false,
+  natives: true,
   help: false
 }
 
@@ -130,7 +136,7 @@ const parseOptions = (args) => {
 }
 
 const showHelp = () => {
-  console.log('Usage: node crawler.js path/to/crawl [file_name_pattern]', '\n')
+  console.log('Usage: node crawler.js path/to/crawl [file_name_pattern]', os.EOL)
 
   console.log('Options:')
   console.log('  --override                          Original file is overrided with rewritten modifications')
@@ -139,8 +145,9 @@ const showHelp = () => {
 and rewritten file is saved with a suffix next to original file'
   )
   console.log('  --restore                           Restores all js files to their original state')
-  console.log('  --no-globals                        Do not inject default global._ddiast.* methods', '\n')
-  console.log('  --no-rewrite                        Search for files but do not rewrite', '\n')
+  console.log('  --no-globals                        Do not inject default global._ddiast.* methods')
+  console.log('  --no-rewrite                        Search for files but do not rewrite')
+  console.log('  --no-natives                        Disable v8 native calls substitution', os.EOL)
 
   console.log('Environment variables:')
   console.log(
@@ -155,7 +162,7 @@ if (options.help) {
   exit()
 }
 if (!options.rootPath) {
-  red('Error. Missing path!', '\n')
+  red('Error. Missing path!', os.EOL)
   showHelp()
   exit()
 }
@@ -171,8 +178,16 @@ crawl(options.rootPath, options, {
   visit (code, fileName, path) {
     if (options.rewrite) {
       try {
-        const rewrited = rewriter.rewrite(code, path)
+        if (options.natives) {
+          code = this.replaceNativeV8Calls(code, fileName)
+        }
+        let rewrited = rewriter.rewrite(code, path)
+
         green(`     -> ${fileName}`)
+
+        if (options.natives) {
+          rewrited = this.replaceNativeV8Calls(rewrited, fileName, true)
+        }
         return this.addGlobalMethods(rewrited, options)
       } catch (e) {
         red(`     -> ${fileName}: ${e}`)
@@ -180,6 +195,16 @@ crawl(options.rootPath, options, {
     } else {
       cyan(`     -> ${fileName}`)
     }
+  },
+  replaceNativeV8Calls (code, fileName, restore) {
+    if (!code.match(V8_NATIVE_CALL_FLAGS_COMMENT_REGEX)) {
+      return code
+    }
+
+    const regex = restore ? V8_NATIVE_CALL_REPLACEMENT_REGEX : V8_NATIVE_CALL_REGEX
+    const replacement = restore ? '%' : V8_NATIVE_CALL_REPLACEMENT_PREFIX
+    code = code.replace(regex, replacement + '$1')
+    return code
   },
   addGlobalMethods (code, options) {
     let globalMethods = GLOBAL_METHODS
@@ -190,6 +215,6 @@ crawl(options.rootPath, options, {
         red(e)
       }
     }
-    return options.globals ? globalMethods + '\n' + code : code
+    return options.globals ? globalMethods + os.EOL + code : code
   }
 })
