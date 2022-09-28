@@ -201,7 +201,7 @@ fn chain_source_maps(
 }
 
 fn extract_source_map(folder: &Path, comments: &SwcComments) -> Option<SourceMap> {
-    for trailing in comments.trailing.iter_mut() {
+    for trailing in comments.trailing.iter() {
         for comment in trailing.iter() {
             let trim_comment = comment.text.trim();
             if trim_comment.starts_with(SOURCE_MAP_URL) {
