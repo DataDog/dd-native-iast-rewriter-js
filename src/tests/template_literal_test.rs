@@ -21,7 +21,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("const a = _ddiast.plusOperator(`${b}Hello`, b, `Hello`);");
+            .contains("const a = (__datadog_test_0 = b, _ddiast.plusOperator(`${__datadog_test_0}Hello`, __datadog_test_0, `Hello`));");
         Ok(())
     }
 
@@ -72,7 +72,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = typeof b, _ddiast.plusOperator(`He${__datadog_test_0}llo wor${a}ld`, `He`, __datadog_test_0, `llo wor`, a, `ld`))");
+            .contains("const a = (__datadog_test_0 = typeof b, __datadog_test_1 = a, _ddiast.plusOperator(`He${__datadog_test_0}llo wor${__datadog_test_1}ld`, `He`, __datadog_test_0, `llo wor`, __datadog_test_1, `ld`));");
         Ok(())
     }
 
@@ -83,6 +83,21 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = b.x, _ddiast.plusOperator(`Hello world ${__datadog_test_0}`, `Hello world `, __datadog_test_0));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_template_literal_with_yield() -> Result<(), String> {
+        let original_code = "function* foo() {
+            var f = `foo${ yield 'yielded' }bar`;
+            return f;
+        }"
+        .to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("function* foo() {\n    let __datadog_test_0;
+    var f = (__datadog_test_0 = yield 'yielded', _ddiast.plusOperator(`foo${__datadog_test_0}bar`, `foo`, __datadog_test_0, `bar`));");
         Ok(())
     }
 }

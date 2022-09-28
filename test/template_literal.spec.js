@@ -19,12 +19,22 @@ describe('template literal', () => {
 
   it('middle', () => {
     const js = 'const result = `Hello${a}World!`;'
-    rewriteAndExpect(js, '{\nconst result = _ddiast.plusOperator(`Hello${a}World!`, `Hello`, a, `World!`);\n}')
+    rewriteAndExpect(
+      js,
+      '{\nlet __datadog_test_0;\n\
+const result = (__datadog_test_0 = a, _ddiast.plusOperator(`Hello${__datadog_test_0}World!`, `Hello`, \
+__datadog_test_0, `World!`));\n}'
+    )
   })
 
   it('start', () => {
     const js = 'const result = `${a}Hello World!`;'
-    rewriteAndExpect(js, '{\nconst result = _ddiast.plusOperator(`${a}Hello World!`, a, `Hello World!`);\n}')
+    rewriteAndExpect(
+      js,
+      '{\nlet __datadog_test_0;\n\
+const result = (__datadog_test_0 = a, _ddiast.plusOperator(`${__datadog_test_0}Hello World!`, __datadog_test_0\
+, `Hello World!`));\n}'
+    )
   })
 
   it('multiline string', () => {
@@ -60,7 +70,12 @@ describe('template literal', () => {
 
   it('end', () => {
     const js = 'const result = `Hello World!${a}`;'
-    rewriteAndExpect(js, '{\nconst result = _ddiast.plusOperator(`Hello World!${a}`, `Hello World!`, a);\n}')
+    rewriteAndExpect(
+      js,
+      '{\nlet __datadog_test_0;\n\
+const result = (__datadog_test_0 = a, _ddiast.plusOperator(`Hello World!${__datadog_test_0}`, `Hello World!`, \
+__datadog_test_0));\n}'
+    )
   })
 
   it('with binary operations', () => {
@@ -118,14 +133,22 @@ __datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddia
 
   it('inside if test', () => {
     const js = 'const c = a === `Hello${b}` ? "world" : "moon";'
-    rewriteAndExpect(js, '{\nconst c = a === _ddiast.plusOperator(`Hello${b}`, `Hello`, b) ? \
-"world" : "moon";\n}')
+    rewriteAndExpect(
+      js,
+      '{\nlet __datadog_test_0;\n\
+const c = a === (__datadog_test_0 = b, _ddiast.plusOperator(`Hello${__datadog_test_0}`, `Hello`, __datadog_test_0)) \
+? "world" : "moon";\n}'
+    )
   })
 
   it('inside if cons', () => {
     const js = 'const c = a === "hello" ? `World ${b}` : "Moon";'
-    rewriteAndExpect(js, '{\nconst c = a === "hello" ? _ddiast.plusOperator(`World ${b}`, \
-`World `, b) : "Moon";\n}')
+    rewriteAndExpect(
+      js,
+      '{\nlet __datadog_test_0;\n\
+const c = a === "hello" ? (__datadog_test_0 = b, _ddiast.plusOperator(`World ${__datadog_test_0}`, `World `, \
+__datadog_test_0)) : "Moon";\n}'
+    )
   })
 
   it('typeof is considered literal', () => {
@@ -137,8 +160,9 @@ __datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddia
     const js = 'const a = `He${typeof b}llo wor${a}ld`'
     rewriteAndExpect(
       js,
-      '{\nlet __datadog_test_0;\n    const a = (__datadog_test_0 = typeof b, _ddiast.plusOperator(\
-`He${__datadog_test_0}llo wor${a}ld`, `He`, __datadog_test_0, `llo wor`, a, `ld`));\n}'
+      '{\nlet __datadog_test_1, __datadog_test_0;\n\
+const a = (__datadog_test_0 = typeof b, __datadog_test_1 = a, _ddiast.plusOperator(\
+`He${__datadog_test_0}llo wor${__datadog_test_1}ld`, `He`, __datadog_test_0, `llo wor`, __datadog_test_1, `ld`));\n}'
     )
   })
 
@@ -161,12 +185,12 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1))}World`;\n}'
     const js = "const a = `Hello ${c} ${'how are u ' + `${'bye ' + d}`} world`;"
     rewriteAndExpect(
       js,
-      "{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;\n\
-        const a = (__datadog_test_3 = (__datadog_test_2 = (__datadog_test_1 = (__datadog_test_0 = d, \
-_ddiast.plusOperator('bye ' + __datadog_test_0, 'bye ', __datadog_test_0)), _ddiast.plusOperator(\
+      "{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4;\n\
+        const a = (__datadog_test_3 = c, __datadog_test_4 = (__datadog_test_2 = (__datadog_test_1 = (__datadog_test_0 \
+= d, _ddiast.plusOperator('bye ' + __datadog_test_0, 'bye ', __datadog_test_0)), _ddiast.plusOperator(\
 `${__datadog_test_1}`, __datadog_test_1)), _ddiast.plusOperator('how are u ' + __datadog_test_2, 'how are u ', \
-__datadog_test_2)), _ddiast.plusOperator(`Hello ${c} ${__datadog_test_3} world`, `Hello `, c, ` `, __datadog_test_3, \
-` world`));\n}"
+__datadog_test_2)), _ddiast.plusOperator(`Hello ${__datadog_test_3} ${__datadog_test_4} world`, `Hello `, \
+__datadog_test_3, ` `, __datadog_test_4, ` world`));\n}"
     )
   })
 

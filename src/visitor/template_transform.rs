@@ -105,13 +105,28 @@ fn extract_arguments_in_template(
                 Expr::Lit(_) => {
                     arguments.push(expr.clone());
                 }
-                Expr::Call(_)
-                | Expr::Paren(_)
-                | Expr::Member(_)
-                | Expr::Update(_)
-                | Expr::Await(_)
-                | Expr::Cond(_)
-                | Expr::New(_) => {
+                Expr::Unary(unary) => {
+                    let is_typeof = is_typeof(&unary);
+                    let ident = opv.get_ident_used_in_assignation_with_definitive(
+                        expr.clone(),
+                        assignations,
+                        arguments,
+                        span,
+                        !is_typeof,
+                    );
+
+                    // replace operand with new ident
+                    tpl.exprs[index] = Box::new(Expr::Ident(ident.clone()));
+
+                    if is_typeof {
+                        // the result of `typeof obj` is always a literal string so the ident is not replaced until we
+                        // know that tpl contains some other not literal expression
+                        pending_idents.push(ident);
+                    } else {
+                        all_literals = false;
+                    }
+                }
+                _ => {
                     let ident = opv.get_ident_used_in_assignation(
                         expr.clone(),
                         assignations,
@@ -121,29 +136,6 @@ fn extract_arguments_in_template(
 
                     // replace operand with new ident
                     tpl.exprs[index] = Box::new(Expr::Ident(ident));
-
-                    all_literals = false;
-                }
-                Expr::Unary(unary) => {
-                    if is_typeof(&unary) {
-                        let ident = opv.get_ident_used_in_assignation_with_definitive(
-                            expr.clone(),
-                            assignations,
-                            arguments,
-                            span,
-                            false,
-                        );
-
-                        // the result of `typeof obj` is always a literal string so the ident is not replaced until we
-                        // know that tpl contains some other not literal expression
-                        pending_idents.push(ident.clone());
-
-                        // replace operand with new ident
-                        tpl.exprs[index] = Box::new(Expr::Ident(ident));
-                    }
-                }
-                _ => {
-                    arguments.push(expr.clone());
 
                     all_literals = false;
                 }
