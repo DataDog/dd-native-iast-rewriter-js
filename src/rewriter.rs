@@ -90,11 +90,22 @@ fn parse_js(source: String, file: &str, handler: &Handler, compiler: &Compiler) 
     let fm = compiler
         .cm
         .new_source_file(FileName::Real(PathBuf::from(file)), source.as_str().into());
+    let es_config = EsConfig {
+        jsx: false,
+        fn_bind: false,
+        decorators: false,
+        decorators_before_export: false,
+        export_default_from: false,
+        import_assertions: false,
+        private_in_object: false,
+        allow_super_outside_method: false,
+        allow_return_outside_function: true,
+    };
     compiler.parse_js(
         fm,
         handler,
         EsVersion::latest(),
-        Syntax::Es(EsConfig::default()),
+        Syntax::Es(es_config),
         IsModule::Unknown,
         Some(&compiler.comments().clone() as &dyn Comments),
     )
