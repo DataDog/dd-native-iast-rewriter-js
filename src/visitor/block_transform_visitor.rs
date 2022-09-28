@@ -12,7 +12,8 @@ use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 #[derive(PartialEq)]
 pub enum Status {
-    Ok,
+    Modified,
+    NotModified,
     Cancelled,
 }
 
@@ -22,9 +23,9 @@ pub struct TransformStatus {
 }
 
 impl TransformStatus {
-    pub fn ok() -> TransformStatus {
+    pub fn not_modified() -> TransformStatus {
         TransformStatus {
-            status: Status::Ok,
+            status: Status::NotModified,
             msg: String::from(""),
         }
     }
@@ -46,6 +47,10 @@ impl BlockTransformVisitor<'_> {
     fn cancel_visit(&mut self, reason: &str) {
         self.transform_status.status = Status::Cancelled;
         self.transform_status.msg = reason.to_string();
+    }
+
+    fn mark_modified(&mut self) {
+        self.transform_status.status = Status::Modified;
     }
 }
 
@@ -70,7 +75,7 @@ impl VisitMut for BlockTransformVisitor<'_> {
             return self.cancel_visit("Variable name duplicated");
         }
 
-        insert_var_declaration(&operation_visitor.idents, expr);
+        insert_var_declaration(&operation_visitor.idents, expr, self);
 
         expr.visit_mut_children_with(self);
     }
@@ -81,8 +86,14 @@ fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>) -> bool
     variable_decl.iter().any(|var| var.sym.starts_with(&prefix))
 }
 
-fn insert_var_declaration(ident_expressions: &Vec<Ident>, expr: &mut BlockStmt) {
+fn insert_var_declaration(
+    ident_expressions: &Vec<Ident>,
+    expr: &mut BlockStmt,
+    vtv: &mut BlockTransformVisitor,
+) {
     if ident_expressions.len() > 0 {
+        vtv.mark_modified();
+
         let span = expr.span;
         let mut vec = Vec::new();
         ident_expressions.into_iter().for_each(|ident| {

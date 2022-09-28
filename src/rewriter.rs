@@ -42,7 +42,7 @@ pub struct RewrittenOutput {
 pub fn rewrite_js(code: String, file: String, print_comments: bool) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
-        let program = parse_js(code, file.as_str(), handler, compiler.borrow())?;
+        let program = parse_js(&code, file.as_str(), handler, compiler.borrow())?;
 
         // extract sourcemap before printing otherwise comments are consumed
         // and looks like it is not possible to read them after compiler.print() invocation
@@ -51,11 +51,17 @@ pub fn rewrite_js(code: String, file: String, print_comments: bool) -> Result<Re
             &compiler.comments().clone(),
         );
 
-        let result = transform_js(program, file.as_str(), print_comments, compiler.borrow());
+        let result = transform_js(
+            program,
+            &code,
+            file.as_str(),
+            print_comments,
+            compiler.borrow(),
+        );
 
         result.map(|transformed| RewrittenOutput {
             code: transformed.code,
-            source_map: transformed.map.unwrap(),
+            source_map: transformed.map.unwrap_or_default(),
             original_map,
         })
     });
@@ -86,10 +92,15 @@ fn default_handler_opts() -> HandlerOpts {
     }
 }
 
-fn parse_js(source: String, file: &str, handler: &Handler, compiler: &Compiler) -> Result<Program> {
+fn parse_js(
+    source: &String,
+    file: &str,
+    handler: &Handler,
+    compiler: &Compiler,
+) -> Result<Program> {
     let fm = compiler
         .cm
-        .new_source_file(FileName::Real(PathBuf::from(file)), source.as_str().into());
+        .new_source_file(FileName::Real(PathBuf::from(file)), source.into());
     let es_config = EsConfig {
         jsx: false,
         fn_bind: false,
@@ -113,16 +124,17 @@ fn parse_js(source: String, file: &str, handler: &Handler, compiler: &Compiler) 
 
 fn transform_js(
     mut program: Program,
+    code: &String,
     file: &str,
     comments: bool,
     compiler: &Compiler,
 ) -> Result<TransformOutput, Error> {
-    let mut transform_status = TransformStatus::ok();
+    let mut transform_status = TransformStatus::not_modified();
     let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status);
     program.visit_mut_with(&mut block_transform_visitor);
 
     match transform_status.status {
-        Status::Ok => compiler.print(
+        Status::Modified => compiler.print(
             &program,
             file_name(file),
             None,
@@ -136,6 +148,10 @@ fn transform_js(
             true,
             false,
         ),
+        Status::NotModified => Ok(TransformOutput {
+            code: code.to_owned(),
+            map: None,
+        }),
         _ => Err(Error::msg(format!(
             "Cancelling {} file rewrite. Reason: {}",
             file, transform_status.msg
@@ -234,7 +250,7 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let js_file = "debug.js".to_string();
-        let program = parse_js(code, &js_file, handler, compiler.borrow())?;
+        let program = parse_js(&code, &js_file, handler, compiler.borrow())?;
 
         print!("{:#?}", program);
 
