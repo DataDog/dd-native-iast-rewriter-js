@@ -183,14 +183,14 @@ crawl(options.rootPath, options, {
         if (options.natives) {
           code = this.replaceNativeV8Calls(code, fileName)
         }
-        let rewrited = rewriter.rewrite(code, path)
+        let rewritten = rewriter.rewrite(code, path)
 
         green(`     -> ${fileName}`)
 
         if (options.natives) {
-          rewrited = this.replaceNativeV8Calls(rewrited, fileName, true)
+          rewritten = this.replaceNativeV8Calls(rewritten, fileName, true)
         }
-        return this.addGlobalMethods(rewrited, options)
+        return this.addGlobalMethods(code, rewritten, options)
       } catch (e) {
         red(`     -> ${fileName}: ${e}`)
       }
@@ -208,7 +208,10 @@ crawl(options.rootPath, options, {
     code = code.replace(regex, replacement + '$1')
     return code
   },
-  addGlobalMethods (code, options) {
+  addGlobalMethods (code, rewritten, options) {
+    if (rewritten === code) {
+      return code
+    }
     let globalMethods = GLOBAL_METHODS
     if (options.globalsFile) {
       try {
@@ -218,13 +221,13 @@ crawl(options.rootPath, options, {
       }
     }
     if (options.globals) {
-      if (code.match(USE_STRICT)) {
-        return code.replace(USE_STRICT, '"use strict";' + os.EOL + globalMethods + os.EOL)
+      if (rewritten.match(USE_STRICT)) {
+        return rewritten.replace(USE_STRICT, '"use strict";' + os.EOL + globalMethods + os.EOL)
       } else {
-        return globalMethods + os.EOL + code
+        return globalMethods + os.EOL + rewritten
       }
     }
 
-    return code
+    return rewritten
   }
 })
