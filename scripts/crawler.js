@@ -9,6 +9,7 @@ const { Rewriter } = require('../index')
 
 const INCLUDED_FILES = /(.*)\.m?js$/
 const ENCODING = 'utf8'
+const USE_STRICT = /^"use strict";$/gm
 const REWRITTEN_FILE_TOKEN_NAME = '___rewritten'
 const REWRITTEN_FILE_BACKUP_NAME = REWRITTEN_FILE_TOKEN_NAME + '_original'
 const DD_IAST_GLOBAL_METHODS_FILE_ENV = 'DD_IAST_GLOBAL_METHODS_FILE'
@@ -17,7 +18,8 @@ const V8_NATIVE_CALL_REPLACEMENT_PREFIX = '__v8_native_remainder'
 const V8_NATIVE_CALL_REPLACEMENT_REGEX = /__v8_native_remainder(\w+\(\S*?|\s*\))/gm
 const V8_NATIVE_CALL_FLAGS_COMMENT_REGEX = /\/\/\s*Flags:.*(--allow-natives-syntax)+/gm
 
-const GLOBAL_METHODS = "if (typeof _ddiast === 'undefined' ){_ddiast = {plusOperator(res) {return res;}};}"
+const GLOBAL_METHODS =
+  "(function(globals){globals._ddiast = globals._ddiast || {plusOperator(res) {return res;}};}((1,eval)('this')));"
 
 const DEFAULT_OPTIONS = {
   restore: false,
@@ -215,6 +217,14 @@ crawl(options.rootPath, options, {
         red(e)
       }
     }
-    return options.globals ? globalMethods + os.EOL + code : code
+    if (options.globals) {
+      if (code.match(USE_STRICT)) {
+        return code.replace(USE_STRICT, '"use strict";' + os.EOL + globalMethods + os.EOL)
+      } else {
+        return globalMethods + os.EOL + code
+      }
+    }
+
+    return code
   }
 })
