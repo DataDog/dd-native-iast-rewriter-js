@@ -77,12 +77,16 @@ pub fn print_js(output: RewrittenOutput, chain_source_map: bool) -> String {
         Some(index) => output.code.split_at(index).0.to_string(),
         None => output.code,
     };
-    format!(
-        "{}\n//{}data:application/json;base64,{}",
-        final_code,
-        SOURCE_MAP_URL,
-        base64::encode(final_source_map)
-    )
+    if final_source_map.is_empty() {
+        final_code
+    } else {
+        format!(
+            "{}\n//{}data:application/json;base64,{}",
+            final_code,
+            SOURCE_MAP_URL,
+            base64::encode(final_source_map)
+        )
+    }
 }
 
 fn default_handler_opts() -> HandlerOpts {
