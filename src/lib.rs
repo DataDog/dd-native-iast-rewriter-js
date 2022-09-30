@@ -18,8 +18,10 @@ use crate::rewriter::{print_js, rewrite_js};
 use napi::{Error, Status};
 
 #[napi(object)]
+#[derive(Debug)]
 pub struct RewriterConfig {
-    pub chain_source_map: bool,
+    pub chain_source_map: Option<bool>,
+    pub comments: Option<bool>,
 }
 
 #[napi]
@@ -32,7 +34,8 @@ impl Rewriter {
     #[napi(constructor)]
     pub fn new(config: Option<RewriterConfig>) -> Self {
         let rewriter_config: RewriterConfig = config.unwrap_or(RewriterConfig {
-            chain_source_map: false,
+            chain_source_map: Some(false),
+            comments: Some(false),
         });
         Self {
             config: rewriter_config,
@@ -41,8 +44,8 @@ impl Rewriter {
 
     #[napi]
     pub fn rewrite(&self, code: String, file: String) -> napi::Result<String> {
-        return rewrite_js(code, file)
-            .map(|result| print_js(result, self.config.chain_source_map))
+        return rewrite_js(code, file, self.config.comments.unwrap_or(false))
+            .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))
             .map_err(|e| Error::new(Status::Unknown, format!("{}", e)));
     }
 }

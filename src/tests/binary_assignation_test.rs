@@ -7,7 +7,7 @@
 mod tests {
     use spectral::{assert_that, string::StrAssertions};
 
-    use crate::{rewrite_js, tests::set_local_var};
+    use crate::tests::{rewrite_js, set_local_var};
 
     #[cfg(test)]
     #[ctor::ctor]
@@ -20,7 +20,7 @@ mod tests {
         let original_code = "{a += b;}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("a = global._ddiast.plusOperator(a + b, a, b)");
+        assert_that(&rewritten.code).contains("a = (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
         Ok(())
     }
 
@@ -29,8 +29,7 @@ mod tests {
         let original_code = "{a += b + c;}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code)
-            .contains("a = global._ddiast.plusOperator(a + b + c, a, b, c)");
+        assert_that(&rewritten.code).contains("a = (__datadog_test_2 = a, __datadog_test_3 = (__datadog_test_0 = b, __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3))");
         Ok(())
     }
 
@@ -44,8 +43,54 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("for(let i = 0; i < buf.length; i++){
-    let __datadog_test_0;
-    res1 = (__datadog_test_0 = s.write(buf.slice(i, global._ddiast.plusOperator(i + 1, i, 1))), global._ddiast.plusOperator(res1 + __datadog_test_0, res1, __datadog_test_0));\n}");
+    let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+    res1 = (__datadog_test_1 = res1, __datadog_test_2 = s.write(buf.slice(i, (__datadog_test_0 = i, _ddiast.plusOperator(__datadog_test_0 + 1, __datadog_test_0, 1)))), _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, __datadog_test_1, __datadog_test_2));\n}");
+        Ok(())
+    }
+
+    #[test]
+    fn test_conditional_and_assignation() -> Result<(), String> {
+        let original_code = "{a += b ? c : d;}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0, __datadog_test_1;
+    a = (__datadog_test_0 = a, __datadog_test_1 = b ? c : d, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
+        Ok(())
+    }
+
+    #[test]
+    fn test_conditional_with_call_and_assignation() -> Result<(), String> {
+        let original_code = "{a += b ? c() : d;}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0, __datadog_test_1;
+    a = (__datadog_test_0 = a, __datadog_test_1 = b ? c() : d, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
+        Ok(())
+    }
+
+    #[test]
+    fn test_conditional_with_call_add_and_assignation() -> Result<(), String> {
+        let original_code = "{a += b ? c(e() + f) : d;}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;
+    a = (__datadog_test_2 = a, __datadog_test_3 = b ? c((__datadog_test_0 = e(), __datadog_test_1 = f, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))) : d, _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3))");
+        Ok(())
+    }
+
+    #[test]
+    fn test_assignation_with_same_variable() -> Result<(), String> {
+        let original_code =
+            "{x += (x+((tmp = -3, tmp)+((tmp = -3, tmp)*(tmp = 6, tmp))))}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5;
+    x = (__datadog_test_4 = x, __datadog_test_5 = ((__datadog_test_2 = x, __datadog_test_3 = ((__datadog_test_0 = (tmp = -3, tmp), __datadog_test_1 = ((tmp = -3, tmp) * (tmp = 6, tmp)), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))), _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3))), _ddiast.plusOperator(__datadog_test_4 + __datadog_test_5, __datadog_test_4, __datadog_test_5));");
+
         Ok(())
     }
 }

@@ -7,9 +7,6 @@ use swc::{
     common::{util::take::Take, Span},
     ecmascript::ast::*,
 };
-use swc_ecma_visit::VisitMutWith;
-
-use crate::visitor::visitor_util::is_typeof;
 
 use super::{
     operation_transform_visitor::OperationTransformVisitor,
@@ -20,30 +17,30 @@ pub struct BinaryAddTransform {}
 
 impl BinaryAddTransform {
     pub fn to_dd_binary_expr(expr: &Expr, opv: &mut OperationTransformVisitor) -> Expr {
-        match expr {
-            Expr::Bin(binary) => {
-                let mut binary_clone = binary.clone();
-
-                let mut assignations = Vec::new();
-                let mut arguments = Vec::new();
-                if prepare_replace_expressions_in_binary(
-                    &mut binary_clone,
-                    &mut assignations,
-                    &mut arguments,
-                    opv,
-                ) {
-                    return get_dd_plus_operator_paren_expr(
-                        Expr::Bin(binary_clone),
-                        &arguments,
-                        &mut assignations,
-                        binary.span,
-                    );
-                }
+        let expr_clone = expr.clone();
+        match expr_clone {
+            Expr::Bin(mut binary) => {
+                return to_dd_binary_expr_binary(&mut binary, opv);
             }
             _ => {}
         }
-        expr.clone()
+        expr_clone
     }
+}
+
+fn to_dd_binary_expr_binary(binary: &mut BinExpr, opv: &mut OperationTransformVisitor) -> Expr {
+    let mut assignations = Vec::new();
+    let mut arguments = Vec::new();
+
+    if prepare_replace_expressions_in_binary(binary, &mut assignations, &mut arguments, opv) {
+        return get_dd_plus_operator_paren_expr(
+            Expr::Bin(binary.clone()),
+            &arguments,
+            &mut assignations,
+            binary.span,
+        );
+    }
+    Expr::Bin(binary.clone())
 }
 
 fn prepare_replace_expressions_in_binary(
@@ -62,9 +59,8 @@ fn prepare_replace_expressions_in_binary(
     return must_replace_binary_expression(&arguments);
 }
 
-fn must_replace_binary_expression(argument_exprs: &Vec<Expr>) -> bool {
-    // only literals are filtered by now but may be other cases.
-    argument_exprs.iter().any(|arg| match arg {
+fn must_replace_binary_expression(arguments: &Vec<Expr>) -> bool {
+    arguments.iter().any(|arg| match arg {
         Expr::Lit(_) => false,
         _ => true,
     })
@@ -78,25 +74,10 @@ fn replace_expressions_in_binary_operand(
     opv: &mut OperationTransformVisitor,
 ) {
     match operand {
-        Expr::Bin(binary) => {
-            if binary.op == BinaryOp::Add {
-                prepare_replace_expressions_in_binary(binary, assignations, arguments, opv);
-            } else {
-                arguments.push(operand.clone())
-            }
-        }
-        Expr::Call(_) | Expr::Paren(_) | Expr::Tpl(_) | Expr::Await(_) => {
-            operand.visit_mut_children_with(opv);
+        Expr::Lit(_) => arguments.push(operand.clone()),
 
-            operand.map_with_mut(|op| {
-                Expr::Ident(opv.get_ident_used_in_assignation(op, assignations, arguments, span))
-            })
-        }
-        Expr::Member(_) | Expr::Update(_) => operand.map_with_mut(|op| {
-            Expr::Ident(opv.get_ident_used_in_assignation(op, assignations, arguments, span))
-        }),
-        Expr::Unary(unary) => {
-            if is_typeof(&unary) {
+        Expr::Bin(binary) => {
+            if binary.op != BinaryOp::Add {
                 operand.map_with_mut(|op| {
                     Expr::Ident(opv.get_ident_used_in_assignation(
                         op,
@@ -105,8 +86,12 @@ fn replace_expressions_in_binary_operand(
                         span,
                     ))
                 })
+            } else {
+                to_dd_binary_expr_binary(binary, opv);
             }
         }
-        _ => arguments.push(operand.clone()),
+        _ => operand.map_with_mut(|op| {
+            Expr::Ident(opv.get_ident_used_in_assignation(op, assignations, arguments, span))
+        }),
     }
 }

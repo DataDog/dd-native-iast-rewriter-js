@@ -39,19 +39,30 @@ pub struct RewrittenOutput {
     pub original_map: Option<SourceMap>,
 }
 
-pub fn rewrite_js(code: String, file: String) -> Result<RewrittenOutput> {
+pub fn rewrite_js(code: String, file: String, print_comments: bool) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
-        let program = parse_js(code, file.as_str(), handler, compiler.borrow())?;
-        let result = transform_js(program, file.as_str(), compiler.borrow());
+        let program = parse_js(&code, file.as_str(), handler, compiler.borrow())?;
+
+        // extract sourcemap before printing otherwise comments are consumed
+        // and looks like it is not possible to read them after compiler.print() invocation
+        let original_map = extract_source_map(
+            Path::new(file.as_str()).parent().unwrap(),
+            &compiler.comments().clone(),
+        );
+
+        let result = transform_js(
+            program,
+            &code,
+            file.as_str(),
+            print_comments,
+            compiler.borrow(),
+        );
 
         result.map(|transformed| RewrittenOutput {
             code: transformed.code,
-            source_map: transformed.map.unwrap(),
-            original_map: extract_source_map(
-                Path::new(file.as_str()).parent().unwrap(),
-                compiler.comments(),
-            ),
+            source_map: transformed.map.unwrap_or_default(),
+            original_map,
         })
     });
 }
@@ -62,11 +73,20 @@ pub fn print_js(output: RewrittenOutput, chain_source_map: bool) -> String {
         final_source_map = chain_source_maps(&output.source_map, output.original_map)
             .unwrap_or(String::from(&output.source_map));
     }
-    format!(
-        "{}\n//# sourceMappingURL=data:application/json;base64,{}",
-        output.code,
-        base64::encode(final_source_map)
-    )
+    let final_code: String = match output.code.rfind(SOURCE_MAP_URL) {
+        Some(index) => output.code.split_at(index).0.to_string(),
+        None => output.code,
+    };
+    if final_source_map.is_empty() {
+        final_code
+    } else {
+        format!(
+            "{}\n//{}data:application/json;base64,{}",
+            final_code,
+            SOURCE_MAP_URL,
+            base64::encode(final_source_map)
+        )
+    }
 }
 
 fn default_handler_opts() -> HandlerOpts {
@@ -76,42 +96,66 @@ fn default_handler_opts() -> HandlerOpts {
     }
 }
 
-fn parse_js(source: String, file: &str, handler: &Handler, compiler: &Compiler) -> Result<Program> {
+fn parse_js(
+    source: &String,
+    file: &str,
+    handler: &Handler,
+    compiler: &Compiler,
+) -> Result<Program> {
     let fm = compiler
         .cm
-        .new_source_file(FileName::Real(PathBuf::from(file)), source.as_str().into());
+        .new_source_file(FileName::Real(PathBuf::from(file)), source.into());
+    let es_config = EsConfig {
+        jsx: false,
+        fn_bind: false,
+        decorators: false,
+        decorators_before_export: false,
+        export_default_from: false,
+        import_assertions: false,
+        private_in_object: false,
+        allow_super_outside_method: false,
+        allow_return_outside_function: true,
+    };
     compiler.parse_js(
         fm,
         handler,
-        EsVersion::Es2020,
-        Syntax::Es(EsConfig::default()),
+        EsVersion::latest(),
+        Syntax::Es(es_config),
         IsModule::Unknown,
-        Some(compiler.comments() as &dyn Comments),
+        Some(&compiler.comments().clone() as &dyn Comments),
     )
 }
 
 fn transform_js(
     mut program: Program,
+    code: &String,
     file: &str,
+    comments: bool,
     compiler: &Compiler,
 ) -> Result<TransformOutput, Error> {
-    let mut transform_status = TransformStatus::ok();
+    let mut transform_status = TransformStatus::not_modified();
     let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status);
     program.visit_mut_with(&mut block_transform_visitor);
 
     match transform_status.status {
-        Status::Ok => compiler.print(
+        Status::Modified => compiler.print(
             &program,
             file_name(file),
             None,
             false,
-            EsVersion::Es2020,
+            EsVersion::latest(),
             SourceMapsConfig::Bool(true),
             &Default::default(),
             None,
             false,
-            None,
+            comments.then_some(&compiler.comments().clone() as &dyn Comments),
+            true,
+            false,
         ),
+        Status::NotModified => Ok(TransformOutput {
+            code: code.to_owned(),
+            map: None,
+        }),
         _ => Err(Error::msg(format!(
             "Cancelling {} file rewrite. Reason: {}",
             file, transform_status.msg
@@ -210,30 +254,34 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let js_file = "debug.js".to_string();
-        let program = parse_js(code, &js_file, handler, compiler.borrow())?;
+        let program = parse_js(&code, &js_file, handler, compiler.borrow())?;
 
         print!("{:#?}", program);
+
+        let original_map = extract_source_map(
+            Path::new(js_file.as_str()).parent().unwrap(),
+            &compiler.comments().clone(),
+        );
 
         let print_result = compiler.print(
             &program,
             file_name(&js_file),
             None,
             false,
-            EsVersion::Es2020,
+            EsVersion::latest(),
             SourceMapsConfig::Bool(true),
             &Default::default(),
             None,
             false,
-            None,
+            Some(compiler.comments() as &dyn Comments),
+            true,
+            false,
         );
 
         print_result.map(|printed| RewrittenOutput {
             code: printed.code,
             source_map: printed.map.unwrap(),
-            original_map: extract_source_map(
-                Path::new(js_file.as_str()).parent().unwrap(),
-                compiler.comments(),
-            ),
+            original_map,
         })
     });
 }

@@ -6,7 +6,7 @@
 #[cfg(test)]
 mod tests {
 
-    use crate::{rewriter::rewrite_js, tests::set_local_var};
+    use crate::tests::{rewrite_js, set_local_var};
     use spectral::{assert_that, string::StrAssertions};
 
     #[cfg(test)]
@@ -21,7 +21,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("const a = global._ddiast.plusOperator(`${b}Hello`, b, `Hello`);");
+            .contains("const a = (__datadog_test_0 = b, _ddiast.plusOperator(`${__datadog_test_0}Hello`, __datadog_test_0, `Hello`));");
         Ok(())
     }
 
@@ -31,7 +31,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = b(), global._ddiast.plusOperator(`He${__datadog_test_0}llo`, `He`, __datadog_test_0, `llo`))");
+            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = b(), _ddiast.plusOperator(`He${__datadog_test_0}llo`, `He`, __datadog_test_0, `llo`))");
         Ok(())
     }
 
@@ -41,7 +41,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = global._ddiast.plusOperator(b + c, b, c), global._ddiast.plusOperator(`He${__datadog_test_0}llo`, `He`, __datadog_test_0, `llo`))");
+            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+    const a = (__datadog_test_2 = (__datadog_test_0 = b, __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator(`He${__datadog_test_2}llo`, `He`, __datadog_test_2, `llo`));");
         Ok(())
     }
 
@@ -51,7 +52,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1;\n    const a = (__datadog_test_1 = (__datadog_test_0 = c(), global._ddiast.plusOperator(b + __datadog_test_0, b, __datadog_test_0)), global._ddiast.plusOperator(`He${__datadog_test_1}llo`, `He`, __datadog_test_1, `llo`))");
+            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+    const a = (__datadog_test_2 = (__datadog_test_0 = b, __datadog_test_1 = c(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator(`He${__datadog_test_2}llo`, `He`, __datadog_test_2, `llo`));");
         Ok(())
     }
 
@@ -70,7 +72,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = typeof b, global._ddiast.plusOperator(`He${__datadog_test_0}llo wor${a}ld`, `He`, __datadog_test_0, `llo wor`, a, `ld`))");
+            .contains("const a = (__datadog_test_0 = typeof b, __datadog_test_1 = a, _ddiast.plusOperator(`He${__datadog_test_0}llo wor${__datadog_test_1}ld`, `He`, __datadog_test_0, `llo wor`, __datadog_test_1, `ld`));");
         Ok(())
     }
 
@@ -80,7 +82,22 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = b.x, global._ddiast.plusOperator(`Hello world ${__datadog_test_0}`, `Hello world `, __datadog_test_0));");
+            .contains("let __datadog_test_0;\n    const a = (__datadog_test_0 = b.x, _ddiast.plusOperator(`Hello world ${__datadog_test_0}`, `Hello world `, __datadog_test_0));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_template_literal_with_yield() -> Result<(), String> {
+        let original_code = "function* foo() {
+            var f = `foo${ yield 'yielded' }bar`;
+            return f;
+        }"
+        .to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("function* foo() {\n    let __datadog_test_0;
+    var f = (__datadog_test_0 = yield 'yielded', _ddiast.plusOperator(`foo${__datadog_test_0}bar`, `foo`, __datadog_test_0, `bar`));");
         Ok(())
     }
 }

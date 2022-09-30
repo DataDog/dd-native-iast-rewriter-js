@@ -1,11 +1,12 @@
 target
+Cargo.toml
 Cargo.lock
 .cargo
 .github
 npm
 .eslintrc
 .eslintignore
-.eslintrc.yml
+.eslintrc.json
 .prettierignore
 .editorconfig
 .gitattributes
@@ -15,3 +16,9 @@ yarn.lock
 docker
 samples
 scripts
+src
+test
+build.rs
+build
+.husky
+tsconfig.json

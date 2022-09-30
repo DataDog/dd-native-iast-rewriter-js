@@ -4,9 +4,12 @@
 **/
 use crate::util::rnd_string;
 use std::{env, sync::Once};
-use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
+use swc::{
+    atoms::JsWord,
+    common::{Span, DUMMY_SP},
+    ecmascript::ast::*,
+};
 
-pub const NODE_GLOBAL: &str = "global";
 pub const DD_GLOBAL_NAMESPACE: &str = "_ddiast";
 const DD_PLUS_OPERATOR: &str = "plusOperator";
 pub const DD_LOCAL_VAR_NAME_HASH_ENV_NAME: &str = "DD_LOCAL_VAR_NAME_HASH";
@@ -48,18 +51,10 @@ where
     Callee::Expr(Box::new(Expr::Member(MemberExpr {
         span,
         prop: method(span),
-        obj: Box::new(Expr::Member(MemberExpr {
+        obj: Box::new(Expr::Ident(Ident {
             span,
-            prop: MemberProp::Ident(Ident {
-                span,
-                sym: JsWord::from(DD_GLOBAL_NAMESPACE),
-                optional: false,
-            }),
-            obj: Box::new(Expr::Ident(Ident {
-                span,
-                sym: JsWord::from(NODE_GLOBAL),
-                optional: false,
-            })),
+            sym: JsWord::from(DD_GLOBAL_NAMESPACE),
+            optional: false,
         })),
     })))
 }
@@ -124,7 +119,7 @@ pub fn get_dd_plus_operator_paren_expr(
 
 pub fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (AssignExpr, Ident) {
     let id = Ident {
-        span,
+        span: DUMMY_SP,
         sym: JsWord::from(get_dd_local_variable_name(index)),
         optional: false,
     };
