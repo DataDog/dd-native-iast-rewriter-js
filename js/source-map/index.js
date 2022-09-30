@@ -33,7 +33,7 @@ function readAndCacheSourceMap (filename, filePath) {
   return null
 }
 
-function getSourcePathAndLineFromSourceMaps (filename, line, originalColumn = 0) {
+function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
   try {
     let sourceMap = pathSourceMapsCache.get(filename)
     const filenameParts = filename.split(path.sep)
@@ -43,10 +43,11 @@ function getSourcePathAndLineFromSourceMaps (filename, line, originalColumn = 0)
       sourceMap = readAndCacheSourceMap(filename, filePath)
     }
     if (sourceMap) {
-      const { originalSource, originalLine } = sourceMap.findEntry(line, originalColumn)
+      const { originalSource, originalLine, originalColumn } = sourceMap.findEntry(line, column)
       return {
         path: path.join(filePath, originalSource),
-        line: originalLine
+        line: originalLine,
+        column: originalColumn
       }
     }
   } catch (e) {
