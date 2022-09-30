@@ -23,7 +23,7 @@ RUN pip3 install httplib2 six \
     && gclient sync \
     && tools/dev/gm.py x64.release;
 
-FROM node:18 AS v8tester
+FROM node:16@sha256:481d28c3890e832ec54b73ec5ea74d91b91af111ec06ae3a3bcb5a81e91892f0 AS v8tester
 WORKDIR /test
 RUN mkdir v8
 COPY --from=v8builder /build/v8/test /test/v8/test
