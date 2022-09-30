@@ -31,10 +31,6 @@ jobs:
     strategy:
       matrix:
         target:
-          - name: linux 64 bits
-            buildid: linux
-            os: ubuntu-latest
-            artifact: iast-rewriter.linux-x64-gnu
           - name: windows 64 bits
             buildid: windows
             os: windows-latest
@@ -62,6 +58,9 @@ jobs:
     strategy:
       matrix:
         target:
+          - name: linux 64 bits
+            dockerfile: Dockerfile
+            artifact: iast-rewriter.linux-x64-gnu
           - name: alpine 64 bits
             dockerfile: alpine.Dockerfile
             artifact: iast-rewriter.linux-x64-musl

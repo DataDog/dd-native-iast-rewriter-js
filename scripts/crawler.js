@@ -118,9 +118,9 @@ const parseOptions = (args) => {
     const dashes = arg.indexOf('--')
     if (dashes === 0) {
       let key = arg.substring(dashes + 2)
-      const value = key.indexOf('no-') === -1
-      key = value ? key : key.substring('no-'.length)
-      options[key] = value
+      const negationFlag = key.indexOf('no-') === -1
+      key = negationFlag ? key : key.substring('no-'.length)
+      options[key] = negationFlag
     } else {
       if (!options.rootPath) {
         options.rootPath = arg
