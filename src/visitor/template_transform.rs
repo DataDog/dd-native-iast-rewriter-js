@@ -8,13 +8,24 @@ pub struct TemplateTransform {}
 
 impl TemplateTransform {
     pub fn get_binary_from_tpl(tpl: &Tpl) -> Expr {
-        // at least 2 arguments (reversed): tail, expr, quasi (empty quasi `` is filtered)
         let arguments = get_reversed_arguments(tpl);
+
+        let left: Expr;
+        // with `${expression}` first quasi is filtered
+        if arguments.len() == 1 {
+            left = Expr::Lit(Lit::Str(Str {
+                span: tpl.span,
+                raw: None,
+                value: JsWord::from(""),
+            }))
+        } else {
+            left = arguments[1].clone()
+        }
 
         let mut binary_expr = BinExpr {
             span: DUMMY_SP,
             op: BinaryOp::Add,
-            left: Box::new(arguments[1].clone()),
+            left: Box::new(left),
             right: Box::new(arguments[0].clone()),
         };
 
@@ -38,26 +49,20 @@ fn get_reversed_arguments(tpl: &Tpl) -> Vec<Expr> {
     for quasi in &tpl.quasis {
         let value = quasi.cooked.clone();
         if value.is_none() || value.unwrap() == empty_quasi {
-            let expr = &*tpl.exprs[index];
-            arguments.push(expr.clone());
-            index += 1;
+            if !quasi.tail {
+                let expr = &*tpl.exprs[index];
+                arguments.push(expr.clone());
+                index += 1;
+            }
             continue;
         }
 
-        // TODO: generate a Exp::Lit instead Expr::Tpl
-        let mut expr_args = Vec::new();
-        expr_args.push(TplElement {
+        let str = Expr::Lit(Lit::Str(Str {
             span: quasi.span,
-            tail: true,
-            cooked: quasi.cooked.clone(),
-            raw: quasi.raw.clone(),
-        });
-        let expr = Tpl {
-            span: tpl.span,
-            quasis: expr_args,
-            exprs: Vec::new(),
-        };
-        arguments.push(Expr::Tpl(expr));
+            raw: None,
+            value: quasi.cooked.clone().unwrap_or(empty_quasi.clone()),
+        }));
+        arguments.push(str);
 
         if !quasi.tail {
             let expr = &*tpl.exprs[index];
