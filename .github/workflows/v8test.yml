@@ -37,4 +37,4 @@ jobs:
         run: docker image load --input ./ci/cache/docker/v8-tester/v8-tester-latest.tar
 
       - id: run-tests
-        run: docker run --name v8test v8-tester:latest
+        run: docker run --name v8test v8-tester
