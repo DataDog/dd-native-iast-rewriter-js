@@ -22,4 +22,9 @@ jobs:
           name: datadog-native-iast-rewriter
 
       - run: docker build -t test -f ./docker/v8test.Dockerfile .
-      - run: docker run --name v8tester test
+      - id: run-tests
+        run: |
+          result=docker run --name v8tester test
+          echo "::set-output name=result::$result"
+      - name: Get the test results
+        run: echo "${{ steps.run-tests.outputs.result }}"
