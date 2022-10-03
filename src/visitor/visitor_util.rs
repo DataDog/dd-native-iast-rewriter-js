@@ -136,10 +136,3 @@ pub fn create_assign_expression(index: usize, expr: Expr, span: Span) -> (Assign
         id,
     )
 }
-
-pub fn is_typeof(unary: &UnaryExpr) -> bool {
-    match unary.op {
-        UnaryOp::TypeOf => true,
-        _ => false,
-    }
-}

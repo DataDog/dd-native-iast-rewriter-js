@@ -9,7 +9,7 @@ const { Rewriter } = require('../index')
 
 const INCLUDED_FILES = /(.*)\.m?js$/
 const ENCODING = 'utf8'
-const USE_STRICT = /^"use strict";$/gm
+const USE_STRICT = /^(["']use strict["'];*)$/gm
 const REWRITTEN_FILE_TOKEN_NAME = '___rewritten'
 const REWRITTEN_FILE_BACKUP_NAME = REWRITTEN_FILE_TOKEN_NAME + '_original'
 const DD_IAST_GLOBAL_METHODS_FILE_ENV = 'DD_IAST_GLOBAL_METHODS_FILE'
@@ -222,7 +222,7 @@ crawl(options.rootPath, options, {
     }
     if (options.globals) {
       if (rewritten.match(USE_STRICT)) {
-        return rewritten.replace(USE_STRICT, '"use strict";' + os.EOL + globalMethods + os.EOL)
+        return rewritten.replace(USE_STRICT, '$1' + os.EOL + globalMethods + os.EOL)
       } else {
         return globalMethods + os.EOL + rewritten
       }

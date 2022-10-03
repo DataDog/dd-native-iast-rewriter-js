@@ -148,9 +148,10 @@ impl VisitMut for OperationTransformVisitor {
             }
             Expr::Tpl(tpl) => {
                 if !tpl.exprs.is_empty() {
-                    tpl.exprs
-                        .visit_mut_children_with(&mut *self.with_child_ctx());
-                    expr.map_with_mut(|tpl| TemplateTransform::to_dd_tpl_expr(&tpl, self));
+                    // transform tpl into binary and act like it was a binary expr
+                    let mut binary = TemplateTransform::get_binary_from_tpl(tpl);
+                    binary.visit_mut_children_with(&mut *self.with_child_ctx());
+                    expr.map_with_mut(|_| BinaryAddTransform::to_dd_binary_expr(&binary, self));
                     self.reset_ctx();
                 }
             }
