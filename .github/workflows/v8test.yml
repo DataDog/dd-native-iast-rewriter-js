@@ -34,4 +34,8 @@ jobs:
 
       - name: Use v8-tester Image Cache if cache hit
         if: steps.cache-docker-v8.outputs.cache-hit == 'true'
-        run: docker image load --input ./ci/cache/docker/v8-tester/v8-tester-latest.tar && docker run --name v8test v8-tester:latest
+        run: docker image load --input ./ci/cache/docker/v8-tester/v8-tester-latest.tar
+
+      - name: Run tests
+        id: run-tests
+        run: docker run --name v8test v8-tester:latest
