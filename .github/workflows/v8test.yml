@@ -1,5 +1,8 @@
 name: v8 testing
 
+env:
+  V8_BRANCH: 10.7.190
+
 on:
   workflow_dispatch:
 
@@ -21,21 +24,21 @@ jobs:
           workflow_conclusion: success
           name: datadog-native-iast-rewriter
 
-      - name: Restore v8-tester Image
+      - name: Restore v8 builder Image
         id: cache-docker-v8
         uses: actions/cache@v3
         with:
-          path: ci/cache/docker/v8-tester
-          key: cache-docker-v8-tester
+          path: ci/cache/docker/v8builder
+          key: cache-docker-v8builder
 
-      - name: Update v8-tester Image Cache if cache miss
+      - name: Update v8 builder Image Cache if cache miss
         if: steps.cache-docker-v8.outputs.cache-hit != 'true'
-        run: docker build -t v8-tester -f ./docker/v8test.Dockerfile . && mkdir -p ci/cache/docker/v8-tester && docker image save v8-tester:latest --output ./ci/cache/docker/v8-tester/v8-tester-latest.tar
+        run: docker build -t v8builder:$V8_BRANCH -f ./docker/v8test-builder.Dockerfile . && mkdir -p ci/cache/docker/v8builder && docker image save v8builder:$V8_BRANCH --output ./ci/cache/docker/v8builder/v8builder-$V8_BRANCH.tar
 
-      - name: Use v8-tester Image Cache if cache hit
+      - name: Use v8 builder Image Cache if cache hit
         if: steps.cache-docker-v8.outputs.cache-hit == 'true'
-        run: docker image load --input ./ci/cache/docker/v8-tester/v8-tester-latest.tar
+        run: docker image load --input ./ci/cache/docker/v8builder/v8builder-$V8_BRANCH.tar
 
-      - name: Run tests
+      - name: Rewrite and run v8 tests
         id: run-tests
-        run: docker run --name v8test v8-tester:latest
+        run: docker build -t v8tester:$V8_BRANCH --build-arg V8_BRANCH=$V8_BRANCH -f v8test.Dockerfile . && docker run --name v8tester v8tester:$V8_BRANCH
