@@ -29,7 +29,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ci/cache/docker/v8builder
-          key: cache-docker-v8builder
+          key: cache-docker-v8builder-$V8_BRANCH
 
       - name: Update v8 builder Image Cache if cache miss
         if: steps.cache-docker-v8.outputs.cache-hit != 'true'
