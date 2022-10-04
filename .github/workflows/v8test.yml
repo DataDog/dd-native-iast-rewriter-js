@@ -41,4 +41,4 @@ jobs:
 
       - name: Rewrite and run v8 tests
         id: run-tests
-        run: docker build -t v8tester:$V8_BRANCH --build-arg V8_BRANCH=$V8_BRANCH -f v8test.Dockerfile . && docker run --name v8tester v8tester:$V8_BRANCH
+        run: docker build -t v8tester:$V8_BRANCH --build-arg V8_BRANCH=$V8_BRANCH -f ./docker/v8test.Dockerfile . && docker run --name v8tester v8tester:$V8_BRANCH
