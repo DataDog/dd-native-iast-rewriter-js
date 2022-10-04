@@ -5,7 +5,7 @@ FROM v8builder:${V8_BRANCH}
 WORKDIR /build
 
 # asm tests excluded
-RUN rm -rf /test/v8/test/mjsunit/asm
+RUN rm -rf /build/v8/test/mjsunit/asm
 
 # copy rewriter npm packages and extract them
 COPY ./datadog-native-iast-rewriter* /build/
