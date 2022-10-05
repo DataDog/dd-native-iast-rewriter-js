@@ -107,9 +107,11 @@ jobs:
       - run: npm pack npm/linux-x64-musl/
       - run: npm pack npm/win32-x64-msvc/
       - run: npm pack npm/darwin-x64/
+      - uses: codex-team/action-nodejs-package-info@v1
+        id: package
       - uses: actions/upload-artifact@v2
         with:
-          name: datadog-native-iast-rewriter
+          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
           path: '*.tgz'
 
   test-native-js:
@@ -140,7 +142,7 @@ jobs:
         id: package
       - uses: actions/download-artifact@v2
         with:
-          name: datadog-native-iast-rewriter
+          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
       - run: npm i --verbose datadog-native-iast-rewriter-${{ matrix.target.artifact }}-${{ steps.package.outputs.version }}.tgz
       - run: npm i --verbose datadog-native-iast-rewriter-${{ steps.package.outputs.version }}.tgz
       - run: npm run test:junit
@@ -164,11 +166,11 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '16'
-      - uses: actions/download-artifact@v2
-        with:
-          name: datadog-native-iast-rewriter
       - uses: codex-team/action-nodejs-package-info@v1
         id: package
+      - uses: actions/download-artifact@v2
+        with:
+          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
       - run: docker build -t test -f ./docker/${{ matrix.target.dockerfile }} --build-arg NPM_VERSION=${{ steps.package.outputs.version }} .
       - run: docker run --name tester test
       - run: docker cp tester:/test/build/junit.xml ./junit.xml
