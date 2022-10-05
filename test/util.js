@@ -6,7 +6,8 @@
 const os = require('os')
 const path = require('path')
 
-const { Rewriter } = require('../index')
+const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/native-iast-rewriter' : '../index'
+const { Rewriter } = require(rewriterPackage)
 
 const removeSourceMap = (code) => {
   return code
