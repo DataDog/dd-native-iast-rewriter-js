@@ -17,12 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: codex-team/action-nodejs-package-info@v1
+        id: package
       - uses: dawidd6/action-download-artifact@v2
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: build.yml
           workflow_conclusion: success
-          name: datadog-native-iast-rewriter
+          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
 
       - name: Restore v8 builder Image
         id: cache-docker-v8
