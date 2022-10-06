@@ -11,6 +11,9 @@ on:
       - main
       - feature/iast-chapter-1
   pull_request:
+    branches:
+      - main
+      - feature/iast-chapter-1
 
 jobs:
   compile-v8-and-run-tests:
