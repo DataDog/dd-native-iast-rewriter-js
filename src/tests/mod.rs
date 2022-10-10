@@ -9,6 +9,7 @@ use std::{env, path::PathBuf};
 mod binary_assignation_test;
 mod binary_expression_test;
 mod source_map_test;
+mod string_method_test;
 mod template_literal_test;
 
 fn set_local_var() {

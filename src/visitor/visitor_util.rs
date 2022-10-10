@@ -43,9 +43,14 @@ pub fn dd_global_method_invocation<F>(span: Span, method: F) -> Callee
 where
     F: FnOnce(Span) -> MemberProp,
 {
+pub fn dd_global_method_invocation(method_name: &str, span: Span) -> Callee {
     Callee::Expr(Box::new(Expr::Member(MemberExpr {
         span,
-        prop: method(span),
+        prop: MemberProp::Ident(Ident {
+            span,
+            sym: JsWord::from(method_name),
+            optional: false,
+        }),
         obj: Box::new(Expr::Ident(Ident {
             span,
             sym: JsWord::from(DD_GLOBAL_NAMESPACE),
@@ -64,6 +69,10 @@ pub fn any_items_plus_operator(span: Span) -> MemberProp {
 
 pub fn get_dd_call_plus_operator_expr(expr: Expr, arguments: &[Expr], span: Span) -> Expr {
     let mut args: Vec<ExprOrSpread> = vec![ExprOrSpread {
+pub fn get_dd_call_expr(expr: Expr, arguments: &Vec<Expr>, method_name: &str, span: Span) -> Expr {
+    let mut args: Vec<ExprOrSpread> = Vec::new();
+
+    args.push(ExprOrSpread {
         expr: Box::new(expr),
         spread: None,
     }];
@@ -80,7 +89,7 @@ pub fn get_dd_call_plus_operator_expr(expr: Expr, arguments: &[Expr], span: Span
 
     Expr::Call(CallExpr {
         span,
-        callee: get_plus_operator_based_on_num_of_args_for_span(args.len() - 1, span),
+        callee: dd_global_method_invocation(method_name, span),
         args,
         type_args: None,
     })
@@ -101,6 +110,25 @@ pub fn get_dd_plus_operator_paren_expr(
     } else {
         assignations.push(plus_operator_call);
         Expr::Paren(ParenExpr {
+    get_dd_paren_expr(expr, arguments, assignations, DD_PLUS_OPERATOR, span)
+}
+
+pub fn get_dd_paren_expr(
+    expr: Expr,
+    arguments: &Vec<Expr>,
+    assignations: &mut Vec<Box<Expr>>,
+    method_name: &str,
+    span: Span,
+) -> Expr {
+    let call = get_dd_call_expr(expr, &arguments, method_name, span);
+
+    // if there are 0 assign expressions we can return just call expression without parentheses
+    // else wrap them all with a sequence of comma separated expressions inside parentheses
+    if assignations.len() == 0 {
+        return call;
+    } else {
+        assignations.push(Box::new(call));
+        return Expr::Paren(ParenExpr {
             span,
             expr: Box::new(Expr::Seq(SeqExpr {
                 span,
