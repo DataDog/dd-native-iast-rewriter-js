@@ -18,11 +18,8 @@ pub struct BinaryAddTransform {}
 impl BinaryAddTransform {
     pub fn to_dd_binary_expr(expr: &Expr, opv: &mut OperationTransformVisitor) -> Expr {
         let expr_clone = expr.clone();
-        match expr_clone {
-            Expr::Bin(mut binary) => {
-                return to_dd_binary_expr_binary(&mut binary, opv);
-            }
-            _ => {}
+        if let Expr::Bin(mut binary) = expr_clone {
+            return to_dd_binary_expr_binary(&mut binary, opv);
         }
         expr_clone
     }
@@ -45,7 +42,7 @@ fn to_dd_binary_expr_binary(binary: &mut BinExpr, opv: &mut OperationTransformVi
 
 fn prepare_replace_expressions_in_binary(
     binary: &mut BinExpr,
-    assignations: &mut Vec<Box<Expr>>,
+    assignations: &mut Vec<Expr>,
     arguments: &mut Vec<Expr>,
     opv: &mut OperationTransformVisitor,
 ) -> bool {
@@ -56,19 +53,16 @@ fn prepare_replace_expressions_in_binary(
     replace_expressions_in_binary_operand(right, assignations, arguments, binary.span, opv);
 
     // if all arguments are literals we can skip expression replacement
-    return must_replace_binary_expression(&arguments);
+    must_replace_binary_expression(arguments)
 }
 
-fn must_replace_binary_expression(arguments: &Vec<Expr>) -> bool {
-    arguments.iter().any(|arg| match arg {
-        Expr::Lit(_) => false,
-        _ => true,
-    })
+fn must_replace_binary_expression(arguments: &[Expr]) -> bool {
+    arguments.iter().any(|arg| !matches!(arg, Expr::Lit(_)))
 }
 
 fn replace_expressions_in_binary_operand(
     operand: &mut Expr,
-    assignations: &mut Vec<Box<Expr>>,
+    assignations: &mut Vec<Expr>,
     arguments: &mut Vec<Expr>,
     span: Span,
     opv: &mut OperationTransformVisitor,

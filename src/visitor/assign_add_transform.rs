@@ -22,7 +22,7 @@ impl AssignAddTransform {
         let span = assign.span;
         let op = assign.op;
 
-        return match &assign.left {
+        match &assign.left {
             PatOrExpr::Pat(_) => {
                 assign.visit_mut_children_with(opv);
                 AssignExpr {
@@ -47,6 +47,6 @@ impl AssignAddTransform {
                     right: Box::new(BinaryAddTransform::to_dd_binary_expr(&binary, opv)),
                 }
             }
-        };
+        }
     }
 }

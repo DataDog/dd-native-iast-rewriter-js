@@ -10,7 +10,7 @@ pub fn file_name(file: &str) -> Option<&str> {
 }
 
 pub fn parse_source_map(source_map: Option<&str>) -> Option<SourceMap> {
-    return source_map.and_then(|source| SourceMap::from_reader(source.as_bytes()).ok());
+    source_map.and_then(|source| SourceMap::from_reader(source.as_bytes()).ok())
 }
 
 pub fn rnd_string(length: usize) -> String {

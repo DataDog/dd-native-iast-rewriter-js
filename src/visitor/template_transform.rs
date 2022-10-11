@@ -10,17 +10,16 @@ impl TemplateTransform {
     pub fn get_binary_from_tpl(tpl: &Tpl) -> Expr {
         let arguments = get_reversed_arguments(tpl);
 
-        let left: Expr;
         // with `${expression}` first quasi is filtered
-        if arguments.len() == 1 {
-            left = Expr::Lit(Lit::Str(Str {
+        let left: Expr = if arguments.len() == 1 {
+            Expr::Lit(Lit::Str(Str {
                 span: tpl.span,
                 raw: None,
                 value: JsWord::from(""),
             }))
         } else {
-            left = arguments[1].clone()
-        }
+            arguments[1].clone()
+        };
 
         let mut binary_expr = BinExpr {
             span: DUMMY_SP,
@@ -60,7 +59,7 @@ fn get_reversed_arguments(tpl: &Tpl) -> Vec<Expr> {
         let str = Expr::Lit(Lit::Str(Str {
             span: quasi.span,
             raw: None,
-            value: quasi.cooked.clone().unwrap_or(empty_quasi.clone()),
+            value: quasi.cooked.clone().unwrap_or_else(|| empty_quasi.clone()),
         }));
         arguments.push(str);
 

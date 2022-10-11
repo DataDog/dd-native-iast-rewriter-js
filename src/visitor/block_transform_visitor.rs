@@ -91,12 +91,12 @@ fn insert_var_declaration(
     expr: &mut BlockStmt,
     vtv: &mut BlockTransformVisitor,
 ) {
-    if ident_expressions.len() > 0 {
+    if !ident_expressions.is_empty() {
         vtv.mark_modified();
 
         let span = expr.span;
         let mut vec = Vec::new();
-        ident_expressions.into_iter().for_each(|ident| {
+        ident_expressions.iter().for_each(|ident| {
             vec.push(VarDeclarator {
                 span,
                 definite: false,
@@ -120,7 +120,7 @@ fn insert_var_declaration(
 }
 
 fn get_variable_insertion_index(stmts: &Vec<Stmt>) -> usize {
-    if stmts.len() > 0 {
+    if !stmts.is_empty() {
         match &stmts[0] {
             Stmt::Expr(expr) => match &*expr.expr {
                 Expr::Lit(Lit::Str(lit)) => {
