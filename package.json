@@ -87,7 +87,8 @@
     "version": "napi version",
     "test": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js'",
     "test:junit": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "clippy": "cargo clippy --workspace -- -D warnings"
   },
   "lint-staged": {
     "*.@(js|ts|tsx)": ["prettier --write", "eslint -c .eslintrc.json --fix"],
