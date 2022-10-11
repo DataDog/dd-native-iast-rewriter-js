@@ -6,6 +6,7 @@ pub(crate) mod assign_add_transform;
 pub(crate) mod binary_add_transform;
 pub(crate) mod block_transform_visitor;
 pub(crate) mod ident_provider;
+pub(crate) mod function_prototype_transform;
 pub(crate) mod operation_transform_visitor;
 pub(crate) mod string_method_transform;
 pub(crate) mod template_transform;

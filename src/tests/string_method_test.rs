@@ -67,4 +67,44 @@ mod tests {
         assert_that(&rewritten.code).contains("const a = \"b\".substring(1)");
         Ok(())
     }
+
+    #[test]
+    fn test_prototype_substring_with_literal_arg() -> Result<(), String> {
+        let original_code = "{const a = String.prototype.substring.call('hello', 2);}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("const a = String.prototype.substring.call('hello', 2)");
+        Ok(())
+    }
+
+    #[test]
+    fn test_prototype_substring_call_with_variable_arg() -> Result<(), String> {
+        let original_code = "{const a = String.prototype.substring.call(b, 2);}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = b, _ddiast.substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_prototype_substring_apply_with_variable_arg() -> Result<(), String> {
+        let original_code = "{const a = String.prototype.substring.apply(b, [2]);}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = b, _ddiast.substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_prototype_substring_apply_with_call_arg() -> Result<(), String> {
+        let original_code = "{const a = String.prototype.substring.apply(b(), [2]);}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = b(), _ddiast.substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
+        Ok(())
+    }
 }

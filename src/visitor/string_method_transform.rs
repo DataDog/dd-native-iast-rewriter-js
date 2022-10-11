@@ -5,9 +5,13 @@
 use swc::common::{util::take::Take, Span};
 use swc_ecma_visit::swc_ecma_ast::{CallExpr, Callee, Expr, Ident, MemberExpr, MemberProp};
 
+use crate::visitor::function_prototype_transform::FunctionPrototypeTransform;
+
 use super::{
     operation_transform_visitor::OperationTransformVisitor, visitor_util::get_dd_paren_expr,
 };
+
+pub const STRING_CLASS_NAME: &str = "String";
 
 // TODO: make vector static with Once?
 fn get_methods() -> Vec<String> {
@@ -27,10 +31,32 @@ impl StringMethodTransform {
                 Expr::Member(member) => match (*member.obj, member.prop) {
                     // replace ident and call members but exclude literal "".substring() calls
                     (Expr::Ident(obj), MemberProp::Ident(ident)) => {
-                        replace_call_expr_id_match(Expr::Ident(obj), ident, call, opv)
+                        replace_call_expr_if_match(Expr::Ident(obj), ident, call, opv)
                     }
                     (Expr::Call(callee_call), MemberProp::Ident(ident)) => {
-                        replace_call_expr_id_match(Expr::Call(callee_call), ident, call, opv)
+                        replace_call_expr_if_match(Expr::Call(callee_call), ident, call, opv)
+                    }
+
+                    // may be something like String.prototype.substring.call
+                    (Expr::Member(member_obj), MemberProp::Ident(ident)) => {
+                        let prototype_call_option =
+                            FunctionPrototypeTransform::get_ident_from_call_or_apply(
+                                &call,
+                                &member_obj,
+                                &ident,
+                                STRING_CLASS_NAME,
+                            );
+                        if prototype_call_option.is_some() {
+                            let mut prototype_call = prototype_call_option.unwrap();
+                            replace_call_expr_if_match(
+                                prototype_call.2,
+                                prototype_call.0,
+                                &mut prototype_call.1,
+                                opv,
+                            )
+                        } else {
+                            None
+                        }
                     }
                     _ => None,
                 },
@@ -41,7 +67,7 @@ impl StringMethodTransform {
     }
 }
 
-fn replace_call_expr_id_match(
+fn replace_call_expr_if_match(
     expr: Expr,
     ident: Ident,
     call: &mut CallExpr,
