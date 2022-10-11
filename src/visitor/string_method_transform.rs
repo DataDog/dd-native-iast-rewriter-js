@@ -40,7 +40,7 @@ impl StringMethodTransform {
                     // may be something like String.prototype.substring.call
                     (Expr::Member(member_obj), MemberProp::Ident(ident)) => {
                         let prototype_call_option =
-                            FunctionPrototypeTransform::get_ident_from_call_or_apply(
+                            FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(
                                 &call,
                                 &member_obj,
                                 &ident,

@@ -77,12 +77,12 @@ __datadog_test_2.substring(__datadog_test_3), __datadog_test_2, __datadog_test_3
     )
   })
 
-  it('does not modify literal String.prototype.substring', () => {
+  it('does not modify literal String.prototype.substring.call', () => {
     const js = 'String.prototype.substring.call("hello", 2);'
     rewriteAndExpectNoTransformation(js)
   })
 
-  it('does modify String.prototype.substring', () => {
+  it('does modify String.prototype.substring.call', () => {
     const js = 'String.prototype.substring.call(b, 2);'
     rewriteAndExpect(
       js,
@@ -92,7 +92,7 @@ let __datadog_test_0;
     )
   })
 
-  it('does modify String.prototype.substring with expression argument', () => {
+  it('does modify String.prototype.substring.call with expression argument', () => {
     const js = 'String.prototype.substring.call(b + c, 2);'
     rewriteAndExpect(
       js,
@@ -102,5 +102,47 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.substring(__datadog_test_2.substring(2), \
 __datadog_test_2, 2));\n}`
     )
+  })
+
+  it('does modify String.prototype.substring.call with no arguments', () => {
+    const js = 'String.prototype.substring.call(b);'
+    rewriteAndExpect(
+      js,
+      `{
+let __datadog_test_0;
+(__datadog_test_0 = b, _ddiast.substring(__datadog_test_0.substring(), __datadog_test_0));
+    }`
+    )
+  })
+
+  it('does modify String.prototype.substring.apply with variable argument', () => {
+    const js = 'String.prototype.substring.apply(b, [2]);'
+    rewriteAndExpect(
+      js,
+      `{
+let __datadog_test_0;
+(__datadog_test_0 = b, _ddiast.substring(__datadog_test_0.substring(2), __datadog_test_0, 2));\n}`
+    )
+  })
+
+  it('does modify String.prototype.substring.apply with more arguments than needed', () => {
+    const js = 'String.prototype.substring.apply(b, [2], 1);'
+    rewriteAndExpect(
+      js,
+      `{
+let __datadog_test_0;
+(__datadog_test_0 = b, _ddiast.substring(__datadog_test_0.substring(2), __datadog_test_0, 2));
+    }`
+    )
+  })
+
+  it('does not modify String.prototype.substring.apply with incorrect arguments', () => {
+    const js = 'String.prototype.substring.apply(b, 2);'
+    rewriteAndExpectNoTransformation(js)
+  })
+
+  it('does not modify String.prototype.substring.apply with incorrect arguments', () => {
+    const js = 'String.prototype.substring.apply();'
+    rewriteAndExpectNoTransformation(js)
   })
 })

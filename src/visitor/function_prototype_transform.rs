@@ -13,13 +13,13 @@ pub struct FunctionPrototypeTransform {}
 
 impl FunctionPrototypeTransform {
     /// inspects call expression searching for $class_name.prototype.$method_name.[call|apply]($this_expr, $arguments) and if there is a match
-    /// returns a (
+    /// returns a tuple (
     ///     Ident -> $method_name,
     ///     CallExpr -> a expression equivalent to $this_expr.$method_name($arguments)
     ///     Expr -> $this_expr
     /// )
     ///
-    pub fn get_ident_from_call_or_apply(
+    pub fn get_expression_parts_from_call_or_apply(
         call: &CallExpr,
         member: &MemberExpr,
         ident: &Ident,
@@ -28,14 +28,24 @@ impl FunctionPrototypeTransform {
         let method_name = ident.sym.to_string();
         if method_name == CALL_METHOD_NAME || method_name == APPLY_METHOD_NAME {
             let mut path_parts = vec![];
-
             if get_prototype_member_path(member, &mut path_parts)
                 && is_prototype_call_from_class(&mut path_parts, class_name)
             {
-                let this_expr = &call.args[0].expr;
+                if call.args.len() == 0 {
+                    return None;
+                }
 
-                let args = get_call_args(&call.args, method_name == APPLY_METHOD_NAME);
-                if this_expr.is_lit() || args.len() == 0 {
+                let this_expr = &call.args[0].expr;
+                if this_expr.is_lit() {
+                    return None;
+                }
+
+                let mut filtered_args = vec![];
+                if !filter_call_args(
+                    &call.args,
+                    method_name == APPLY_METHOD_NAME,
+                    &mut filtered_args,
+                ) {
                     return None;
                 }
 
@@ -48,7 +58,7 @@ impl FunctionPrototypeTransform {
                 };
 
                 let new_call = CallExpr {
-                    args,
+                    args: filtered_args,
                     callee: Callee::Expr(Box::new(Expr::Member(new_callee))),
                     span: call.span,
                     type_args: None,
@@ -62,28 +72,39 @@ impl FunctionPrototypeTransform {
     }
 }
 
-fn get_call_args(args: &Vec<ExprOrSpread>, is_apply: bool) -> Vec<ExprOrSpread> {
+fn filter_call_args(
+    args: &Vec<ExprOrSpread>,
+    is_apply: bool,
+    filtered_args: &mut Vec<ExprOrSpread>,
+) -> bool {
     // when using apply, arguments are provided as an array
+    let mut success_filtering = true;
     if is_apply {
-        let mut apply_args = Vec::new();
-        if args.len() == 2 && args[1].expr.is_array() {
-            let array = args[1].expr.as_array().unwrap();
-            apply_args = array
-                .elems
-                .iter()
-                .filter(|elem| elem.is_some())
-                .map(|elem| elem.as_ref().unwrap().clone())
-                .collect();
+        if args.len() >= 2 {
+            if args[1].expr.is_array() {
+                let array = args[1].expr.as_array().unwrap();
+                filtered_args.append(
+                    &mut array
+                        .elems
+                        .iter()
+                        .filter(|elem| elem.is_some())
+                        .map(|elem| elem.as_ref().unwrap().clone())
+                        .collect(),
+                );
+            } else {
+                success_filtering = false;
+            }
         }
-        apply_args
     } else {
-        let call_args = args
-            .iter()
-            .skip(1)
-            .map(|arg| arg.clone())
-            .collect::<Vec<ExprOrSpread>>();
-        call_args
+        filtered_args.append(
+            &mut args
+                .iter()
+                .skip(1)
+                .map(|arg| arg.clone())
+                .collect::<Vec<ExprOrSpread>>(),
+        );
     }
+    success_filtering
 }
 
 fn get_prototype_member_path(member: &MemberExpr, parts: &mut Vec<Ident>) -> bool {
