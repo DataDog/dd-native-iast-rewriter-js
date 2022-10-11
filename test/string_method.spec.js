@@ -145,4 +145,42 @@ let __datadog_test_0;
     const js = 'String.prototype.substring.apply();'
     rewriteAndExpectNoTransformation(js)
   })
+
+  it('does not modify String.prototype.substring direct call', () => {
+    const js = 'String.prototype.substring(1);'
+    rewriteAndExpectNoTransformation(js)
+  })
+
+  it('does modify member.prop.substring call', () => {
+    const js = 'a.b.c.substring(1);'
+    rewriteAndExpect(
+      js,
+      `{
+let __datadog_test_0;
+(__datadog_test_0 = a.b.c, _ddiast.substring(__datadog_test_0.substring(1), __datadog_test_0, 1));
+    }`
+    )
+  })
+
+  it('does modify member.call.prop.substring call', () => {
+    const js = 'a.b().c.substring(1);'
+    rewriteAndExpect(
+      js,
+      `{
+let __datadog_test_0;
+(__datadog_test_0 = a.b().c, _ddiast.substring(__datadog_test_0.substring(1), __datadog_test_0, 1));
+    }`
+    )
+  })
+
+  it('does modify member.prop.call.substring call', () => {
+    const js = 'a.b.c().substring(1);'
+    rewriteAndExpect(
+      js,
+      `{
+let __datadog_test_0;
+(__datadog_test_0 = a.b.c(), _ddiast.substring(__datadog_test_0.substring(1), __datadog_test_0, 1));
+    }`
+    )
+  })
 })

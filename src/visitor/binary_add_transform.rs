@@ -109,6 +109,7 @@ fn replace_expressions_in_binary_operand(
             if binary.op != BinaryOp::Add {
                 operand.map_with_mut(|op| {
                     Expr::Ident(ident_provider.get_ident_used_in_assignation(
+                    Expr::Ident(opv.get_ident_used_in_assignation(
                         &op,
                         assignations,
                         arguments,
@@ -126,6 +127,7 @@ fn replace_expressions_in_binary_operand(
                 arguments,
                 span,
             ))
+            Expr::Ident(opv.get_ident_used_in_assignation(&op, assignations, arguments, span))
         }),
     }
 }

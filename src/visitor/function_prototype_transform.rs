@@ -12,11 +12,16 @@ pub const APPLY_METHOD_NAME: &str = "apply";
 pub struct FunctionPrototypeTransform {}
 
 impl FunctionPrototypeTransform {
+    pub fn is_call_or_apply(ident: &Ident) -> bool {
+        let method_name = ident.sym.to_string();
+        method_name == CALL_METHOD_NAME || method_name == APPLY_METHOD_NAME
+    }
+
     /// inspects call expression searching for $class_name.prototype.$method_name.[call|apply]($this_expr, $arguments) and if there is a match
     /// returns a tuple (
+    ///     Expr -> $this_expr,
     ///     Ident -> $method_name,
     ///     CallExpr -> a expression equivalent to $this_expr.$method_name($arguments)
-    ///     Expr -> $this_expr
     /// )
     ///
     pub fn get_expression_parts_from_call_or_apply(
@@ -24,48 +29,50 @@ impl FunctionPrototypeTransform {
         member: &MemberExpr,
         ident: &Ident,
         class_name: &str,
-    ) -> Option<(Ident, CallExpr, Expr)> {
+    ) -> Option<(Expr, Ident, CallExpr)> {
+        if !Self::is_call_or_apply(ident) {
+            return None;
+        }
+
         let method_name = ident.sym.to_string();
-        if method_name == CALL_METHOD_NAME || method_name == APPLY_METHOD_NAME {
-            let mut path_parts = vec![];
-            if get_prototype_member_path(member, &mut path_parts)
-                && is_prototype_call_from_class(&mut path_parts, class_name)
-            {
-                if call.args.len() == 0 {
-                    return None;
-                }
-
-                let this_expr = &call.args[0].expr;
-                if this_expr.is_lit() {
-                    return None;
-                }
-
-                let mut filtered_args = vec![];
-                if !filter_call_args(
-                    &call.args,
-                    method_name == APPLY_METHOD_NAME,
-                    &mut filtered_args,
-                ) {
-                    return None;
-                }
-
-                let method_ident = path_parts[path_parts.len() - 1].clone();
-
-                let new_callee = MemberExpr {
-                    obj: this_expr.clone(),
-                    prop: MemberProp::Ident(method_ident.clone()),
-                    span: call.span,
-                };
-
-                let new_call = CallExpr {
-                    args: filtered_args,
-                    callee: Callee::Expr(Box::new(Expr::Member(new_callee))),
-                    span: call.span,
-                    type_args: None,
-                };
-
-                return Some((method_ident, new_call, *this_expr.clone()));
+        let mut path_parts = vec![];
+        if get_prototype_member_path(member, &mut path_parts)
+            && is_prototype_call_from_class(&mut path_parts, class_name)
+        {
+            if call.args.len() == 0 {
+                return None;
             }
+
+            let this_expr = &call.args[0].expr;
+            if this_expr.is_lit() {
+                return None;
+            }
+
+            let mut filtered_args = vec![];
+            if !filter_call_args(
+                &call.args,
+                method_name == APPLY_METHOD_NAME,
+                &mut filtered_args,
+            ) {
+                return None;
+            }
+
+            let method_ident = path_parts[path_parts.len() - 1].clone();
+
+            let new_callee = MemberExpr {
+                obj: this_expr.clone(),
+                prop: MemberProp::Ident(method_ident.clone()),
+                span: call.span,
+            };
+
+            let new_call = CallExpr {
+                args: filtered_args,
+                callee: Callee::Expr(Box::new(Expr::Member(new_callee))),
+                span: call.span,
+                type_args: None,
+            };
+
+            return Some((*this_expr.clone(), method_ident, new_call));
         }
 
         None

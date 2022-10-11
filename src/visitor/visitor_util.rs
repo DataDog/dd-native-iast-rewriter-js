@@ -140,3 +140,23 @@ pub fn get_dd_paren_expr(
         })
     }
 }
+
+pub fn create_assign_expression(index: usize, expr: &Expr, span: Span) -> (AssignExpr, Ident) {
+    let id = Ident {
+        span: DUMMY_SP,
+        sym: JsWord::from(get_dd_local_variable_name(index)),
+        optional: false,
+    };
+    (
+        AssignExpr {
+            span,
+            left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
+                id: id.clone(),
+                type_ann: None,
+            }))),
+            right: Box::new(expr.clone()),
+            op: AssignOp::Assign,
+        },
+        id,
+    )
+}

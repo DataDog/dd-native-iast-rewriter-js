@@ -107,4 +107,13 @@ mod tests {
     const a = (__datadog_test_0 = b(), _ddiast.substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
         Ok(())
     }
+
+    #[test]
+    fn test_prototype_substring_incorrect() -> Result<(), String> {
+        let original_code = "{const a = b.c.d.substring(1);}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const a = String.prototype.substring(1);");
+        Ok(())
+    }
 }
