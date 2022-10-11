@@ -10,7 +10,7 @@ use std::collections::HashSet;
 use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub enum Status {
     Modified,
     NotModified,
