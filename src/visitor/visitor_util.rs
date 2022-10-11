@@ -6,7 +6,8 @@ use crate::util::rnd_string;
 use std::{env, sync::Once};
 use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
 
-pub const DD_GLOBAL_NAMESPACE: &str = "_ddiast";
+const DATADOG_VAR_PREFIX: &str = "__datadog";
+const DD_GLOBAL_NAMESPACE: &str = "_ddiast";
 const DD_PLUS_OPERATOR: &str = "plusOperator";
 pub const DD_LOCAL_VAR_NAME_HASH_ENV_NAME: &str = "DD_LOCAL_VAR_NAME_HASH";
 
@@ -31,7 +32,7 @@ pub fn get_dd_local_variable_name(n: usize) -> String {
 }
 
 pub fn get_dd_local_variable_prefix() -> String {
-    format!("__datadog_{}_", get_dd_local_var_name_hash())
+    format!("{}_{}_", DATADOG_VAR_PREFIX, get_dd_local_var_name_hash())
 }
 
 pub fn get_plus_operator_based_on_num_of_args_for_span(arguments_len: usize, span: Span) -> Callee {
@@ -70,10 +71,11 @@ pub fn any_items_plus_operator(span: Span) -> MemberProp {
 pub fn get_dd_call_plus_operator_expr(expr: Expr, arguments: &[Expr], span: Span) -> Expr {
     let mut args: Vec<ExprOrSpread> = vec![ExprOrSpread {
 pub fn get_dd_call_expr(expr: Expr, arguments: &Vec<Expr>, method_name: &str, span: Span) -> Expr {
+pub fn get_dd_call_expr(expr: &Expr, arguments: &Vec<Expr>, method_name: &str, span: Span) -> Expr {
     let mut args: Vec<ExprOrSpread> = Vec::new();
 
     args.push(ExprOrSpread {
-        expr: Box::new(expr),
+        expr: Box::new(expr.clone()),
         spread: None,
     }];
 
@@ -99,6 +101,9 @@ pub fn get_dd_plus_operator_paren_expr(
     expr: Expr,
     arguments: &[Expr],
     assignations: &mut Vec<Expr>,
+    expr: &Expr,
+    arguments: &Vec<Expr>,
+    assignations: &mut Vec<Box<Expr>>,
     span: Span,
 ) -> Expr {
     let plus_operator_call = get_dd_call_plus_operator_expr(expr, arguments, span);
@@ -114,7 +119,7 @@ pub fn get_dd_plus_operator_paren_expr(
 }
 
 pub fn get_dd_paren_expr(
-    expr: Expr,
+    expr: &Expr,
     arguments: &Vec<Expr>,
     assignations: &mut Vec<Box<Expr>>,
     method_name: &str,

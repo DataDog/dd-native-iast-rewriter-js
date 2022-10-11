@@ -6,6 +6,7 @@ use swc_ecma_visit::swc_ecma_ast::{
     CallExpr, Callee, Expr, ExprOrSpread, Ident, MemberExpr, MemberProp,
 };
 
+pub const PROTOTYPE: &str = "prototype";
 pub const CALL_METHOD_NAME: &str = "call";
 pub const APPLY_METHOD_NAME: &str = "apply";
 
@@ -15,6 +16,10 @@ impl FunctionPrototypeTransform {
     pub fn is_call_or_apply(ident: &Ident) -> bool {
         let method_name = ident.sym.to_string();
         method_name == CALL_METHOD_NAME || method_name == APPLY_METHOD_NAME
+    }
+
+    pub fn member_prop_is_prototype(member: &MemberExpr) -> bool {
+        member.prop.is_ident() && member.prop.as_ident().unwrap().sym.to_string() == PROTOTYPE
     }
 
     /// inspects call expression searching for $class_name.prototype.$method_name.[call|apply]($this_expr, $arguments) and if there is a match
@@ -136,6 +141,6 @@ fn is_prototype_call_from_class(parts: &mut Vec<Ident>, class_name: &str) -> boo
         .map(|part| part.sym.to_string())
         .collect::<Vec<String>>()
         .join(".");
-    let class_name_prototype = format!("{}.prototype", class_name);
+    let class_name_prototype = format!("{}.{}", class_name, PROTOTYPE);
     call_expr.starts_with(&class_name_prototype)
 }

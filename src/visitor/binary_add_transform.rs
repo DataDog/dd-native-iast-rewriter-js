@@ -37,7 +37,7 @@ fn to_dd_binary_expr_binary(binary: &mut BinExpr, ident_provider: &mut dyn Ident
     ) {
         ident_provider.set_status(TransformStatus::modified());
         return get_dd_plus_operator_paren_expr(
-            Expr::Bin(binary.clone()),
+            &Expr::Bin(binary.clone()),
             &arguments,
             &mut assignations,
             binary.span,

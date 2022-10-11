@@ -44,10 +44,7 @@ impl StringMethodTransform {
 
                         // or a.b.substring() but not String.prototype.substring()
                         } else {
-                            if member_obj.prop.is_ident()
-                                && member_obj.prop.as_ident().unwrap().sym.to_string()
-                                    == "prototype"
-                            {
+                            if FunctionPrototypeTransform::member_prop_is_prototype(&member_obj) {
                                 return None;
                             }
 
@@ -112,9 +109,9 @@ fn replace_call_expr_if_match(
             prop: MemberProp::Ident(ident.clone()),
         })));
 
-        call_replacement.args.iter_mut().for_each(|expr_or_span| {
+        call_replacement.args.iter_mut().for_each(|expr_or_spread| {
             replace_expressions_in_operand(
-                &mut *expr_or_span.expr,
+                &mut *expr_or_spread.expr,
                 &mut assignations,
                 &mut arguments,
                 span,
@@ -123,7 +120,7 @@ fn replace_call_expr_if_match(
         });
 
         return Some(get_dd_paren_expr(
-            Expr::Call(call_replacement),
+            &Expr::Call(call_replacement),
             &arguments,
             &mut assignations,
             &method_name,
