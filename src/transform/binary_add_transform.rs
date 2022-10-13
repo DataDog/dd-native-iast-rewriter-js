@@ -2,14 +2,14 @@
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
-use swc::{
-    common::{util::take::Take, Span},
-    ecmascript::ast::*,
-};
+use swc::ecmascript::ast::*;
 
 use super::{
     ident_provider::IdentProvider, transform_status::TransformStatus,
     visitor_util::get_dd_plus_operator_paren_expr,
+use crate::{
+    transform::operand_handler::{DefaultOperandHandler, OperandHandler},
+    visitor::{ident_provider::IdentProvider, visitor_util::get_dd_plus_operator_paren_expr},
 };
 
 pub struct BinaryAddTransform {}
@@ -58,6 +58,8 @@ fn prepare_replace_expressions_in_binary(
     replace_expressions_in_binary_operand(
         left,
         right,
+    DefaultOperandHandler::replace_expressions_in_operand(
+        &mut *binary.left,
         assignations,
         arguments,
         &binary.span,
@@ -68,6 +70,8 @@ fn prepare_replace_expressions_in_binary(
     replace_expressions_in_binary_operand(
         right,
         left,
+    DefaultOperandHandler::replace_expressions_in_operand(
+        &mut *binary.right,
         assignations,
         arguments,
         &binary.span,

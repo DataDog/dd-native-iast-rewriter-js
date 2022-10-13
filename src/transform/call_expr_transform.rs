@@ -2,12 +2,14 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
-use swc::common::{util::take::Take, Span};
 use swc_ecma_visit::swc_ecma_ast::{CallExpr, Callee, Expr, Ident, MemberExpr, MemberProp};
 
-use crate::visitor::function_prototype_transform::FunctionPrototypeTransform;
+use crate::transform::{
+    function_prototype_transform::FunctionPrototypeTransform,
+    operand_handler::{DefaultOperandHandler, OperandHandler},
+};
 
-use super::{ident_provider::IdentProvider, visitor_util::get_dd_paren_expr};
+use crate::visitor::{ident_provider::IdentProvider, visitor_util::get_dd_paren_expr};
 
 pub const STRING_CLASS_NAME: &str = "String";
 
@@ -127,13 +129,13 @@ fn replace_call_expr_if_match(
         })));
 
         call_replacement.args.iter_mut().for_each(|expr_or_spread| {
-            replace_expressions_in_operand(
+            DefaultOperandHandler::replace_expressions_in_operand(
                 &mut *expr_or_spread.expr,
                 &mut assignations,
                 &mut arguments,
                 &span,
                 ident_provider,
-            );
+            )
         });
 
         return Some(get_dd_paren_expr(
@@ -145,25 +147,4 @@ fn replace_call_expr_if_match(
         ));
     }
     None
-}
-
-fn replace_expressions_in_operand(
-    operand: &mut Expr,
-    assignations: &mut Vec<Expr>,
-    arguments: &mut Vec<Expr>,
-    span: &Span,
-    ident_provider: &mut dyn IdentProvider,
-) {
-    match operand {
-        Expr::Lit(_) => arguments.push(operand.clone()),
-
-        _ => operand.map_with_mut(|op| {
-            Expr::Ident(ident_provider.get_ident_used_in_assignation(
-                &op,
-                assignations,
-                arguments,
-                span,
-            ))
-        }),
-    }
 }

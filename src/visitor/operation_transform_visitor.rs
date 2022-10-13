@@ -6,10 +6,12 @@ use std::collections::HashSet;
 use swc::{common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
+use crate::transform::{
+    assign_add_transform::AssignAddTransform, binary_add_transform::BinaryAddTransform,
+    call_expr_transform::CallExprTransform, template_transform::TemplateTransform,
+};
+
 use super::{
-    assign_add_transform::AssignAddTransform,
-    binary_add_transform::BinaryAddTransform,
-    call_expr_transform::CallExprTransform,
     ident_provider::IdentProvider,
     template_transform::TemplateTransform,
     transform_status::TransformStatus,
