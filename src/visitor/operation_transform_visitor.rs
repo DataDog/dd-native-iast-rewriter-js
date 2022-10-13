@@ -69,7 +69,7 @@ impl OperationTransformVisitor {
         let (assign, id) = create_assign_expression(self.next_ident(), operand, span);
 
         // store ident and assignation expression
-        let id_clone = id.to_owned();
+        let id_clone = id.clone();
         if definitive && !self.idents.contains(&id_clone) {
             self.idents.push(id_clone);
         }
@@ -173,7 +173,7 @@ impl VisitMut for OperationTransformVisitor {
                     if let Some(method) =
                         CallExprTransform::to_dd_call_expr(call, opv_with_child_ctx)
                     {
-                        expr.map_with_mut(|_| method)
+                        expr.map_with_mut(|_| method);
                     }
                 }
             }

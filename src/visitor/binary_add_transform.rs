@@ -2,7 +2,6 @@
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
-use std::ops::DerefMut;
 use swc::{
     common::{util::take::Take, Span},
     ecmascript::ast::*,
@@ -72,6 +71,11 @@ fn prepare_replace_expressions_in_binary(
         &binary.span,
         ident_provider,
     );
+    let left = &mut *binary.left;
+    replace_expressions_in_binary_operand(left, assignations, arguments, binary.span, opv);
+
+    let right = &mut *binary.right;
+    replace_expressions_in_binary_operand(right, assignations, arguments, binary.span, opv);
 
     // if all arguments are literals we can skip expression replacement
     must_replace_binary_expression(arguments)
@@ -106,7 +110,9 @@ fn replace_expressions_in_binary_operand(
             }
         }
         Expr::Bin(binary) => {
-            if binary.op != BinaryOp::Add {
+            if binary.op == BinaryOp::Add {
+                to_dd_binary_expr_binary(binary, opv);
+            } else {
                 operand.map_with_mut(|op| {
                     Expr::Ident(ident_provider.get_ident_used_in_assignation(
                     Expr::Ident(opv.get_ident_used_in_assignation(
@@ -118,6 +124,7 @@ fn replace_expressions_in_binary_operand(
                 })
             } else {
                 to_dd_binary_expr_binary(binary, ident_provider);
+                });
             }
         }
         _ => operand.map_with_mut(|op| {

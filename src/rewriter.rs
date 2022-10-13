@@ -157,9 +157,10 @@ fn transform_js(
         ),
         Status::NotModified => Ok(TransformOutput {
             code: code.to_string(),
+            code: code.clone(),
             map: None,
         }),
-        _ => Err(Error::msg(format!(
+        Status::Cancelled => Err(Error::msg(format!(
             "Cancelling {} file rewrite. Reason: {}",
             file, transform_status.msg
         ))),

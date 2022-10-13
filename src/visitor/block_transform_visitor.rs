@@ -115,8 +115,6 @@ fn get_variable_insertion_index(stmts: &Vec<Stmt>) -> usize {
                 Expr::Lit(Lit::Str(lit)) => {
                     if lit.value.eq("use strict") {
                         return 1;
-                    } else {
-                        return 0;
                     }
                 }
                 _ => return 0,
