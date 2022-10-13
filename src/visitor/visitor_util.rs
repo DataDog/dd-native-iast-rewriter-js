@@ -35,23 +35,23 @@ pub fn get_dd_local_variable_prefix() -> String {
     format!("{}_{}_", DATADOG_VAR_PREFIX, get_dd_local_var_name_hash())
 }
 
-pub fn dd_global_method_invocation(method_name: &str, span: Span) -> Callee {
+pub fn dd_global_method_invocation(method_name: &str, span: &Span) -> Callee {
     Callee::Expr(Box::new(Expr::Member(MemberExpr {
-        span,
+        span: *span,
         prop: MemberProp::Ident(Ident {
-            span,
+            span: *span,
             sym: JsWord::from(method_name),
             optional: false,
         }),
         obj: Box::new(Expr::Ident(Ident {
-            span,
+            span: *span,
             sym: JsWord::from(DD_GLOBAL_NAMESPACE),
             optional: false,
         })),
     })))
 }
 
-pub fn get_dd_call_expr(expr: &Expr, arguments: &[Expr], method_name: &str, span: Span) -> Expr {
+pub fn get_dd_call_expr(expr: &Expr, arguments: &[Expr], method_name: &str, span: &Span) -> Expr {
     let mut args: Vec<ExprOrSpread> = vec![ExprOrSpread {
         expr: Box::new(expr.clone()),
         spread: None,
@@ -68,7 +68,7 @@ pub fn get_dd_call_expr(expr: &Expr, arguments: &[Expr], method_name: &str, span
     );
 
     Expr::Call(CallExpr {
-        span,
+        span: *span,
         callee: dd_global_method_invocation(method_name, span),
         args,
         type_args: None,
@@ -79,7 +79,7 @@ pub fn get_dd_plus_operator_paren_expr(
     expr: &Expr,
     arguments: &[Expr],
     assignations: &mut Vec<Expr>,
-    span: Span,
+    span: &Span,
 ) -> Expr {
     get_dd_paren_expr(expr, arguments, assignations, DD_PLUS_OPERATOR, span)
 }
@@ -89,7 +89,7 @@ pub fn get_dd_paren_expr(
     arguments: &[Expr],
     assignations: &mut Vec<Expr>,
     method_name: &str,
-    span: Span,
+    span: &Span,
 ) -> Expr {
     let call = get_dd_call_expr(expr, arguments, method_name, span);
 
@@ -100,9 +100,9 @@ pub fn get_dd_paren_expr(
     } else {
         assignations.push(call);
         return Expr::Paren(ParenExpr {
-            span,
+            span: *span,
             expr: Box::new(Expr::Seq(SeqExpr {
-                span,
+                span: *span,
                 exprs: assignations
                     .iter()
                     .map(|assignation| Box::new(assignation.clone()))
@@ -110,24 +110,4 @@ pub fn get_dd_paren_expr(
             })),
         });
     }
-}
-
-pub fn create_assign_expression(index: usize, expr: &Expr, span: Span) -> (AssignExpr, Ident) {
-    let id = Ident {
-        span: DUMMY_SP,
-        sym: JsWord::from(get_dd_local_variable_name(index)),
-        optional: false,
-    };
-    (
-        AssignExpr {
-            span,
-            left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
-                id: id.clone(),
-                type_ann: None,
-            }))),
-            right: Box::new(expr.clone()),
-            op: AssignOp::Assign,
-        },
-        id,
-    )
 }

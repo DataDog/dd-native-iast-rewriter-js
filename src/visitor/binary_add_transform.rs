@@ -39,7 +39,7 @@ fn to_dd_binary_expr_binary(binary: &mut BinExpr, ident_provider: &mut dyn Ident
             &Expr::Bin(binary.clone()),
             &arguments,
             &mut assignations,
-            binary.span,
+            &binary.span,
         );
     }
     Expr::Bin(binary.clone())
@@ -54,28 +54,25 @@ fn prepare_replace_expressions_in_binary(
     let left = binary.left.deref_mut();
     let right = binary.right.deref_mut();
 
-    replace_expressions_in_binary_operand(
-        left,
-        right,
-        assignations,
-        arguments,
-        &binary.span,
-        ident_provider,
-    );
-
-    replace_expressions_in_binary_operand(
-        right,
-        left,
-        assignations,
-        arguments,
-        &binary.span,
-        ident_provider,
-    );
     let left = &mut *binary.left;
-    replace_expressions_in_binary_operand(left, assignations, arguments, binary.span, opv);
+    replace_expressions_in_binary_operand(
+        left,
+        right,
+        assignations,
+        arguments,
+        &binary.span,
+        ident_provider,
+    );
 
     let right = &mut *binary.right;
-    replace_expressions_in_binary_operand(right, assignations, arguments, binary.span, opv);
+    replace_expressions_in_binary_operand(
+        right,
+        left,
+        assignations,
+        arguments,
+        &binary.span,
+        ident_provider,
+    );
 
     // if all arguments are literals we can skip expression replacement
     must_replace_binary_expression(arguments)
@@ -111,20 +108,16 @@ fn replace_expressions_in_binary_operand(
         }
         Expr::Bin(binary) => {
             if binary.op == BinaryOp::Add {
-                to_dd_binary_expr_binary(binary, opv);
+                to_dd_binary_expr_binary(binary, ident_provider);
             } else {
                 operand.map_with_mut(|op| {
                     Expr::Ident(ident_provider.get_ident_used_in_assignation(
-                    Expr::Ident(opv.get_ident_used_in_assignation(
                         &op,
                         assignations,
                         arguments,
                         span,
                     ))
                 })
-            } else {
-                to_dd_binary_expr_binary(binary, ident_provider);
-                });
             }
         }
         _ => operand.map_with_mut(|op| {
@@ -134,7 +127,6 @@ fn replace_expressions_in_binary_operand(
                 arguments,
                 span,
             ))
-            Expr::Ident(opv.get_ident_used_in_assignation(&op, assignations, arguments, span))
         }),
     }
 }

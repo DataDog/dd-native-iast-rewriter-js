@@ -157,7 +157,6 @@ fn transform_js(
         ),
         Status::NotModified => Ok(TransformOutput {
             code: code.to_string(),
-            code: code.clone(),
             map: None,
         }),
         Status::Cancelled => Err(Error::msg(format!(

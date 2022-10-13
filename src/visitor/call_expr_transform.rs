@@ -7,9 +7,7 @@ use swc_ecma_visit::swc_ecma_ast::{CallExpr, Callee, Expr, Ident, MemberExpr, Me
 
 use crate::visitor::function_prototype_transform::FunctionPrototypeTransform;
 
-use super::{
-    operation_transform_visitor::OperationTransformVisitor, visitor_util::get_dd_paren_expr,
-};
+use super::{ident_provider::IdentProvider, visitor_util::get_dd_paren_expr};
 
 pub const STRING_CLASS_NAME: &str = "String";
 
@@ -23,7 +21,7 @@ pub struct CallExprTransform {}
 impl CallExprTransform {
     pub fn to_dd_call_expr(
         call: &mut CallExpr,
-        opv: &mut OperationTransformVisitor,
+        ident_provider: &mut dyn IdentProvider,
     ) -> Option<Expr> {
         let callee = call.callee.clone();
         match callee {
@@ -31,16 +29,26 @@ impl CallExprTransform {
                 Expr::Member(member) => match (*member.obj, &member.prop) {
                     // replace ident and call members but exclude literal "".substring() calls
                     (Expr::Ident(obj), MemberProp::Ident(ident)) => {
-                        replace_call_expr_if_match(&Expr::Ident(obj), ident, call, opv)
+                        replace_call_expr_if_match(&Expr::Ident(obj), ident, call, ident_provider)
                     }
                     (Expr::Call(callee_call), MemberProp::Ident(ident)) => {
-                        replace_call_expr_if_match(&Expr::Call(callee_call), ident, call, opv)
+                        replace_call_expr_if_match(
+                            &Expr::Call(callee_call),
+                            ident,
+                            call,
+                            ident_provider,
+                        )
                     }
 
                     (Expr::Member(member_obj), MemberProp::Ident(ident)) => {
                         // may be something like String.prototype.substring.call
                         if FunctionPrototypeTransform::is_call_or_apply(ident) {
-                            replace_prototype_call_or_apply(call, &member_obj, ident, opv)
+                            replace_prototype_call_or_apply(
+                                call,
+                                &member_obj,
+                                ident,
+                                ident_provider,
+                            )
 
                         // or a.b.substring() but not String.prototype.substring()
                         } else {
@@ -48,7 +56,12 @@ impl CallExprTransform {
                                 return None;
                             }
 
-                            replace_call_expr_if_match(&Expr::Member(member_obj), ident, call, opv)
+                            replace_call_expr_if_match(
+                                &Expr::Member(member_obj),
+                                ident,
+                                call,
+                                ident_provider,
+                            )
                         }
                     }
                     _ => None,
@@ -64,7 +77,7 @@ fn replace_prototype_call_or_apply(
     call: &CallExpr,
     member: &MemberExpr,
     ident: &Ident,
-    opv: &mut OperationTransformVisitor,
+    ident_provider: &mut dyn IdentProvider,
 ) -> Option<Expr> {
     let prototype_call_option = FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(
         call,
@@ -78,7 +91,7 @@ fn replace_prototype_call_or_apply(
             &prototype_call.0,
             &prototype_call.1,
             &mut prototype_call.2,
-            opv,
+            ident_provider,
         ),
         _ => None,
     }
@@ -88,7 +101,7 @@ fn replace_call_expr_if_match(
     expr: &Expr,
     ident: &Ident,
     call: &mut CallExpr,
-    opv: &mut OperationTransformVisitor,
+    ident_provider: &mut dyn IdentProvider,
 ) -> Option<Expr> {
     let method_name = ident.sym.to_string();
     if get_methods().contains(&method_name) {
@@ -100,8 +113,12 @@ fn replace_call_expr_if_match(
         // a.substring() -> __datadog_token_$i.substring()
         // a().substring() -> __datadog_token_$i.substring()
         let mut call_replacement = call.clone();
-        let ident_replacement =
-            opv.get_ident_used_in_assignation(expr, &mut assignations, &mut arguments, span);
+        let ident_replacement = ident_provider.get_ident_used_in_assignation(
+            expr,
+            &mut assignations,
+            &mut arguments,
+            &span,
+        );
 
         call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
             span,
@@ -114,8 +131,8 @@ fn replace_call_expr_if_match(
                 &mut *expr_or_spread.expr,
                 &mut assignations,
                 &mut arguments,
-                span,
-                opv,
+                &span,
+                ident_provider,
             );
         });
 
@@ -124,7 +141,7 @@ fn replace_call_expr_if_match(
             &arguments,
             &mut assignations,
             &method_name,
-            span,
+            &span,
         ));
     }
     None
@@ -134,14 +151,19 @@ fn replace_expressions_in_operand(
     operand: &mut Expr,
     assignations: &mut Vec<Expr>,
     arguments: &mut Vec<Expr>,
-    span: Span,
-    opv: &mut OperationTransformVisitor,
+    span: &Span,
+    ident_provider: &mut dyn IdentProvider,
 ) {
     match operand {
         Expr::Lit(_) => arguments.push(operand.clone()),
 
         _ => operand.map_with_mut(|op| {
-            Expr::Ident(opv.get_ident_used_in_assignation(&op, assignations, arguments, span))
+            Expr::Ident(ident_provider.get_ident_used_in_assignation(
+                &op,
+                assignations,
+                arguments,
+                span,
+            ))
         }),
     }
 }

@@ -9,9 +9,8 @@ use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 use super::{
     assign_add_transform::AssignAddTransform,
     binary_add_transform::BinaryAddTransform,
-    ident_provider::IdentProvider,
-    string_method_transform::StringMethodTransform,
     call_expr_transform::CallExprTransform,
+    ident_provider::IdentProvider,
     template_transform::TemplateTransform,
     transform_status::TransformStatus,
     visitor_with_context::{Ctx, VisitorWithContext, WithCtx},
@@ -34,52 +33,6 @@ impl OperationTransformVisitor {
             transform_status: TransformStatus::not_modified(),
             ctx: Ctx::root(),
         }
-    }
-
-    pub fn next_ident(&mut self) -> usize {
-        let counter = self.ident_counter;
-        self.ident_counter += 1;
-        counter
-    }
-
-    pub fn get_ident_used_in_assignation(
-        &mut self,
-        operand: &Expr,
-        assignations: &mut Vec<Expr>,
-        arguments: &mut Vec<Expr>,
-        span: Span,
-    ) -> Ident {
-        self.get_ident_used_in_assignation_with_definitive(
-            operand,
-            assignations,
-            arguments,
-            span,
-            true,
-        )
-    }
-
-    pub fn get_ident_used_in_assignation_with_definitive(
-        &mut self,
-        operand: &Expr,
-        assignations: &mut Vec<Expr>,
-        arguments: &mut Vec<Expr>,
-        span: Span,
-        definitive: bool,
-    ) -> Ident {
-        let (assign, id) = create_assign_expression(self.next_ident(), operand, span);
-
-        // store ident and assignation expression
-        let id_clone = id.clone();
-        if definitive && !self.idents.contains(&id_clone) {
-            self.idents.push(id_clone);
-        }
-
-        assignations.push(Expr::Assign(assign));
-
-        // store ident as argument
-        arguments.push(Expr::Ident(id.clone()));
-
-        id
     }
 
     fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, OperationTransformVisitor> {
