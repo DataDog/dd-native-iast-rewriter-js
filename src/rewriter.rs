@@ -128,7 +128,7 @@ fn parse_js(
 
 fn transform_js(
     mut program: Program,
-    code: &String,
+    code: &str,
     file: &str,
     comments: bool,
     compiler: &Compiler,
@@ -153,7 +153,7 @@ fn transform_js(
             false,
         ),
         Status::NotModified => Ok(TransformOutput {
-            code: code.to_owned(),
+            code: code.to_string(),
             map: None,
         }),
         _ => Err(Error::msg(format!(

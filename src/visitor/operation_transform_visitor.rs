@@ -3,17 +3,14 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use std::collections::HashSet;
-use swc::{
-    common::{util::take::Take, Span},
-    ecmascript::ast::*,
-};
+use swc::{common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use super::{
     assign_add_transform::AssignAddTransform,
     binary_add_transform::BinaryAddTransform,
+    ident_provider::IdentProvider,
     template_transform::TemplateTransform,
-    visitor_util::create_assign_expression,
     visitor_with_context::{Ctx, VisitorWithContext, WithCtx},
 };
 
@@ -32,52 +29,6 @@ impl OperationTransformVisitor {
             variable_decl: HashSet::new(),
             ctx: Ctx::root(),
         }
-    }
-
-    pub fn next_ident(&mut self) -> usize {
-        let counter = self.ident_counter;
-        self.ident_counter += 1;
-        counter
-    }
-
-    pub fn get_ident_used_in_assignation(
-        &mut self,
-        operand: Expr,
-        assignations: &mut Vec<Expr>,
-        arguments: &mut Vec<Expr>,
-        span: Span,
-    ) -> Ident {
-        self.get_ident_used_in_assignation_with_definitive(
-            operand,
-            assignations,
-            arguments,
-            span,
-            true,
-        )
-    }
-
-    pub fn get_ident_used_in_assignation_with_definitive(
-        &mut self,
-        operand: Expr,
-        assignations: &mut Vec<Expr>,
-        arguments: &mut Vec<Expr>,
-        span: Span,
-        definitive: bool,
-    ) -> Ident {
-        let (assign, id) = create_assign_expression(self.next_ident(), operand, span);
-
-        // store ident and assignation expression
-        let id_clone = id.to_owned();
-        if definitive && !self.idents.contains(&id_clone) {
-            self.idents.push(id_clone);
-        }
-
-        assignations.push(Expr::Assign(assign));
-
-        // store ident as argument
-        arguments.push(Expr::Ident(id.clone()));
-
-        id
     }
 
     fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, OperationTransformVisitor> {
@@ -125,6 +76,20 @@ impl VisitorWithContext for OperationTransformVisitor {
     }
 }
 
+impl IdentProvider for OperationTransformVisitor {
+    fn register_ident(&mut self, ident: Ident) {
+        if !self.idents.contains(&ident) {
+            self.idents.push(ident);
+        }
+    }
+
+    fn next_ident(&mut self) -> usize {
+        let counter = self.ident_counter;
+        self.ident_counter += 1;
+        counter
+    }
+}
+
 impl Visit for OperationTransformVisitor {}
 
 impl VisitMut for OperationTransformVisitor {
@@ -162,7 +127,7 @@ impl VisitMut for OperationTransformVisitor {
     }
 
     fn visit_mut_ident(&mut self, ident: &mut Ident) {
-        self.variable_decl.insert(ident.to_owned());
+        self.variable_decl.insert(ident.clone());
     }
 
     fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {
