@@ -18,10 +18,10 @@ fn get_methods() -> Vec<String> {
     vec!["substring".to_string()]
 }
 
-pub struct StringMethodTransform {}
+pub struct CallExprTransform {}
 
-impl StringMethodTransform {
-    pub fn to_dd_string_expr(
+impl CallExprTransform {
+    pub fn to_dd_call_expr(
         call: &mut CallExpr,
         opv: &mut OperationTransformVisitor,
     ) -> Option<Expr> {

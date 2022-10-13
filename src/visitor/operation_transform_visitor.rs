@@ -11,6 +11,7 @@ use super::{
     binary_add_transform::BinaryAddTransform,
     ident_provider::IdentProvider,
     string_method_transform::StringMethodTransform,
+    call_expr_transform::CallExprTransform,
     template_transform::TemplateTransform,
     transform_status::TransformStatus,
     visitor_with_context::{Ctx, VisitorWithContext, WithCtx},
@@ -170,7 +171,7 @@ impl VisitMut for OperationTransformVisitor {
                 call.visit_mut_children_with(opv_with_child_ctx);
                 if call.callee.is_expr() {
                     if let Some(method) =
-                        StringMethodTransform::to_dd_string_expr(call, opv_with_child_ctx)
+                        CallExprTransform::to_dd_call_expr(call, opv_with_child_ctx)
                     {
                         expr.map_with_mut(|_| method)
                     }
