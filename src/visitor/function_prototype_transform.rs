@@ -44,7 +44,7 @@ impl FunctionPrototypeTransform {
         if get_prototype_member_path(member, &mut path_parts)
             && is_prototype_call_from_class(&mut path_parts, class_name)
         {
-            if call.args.len() == 0 {
+            if call.args.is_empty() {
                 return None;
             }
 
@@ -108,13 +108,7 @@ fn filter_call_args(
             }
         }
     } else {
-        filtered_args.append(
-            &mut args
-                .iter()
-                .skip(1)
-                .map(|arg| arg.clone())
-                .collect::<Vec<ExprOrSpread>>(),
-        );
+        filtered_args.append(&mut args.iter().skip(1).cloned().collect::<Vec<ExprOrSpread>>());
     }
     success_filtering
 }
@@ -134,7 +128,7 @@ fn get_prototype_member_path(member: &MemberExpr, parts: &mut Vec<Ident>) -> boo
     !parts.is_empty()
 }
 
-fn is_prototype_call_from_class(parts: &mut Vec<Ident>, class_name: &str) -> bool {
+fn is_prototype_call_from_class(parts: &mut [Ident], class_name: &str) -> bool {
     parts.reverse();
     let call_expr = parts
         .iter()

@@ -39,8 +39,8 @@ impl StringMethodTransform {
 
                     (Expr::Member(member_obj), MemberProp::Ident(ident)) => {
                         // may be something like String.prototype.substring.call
-                        if FunctionPrototypeTransform::is_call_or_apply(&ident) {
-                            replace_prototype_call_or_apply(&call, &member_obj, ident, opv)
+                        if FunctionPrototypeTransform::is_call_or_apply(ident) {
+                            replace_prototype_call_or_apply(call, &member_obj, ident, opv)
 
                         // or a.b.substring() but not String.prototype.substring()
                         } else {
@@ -132,7 +132,7 @@ fn replace_call_expr_if_match(
 
 fn replace_expressions_in_operand(
     operand: &mut Expr,
-    assignations: &mut Vec<Box<Expr>>,
+    assignations: &mut Vec<Expr>,
     arguments: &mut Vec<Expr>,
     span: Span,
     opv: &mut OperationTransformVisitor,

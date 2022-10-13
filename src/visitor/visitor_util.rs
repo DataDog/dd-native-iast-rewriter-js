@@ -35,15 +35,6 @@ pub fn get_dd_local_variable_prefix() -> String {
     format!("{}_{}_", DATADOG_VAR_PREFIX, get_dd_local_var_name_hash())
 }
 
-pub fn get_plus_operator_based_on_num_of_args_for_span(arguments_len: usize, span: Span) -> Callee {
-    let _other = arguments_len;
-    dd_global_method_invocation(span, any_items_plus_operator)
-}
-
-pub fn dd_global_method_invocation<F>(span: Span, method: F) -> Callee
-where
-    F: FnOnce(Span) -> MemberProp,
-{
 pub fn dd_global_method_invocation(method_name: &str, span: Span) -> Callee {
     Callee::Expr(Box::new(Expr::Member(MemberExpr {
         span,
@@ -60,21 +51,8 @@ pub fn dd_global_method_invocation(method_name: &str, span: Span) -> Callee {
     })))
 }
 
-pub fn any_items_plus_operator(span: Span) -> MemberProp {
-    MemberProp::Ident(Ident {
-        span,
-        sym: JsWord::from(DD_PLUS_OPERATOR),
-        optional: false,
-    })
-}
-
-pub fn get_dd_call_plus_operator_expr(expr: Expr, arguments: &[Expr], span: Span) -> Expr {
+pub fn get_dd_call_expr(expr: &Expr, arguments: &[Expr], method_name: &str, span: Span) -> Expr {
     let mut args: Vec<ExprOrSpread> = vec![ExprOrSpread {
-pub fn get_dd_call_expr(expr: Expr, arguments: &Vec<Expr>, method_name: &str, span: Span) -> Expr {
-pub fn get_dd_call_expr(expr: &Expr, arguments: &Vec<Expr>, method_name: &str, span: Span) -> Expr {
-    let mut args: Vec<ExprOrSpread> = Vec::new();
-
-    args.push(ExprOrSpread {
         expr: Box::new(expr.clone()),
         spread: None,
     }];
@@ -98,41 +76,29 @@ pub fn get_dd_call_expr(expr: &Expr, arguments: &Vec<Expr>, method_name: &str, s
 }
 
 pub fn get_dd_plus_operator_paren_expr(
-    expr: Expr,
+    expr: &Expr,
     arguments: &[Expr],
     assignations: &mut Vec<Expr>,
-    expr: &Expr,
-    arguments: &Vec<Expr>,
-    assignations: &mut Vec<Box<Expr>>,
     span: Span,
 ) -> Expr {
-    let plus_operator_call = get_dd_call_plus_operator_expr(expr, arguments, span);
-
-    // if there are 0 assign expressions we can return just call expression without parentheses
-    // else wrap them all with a sequence of comma separated expressions inside parentheses
-    if assignations.is_empty() {
-        plus_operator_call
-    } else {
-        assignations.push(plus_operator_call);
-        Expr::Paren(ParenExpr {
     get_dd_paren_expr(expr, arguments, assignations, DD_PLUS_OPERATOR, span)
 }
 
 pub fn get_dd_paren_expr(
     expr: &Expr,
-    arguments: &Vec<Expr>,
-    assignations: &mut Vec<Box<Expr>>,
+    arguments: &[Expr],
+    assignations: &mut Vec<Expr>,
     method_name: &str,
     span: Span,
 ) -> Expr {
-    let call = get_dd_call_expr(expr, &arguments, method_name, span);
+    let call = get_dd_call_expr(expr, arguments, method_name, span);
 
     // if there are 0 assign expressions we can return just call expression without parentheses
     // else wrap them all with a sequence of comma separated expressions inside parentheses
-    if assignations.len() == 0 {
-        return call;
+    if assignations.is_empty() {
+        call
     } else {
-        assignations.push(Box::new(call));
+        assignations.push(call);
         return Expr::Paren(ParenExpr {
             span,
             expr: Box::new(Expr::Seq(SeqExpr {
@@ -142,7 +108,7 @@ pub fn get_dd_paren_expr(
                     .map(|assignation| Box::new(assignation.clone()))
                     .collect::<Vec<Box<Expr>>>(),
             })),
-        })
+        });
     }
 }
 

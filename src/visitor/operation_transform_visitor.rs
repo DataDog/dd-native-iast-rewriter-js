@@ -43,10 +43,8 @@ impl OperationTransformVisitor {
 
     pub fn get_ident_used_in_assignation(
         &mut self,
-        operand: Expr,
-        assignations: &mut Vec<Expr>,
         operand: &Expr,
-        assignations: &mut Vec<Box<Expr>>,
+        assignations: &mut Vec<Expr>,
         arguments: &mut Vec<Expr>,
         span: Span,
     ) -> Ident {
@@ -61,10 +59,8 @@ impl OperationTransformVisitor {
 
     pub fn get_ident_used_in_assignation_with_definitive(
         &mut self,
-        operand: Expr,
-        assignations: &mut Vec<Expr>,
         operand: &Expr,
-        assignations: &mut Vec<Box<Expr>>,
+        assignations: &mut Vec<Expr>,
         arguments: &mut Vec<Expr>,
         span: Span,
         definitive: bool,
@@ -161,7 +157,7 @@ impl VisitMut for OperationTransformVisitor {
             Expr::Tpl(tpl) => {
                 if !tpl.exprs.is_empty() {
                     // transform tpl into binary and act like it was a binary expr
-                    let mut binary = TemplateTransform::get_binary_from_tpl(&tpl);
+                    let mut binary = TemplateTransform::get_binary_from_tpl(tpl);
                     let opv_with_child_ctx = &mut *self.with_child_ctx();
                     binary.visit_mut_children_with(opv_with_child_ctx);
                     expr.map_with_mut(|_| {
@@ -173,10 +169,11 @@ impl VisitMut for OperationTransformVisitor {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 call.visit_mut_children_with(opv_with_child_ctx);
                 if call.callee.is_expr() {
-                    match StringMethodTransform::to_dd_string_expr(call, opv_with_child_ctx) {
-                        Some(method) => expr.map_with_mut(|_| method),
-                        _ => {}
-                    };
+                    if let Some(method) =
+                        StringMethodTransform::to_dd_string_expr(call, opv_with_child_ctx)
+                    {
+                        expr.map_with_mut(|_| method)
+                    }
                 }
             }
             _ => {

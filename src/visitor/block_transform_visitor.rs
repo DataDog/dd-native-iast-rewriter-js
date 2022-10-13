@@ -81,8 +81,6 @@ fn insert_var_declaration(
     btv: &mut BlockTransformVisitor,
 ) {
     if !ident_expressions.is_empty() {
-        vtv.mark_modified();
-    if ident_expressions.len() > 0 {
         btv.mark_modified();
 
         let span = expr.span;
