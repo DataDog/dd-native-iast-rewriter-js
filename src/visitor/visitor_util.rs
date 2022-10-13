@@ -39,9 +39,8 @@ pub fn get_dd_local_variable_prefix() -> String {
 }
 
 pub fn get_plus_operator_based_on_num_of_args_for_span(arguments_len: usize, span: Span) -> Callee {
-    match arguments_len {
-        _other => dd_global_method_invocation(span, any_items_plus_operator),
-    }
+    let _other = arguments_len;
+    dd_global_method_invocation(span, any_items_plus_operator)
 }
 
 pub fn dd_global_method_invocation<F>(span: Span, method: F) -> Callee
@@ -67,13 +66,11 @@ pub fn any_items_plus_operator(span: Span) -> MemberProp {
     })
 }
 
-pub fn get_dd_call_plus_operator_expr(expr: Expr, arguments: &Vec<Expr>, span: Span) -> Expr {
-    let mut args: Vec<ExprOrSpread> = Vec::new();
-
-    args.push(ExprOrSpread {
+pub fn get_dd_call_plus_operator_expr(expr: Expr, arguments: &[Expr], span: Span) -> Expr {
+    let mut args: Vec<ExprOrSpread> = vec![ExprOrSpread {
         expr: Box::new(expr),
         spread: None,
-    });
+    }];
 
     args.append(
         &mut arguments
@@ -95,25 +92,28 @@ pub fn get_dd_call_plus_operator_expr(expr: Expr, arguments: &Vec<Expr>, span: S
 
 pub fn get_dd_plus_operator_paren_expr(
     expr: Expr,
-    arguments: &Vec<Expr>,
-    assignations: &mut Vec<Box<Expr>>,
+    arguments: &[Expr],
+    assignations: &mut Vec<Expr>,
     span: Span,
 ) -> Expr {
-    let plus_operator_call = get_dd_call_plus_operator_expr(expr, &arguments, span);
+    let plus_operator_call = get_dd_call_plus_operator_expr(expr, arguments, span);
 
     // if there are 0 assign expressions we can return just call expression without parentheses
     // else wrap them all with a sequence of comma separated expressions inside parentheses
-    if assignations.len() == 0 {
-        return plus_operator_call;
+    if assignations.is_empty() {
+        plus_operator_call
     } else {
-        assignations.push(Box::new(plus_operator_call));
-        return Expr::Paren(ParenExpr {
+        assignations.push(plus_operator_call);
+        Expr::Paren(ParenExpr {
             span,
             expr: Box::new(Expr::Seq(SeqExpr {
                 span,
-                exprs: assignations.clone(),
+                exprs: assignations
+                    .iter()
+                    .map(|assignation| Box::new(assignation.clone()))
+                    .collect::<Vec<Box<Expr>>>(),
             })),
-        });
+        })
     }
 }
 

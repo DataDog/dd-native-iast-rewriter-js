@@ -37,13 +37,13 @@ impl OperationTransformVisitor {
     pub fn next_ident(&mut self) -> usize {
         let counter = self.ident_counter;
         self.ident_counter += 1;
-        return counter;
+        counter
     }
 
     pub fn get_ident_used_in_assignation(
         &mut self,
         operand: Expr,
-        assignations: &mut Vec<Box<Expr>>,
+        assignations: &mut Vec<Expr>,
         arguments: &mut Vec<Expr>,
         span: Span,
     ) -> Ident {
@@ -59,7 +59,7 @@ impl OperationTransformVisitor {
     pub fn get_ident_used_in_assignation_with_definitive(
         &mut self,
         operand: Expr,
-        assignations: &mut Vec<Box<Expr>>,
+        assignations: &mut Vec<Expr>,
         arguments: &mut Vec<Expr>,
         span: Span,
         definitive: bool,
@@ -72,7 +72,7 @@ impl OperationTransformVisitor {
             self.idents.push(id_clone);
         }
 
-        assignations.push(Box::new(Expr::Assign(assign)));
+        assignations.push(Expr::Assign(assign));
 
         // store ident as argument
         arguments.push(Expr::Ident(id.clone()));

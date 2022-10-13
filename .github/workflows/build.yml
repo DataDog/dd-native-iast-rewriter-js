@@ -88,6 +88,7 @@ jobs:
       matrix:
         run:
           - lint
+          - clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

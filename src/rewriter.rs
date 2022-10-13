@@ -41,7 +41,7 @@ pub struct RewrittenOutput {
 
 pub fn rewrite_js(code: String, file: String, print_comments: bool) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
-    return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
+    try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let program = parse_js(&code, file.as_str(), handler, compiler.borrow())?;
 
         // extract sourcemap before printing otherwise comments are consumed
@@ -64,14 +64,14 @@ pub fn rewrite_js(code: String, file: String, print_comments: bool) -> Result<Re
             source_map: transformed.map.unwrap_or_default(),
             original_map,
         })
-    });
+    })
 }
 
 pub fn print_js(output: RewrittenOutput, chain_source_map: bool) -> String {
     let mut final_source_map: String = String::from(&output.source_map);
     if chain_source_map {
         final_source_map = chain_source_maps(&output.source_map, output.original_map)
-            .unwrap_or(String::from(&output.source_map));
+            .unwrap_or_else(|_| String::from(&output.source_map));
     }
     let final_code: String = match output.code.rfind(SOURCE_MAP_URL) {
         Some(index) => output.code.split_at(index).0.to_string(),
@@ -180,17 +180,16 @@ fn chain_source_maps(
                         let mut source_idx = None;
                         if original.has_source() {
                             let source = original.get_source().unwrap();
-                            source_idx =
-                                Some(sources.get(source).map(|it| *it).unwrap_or_else(|| {
-                                    let result = builder.add_source(source);
-                                    sources.insert(String::from(source), result);
-                                    result
-                                }));
+                            source_idx = Some(sources.get(source).copied().unwrap_or_else(|| {
+                                let result = builder.add_source(source);
+                                sources.insert(String::from(source), result);
+                                result
+                            }));
                         }
                         let mut name_idx = None;
                         if original.has_name() {
                             let name = original.get_name().unwrap();
-                            name_idx = Some(names.get(name).map(|it| *it).unwrap_or_else(|| {
+                            name_idx = Some(names.get(name).copied().unwrap_or_else(|| {
                                 let result = builder.add_name(name);
                                 names.insert(String::from(name), result);
                                 result
@@ -236,7 +235,7 @@ fn extract_source_map(folder: &Path, comments: &SwcComments) -> Option<SourceMap
                             folder.join(source_path)
                         };
                         let file = File::open(final_path)?;
-                        return decode(file);
+                        decode(file)
                     })
                     .ok()
                     .and_then(|it| match it {
@@ -246,7 +245,7 @@ fn extract_source_map(folder: &Path, comments: &SwcComments) -> Option<SourceMap
             }
         }
     }
-    return None;
+    None
 }
 
 #[cfg(test)]
