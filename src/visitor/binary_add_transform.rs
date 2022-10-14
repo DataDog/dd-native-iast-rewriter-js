@@ -8,7 +8,10 @@ use swc::{
     ecmascript::ast::*,
 };
 
-use super::{ident_provider::IdentProvider, visitor_util::get_dd_plus_operator_paren_expr};
+use super::{
+    ident_provider::IdentProvider, transform_status::TransformStatus,
+    visitor_util::get_dd_plus_operator_paren_expr,
+};
 
 pub struct BinaryAddTransform {}
 
@@ -32,6 +35,7 @@ fn to_dd_binary_expr_binary(binary: &mut BinExpr, ident_provider: &mut dyn Ident
         &mut arguments,
         ident_provider,
     ) {
+        ident_provider.set_status(TransformStatus::modified());
         return get_dd_plus_operator_paren_expr(
             Expr::Bin(binary.clone()),
             &arguments,
@@ -49,17 +53,20 @@ fn prepare_replace_expressions_in_binary(
     ident_provider: &mut dyn IdentProvider,
 ) -> bool {
     let left = binary.left.deref_mut();
+    let right = binary.right.deref_mut();
+
     replace_expressions_in_binary_operand(
         left,
+        right,
         assignations,
         arguments,
         &binary.span,
         ident_provider,
     );
 
-    let right = binary.right.deref_mut();
     replace_expressions_in_binary_operand(
         right,
+        left,
         assignations,
         arguments,
         &binary.span,
@@ -76,6 +83,7 @@ fn must_replace_binary_expression(arguments: &[Expr]) -> bool {
 
 fn replace_expressions_in_binary_operand(
     operand: &mut Expr,
+    other_operand: &mut Expr,
     assignations: &mut Vec<Expr>,
     arguments: &mut Vec<Expr>,
     span: &Span,
@@ -83,7 +91,20 @@ fn replace_expressions_in_binary_operand(
 ) {
     match operand {
         Expr::Lit(_) => arguments.push(operand.clone()),
-
+        Expr::Ident(_) => {
+            if operand_type_is_excluded(other_operand) {
+                arguments.push(operand.clone())
+            } else {
+                operand.map_with_mut(|op| {
+                    Expr::Ident(ident_provider.get_ident_used_in_assignation(
+                        &op,
+                        assignations,
+                        arguments,
+                        span,
+                    ))
+                })
+            }
+        }
         Expr::Bin(binary) => {
             if binary.op != BinaryOp::Add {
                 operand.map_with_mut(|op| {
@@ -107,4 +128,8 @@ fn replace_expressions_in_binary_operand(
             ))
         }),
     }
+}
+
+fn operand_type_is_excluded(operand: &mut Expr) -> bool {
+    operand.is_ident() || operand.is_lit()
 }

@@ -8,5 +8,6 @@ pub(crate) mod block_transform_visitor;
 pub(crate) mod ident_provider;
 pub(crate) mod operation_transform_visitor;
 pub(crate) mod template_transform;
+pub(crate) mod transform_status;
 pub(crate) mod visitor_util;
 pub(crate) mod visitor_with_context;

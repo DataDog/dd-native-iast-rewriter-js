@@ -11,6 +11,7 @@ use super::{
     binary_add_transform::BinaryAddTransform,
     ident_provider::IdentProvider,
     template_transform::TemplateTransform,
+    transform_status::TransformStatus,
     visitor_with_context::{Ctx, VisitorWithContext, WithCtx},
 };
 
@@ -18,6 +19,7 @@ pub struct OperationTransformVisitor {
     pub ident_counter: usize,
     pub idents: Vec<Ident>,
     pub variable_decl: HashSet<Ident>,
+    pub transform_status: TransformStatus,
     ctx: Ctx,
 }
 
@@ -27,6 +29,7 @@ impl OperationTransformVisitor {
             ident_counter: 0,
             idents: Vec::new(),
             variable_decl: HashSet::new(),
+            transform_status: TransformStatus::not_modified(),
             ctx: Ctx::root(),
         }
     }
@@ -42,21 +45,6 @@ impl OperationTransformVisitor {
 
     fn with_child_ctx(&mut self) -> WithCtx<'_, OperationTransformVisitor> {
         self.with_ctx(self.ctx.child(false))
-    }
-
-    // TODO: make it work
-    // this function is in charge of calling visit_mut_children_with creating a new child Ctx, calling delegate function and reseting ctx at the end.
-    // It should be used in the different match cases but it changes the behavior of the block codes. I guess the delegate expr object is cloned
-    // and expr.map_with_mut() has no effect in the real AST.
-    #[allow(dead_code)]
-    fn visit_mut_children_with_child_ctx<E, F>(&mut self, expr: &mut E, op: F)
-    where
-        E: VisitMutWith<OperationTransformVisitor>,
-        F: FnOnce(&mut E, &mut OperationTransformVisitor),
-    {
-        expr.visit_mut_children_with(&mut *self.with_child_ctx());
-        op(expr, self);
-        self.reset_ctx();
     }
 }
 
@@ -87,6 +75,10 @@ impl IdentProvider for OperationTransformVisitor {
         let counter = self.ident_counter;
         self.ident_counter += 1;
         counter
+    }
+
+    fn set_status(&mut self, status: TransformStatus) {
+        self.transform_status = status;
     }
 }
 

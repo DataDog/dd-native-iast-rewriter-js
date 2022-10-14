@@ -4,7 +4,10 @@
 **/
 use crate::{
     util::{file_name, parse_source_map},
-    visitor::block_transform_visitor::{BlockTransformVisitor, Status, TransformStatus},
+    visitor::{
+        block_transform_visitor::BlockTransformVisitor,
+        transform_status::{Status, TransformStatus},
+    },
 };
 use anyhow::{Error, Result};
 use std::{
