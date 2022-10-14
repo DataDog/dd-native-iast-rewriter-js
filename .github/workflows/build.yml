@@ -22,7 +22,7 @@ jobs:
             os: macos-latest
     runs-on: ${{ matrix.target.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: test
         run: |
           cargo check
@@ -46,15 +46,15 @@ jobs:
 
     runs-on: ${{ matrix.target.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
       - if: ${{ matrix.target.buildid == 'darwinArm' }}
         run: rustup target add aarch64-apple-darwin
       - run: npm ci --ignore-scripts
       - run: npm run build:${{ matrix.target.buildid }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.target.artifact }}
           path: ${{ matrix.target.artifact }}.node
@@ -71,14 +71,14 @@ jobs:
             dockerfile: alpine.Dockerfile
             artifact: iast-rewriter.linux-x64-musl
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
       - run: docker build -t build -f ./docker/${{ matrix.target.dockerfile }} .
       - run: docker run --name builder build
       - run: docker cp builder:/build/${{ matrix.target.artifact }}.node .
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.target.artifact }}
           path: ${{ matrix.target.artifact }}.node
@@ -91,8 +91,8 @@ jobs:
           - clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
       - run: npm ci
       - run: npm run ${{ matrix.run }}
 
@@ -100,11 +100,11 @@ jobs:
     needs: ['build-native', 'build-docker']
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           path: artifacts
       - run: npm ci --ignore-scripts
@@ -117,7 +117,7 @@ jobs:
       - run: npm pack npm/darwin-arm64/
       - uses: codex-team/action-nodejs-package-info@v1
         id: package
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
           path: '*.tgz'
@@ -141,14 +141,14 @@ jobs:
     env:
       NPM_REWRITER: true
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
       - run: npm ci --ignore-scripts
       - uses: codex-team/action-nodejs-package-info@v1
         id: package
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
       - run: npm i --verbose datadog-native-iast-rewriter-${{ matrix.target.artifact }}-${{ steps.package.outputs.version }}.tgz
@@ -170,13 +170,13 @@ jobs:
           - name: alpine 64 bits
             dockerfile: test.alpine.Dockerfile
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: '16'
       - uses: codex-team/action-nodejs-package-info@v1
         id: package
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
       - run: docker build -t test -f ./docker/${{ matrix.target.dockerfile }} --build-arg NPM_VERSION=${{ steps.package.outputs.version }} .
