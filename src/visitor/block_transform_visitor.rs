@@ -10,26 +10,7 @@ use std::collections::HashSet;
 use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-#[derive(PartialEq, Eq)]
-pub enum Status {
-    Modified,
-    NotModified,
-    Cancelled,
-}
-
-pub struct TransformStatus {
-    pub status: Status,
-    pub msg: String,
-}
-
-impl TransformStatus {
-    pub fn not_modified() -> TransformStatus {
-        TransformStatus {
-            status: Status::NotModified,
-            msg: String::from(""),
-        }
-    }
-}
+use super::transform_status::{Status, TransformStatus};
 
 pub struct BlockTransformVisitor<'a> {
     pub transform_status: &'a mut TransformStatus,
@@ -50,7 +31,9 @@ impl BlockTransformVisitor<'_> {
     }
 
     fn mark_modified(&mut self) {
-        self.transform_status.status = Status::Modified;
+        if !self.visit_is_cancelled() {
+            self.transform_status.status = Status::Modified;
+        }
     }
 }
 
@@ -71,11 +54,15 @@ impl VisitMut for BlockTransformVisitor<'_> {
         let operation_visitor = &mut OperationTransformVisitor::new();
         expr.visit_mut_children_with(operation_visitor);
 
+        if operation_visitor.transform_status.status == Status::Modified {
+            self.mark_modified();
+        }
+
         if variables_contains_possible_duplicate(&operation_visitor.variable_decl) {
             return self.cancel_visit("Variable name duplicated");
         }
 
-        insert_var_declaration(&operation_visitor.idents, expr, self);
+        insert_var_declaration(&operation_visitor.idents, expr);
 
         expr.visit_mut_children_with(self);
     }
@@ -86,14 +73,8 @@ fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>) -> bool
     variable_decl.iter().any(|var| var.sym.starts_with(&prefix))
 }
 
-fn insert_var_declaration(
-    ident_expressions: &Vec<Ident>,
-    expr: &mut BlockStmt,
-    vtv: &mut BlockTransformVisitor,
-) {
+fn insert_var_declaration(ident_expressions: &Vec<Ident>, expr: &mut BlockStmt) {
     if !ident_expressions.is_empty() {
-        vtv.mark_modified();
-
         let span = expr.span;
         let mut vec = Vec::new();
         ident_expressions.iter().for_each(|ident| {

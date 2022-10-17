@@ -19,7 +19,7 @@ const V8_NATIVE_CALL_REPLACEMENT_REGEX = /__v8_native_remainder(\w+\(\S*?|\s*\))
 const V8_NATIVE_CALL_FLAGS_COMMENT_REGEX = /\/\/\s*Flags:.*(--allow-natives-syntax)+/gm
 
 const GLOBAL_METHODS =
-  "(function(globals){globals._ddiast = globals._ddiast || {plusOperator(res) {return res;}};}((1,eval)('this')));"
+  ";(function(globals){globals._ddiast = globals._ddiast || {plusOperator(res) {return res;}};}((1,eval)('this')));"
 
 const DEFAULT_OPTIONS = {
   restore: false,

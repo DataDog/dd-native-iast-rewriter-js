@@ -22,60 +22,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    #[allow(unused_must_use)]
-    fn test_paren_stmt() -> Result<(), Error> {
-        let original_code = "(a,b,c)".to_string();
-        debug_js(original_code);
-        Ok(())
-    }
-
-    #[test]
-    fn test_class_multiple_block() -> Result<(), String> {
-        let original_code = "
-        class Polygon {
-            constructor(height, width) {
-              this.height = height;
-              this.width = width;
-              if (this.height > 100) {
-                this.greaterThan100 = true;
-              }
-            }
-            sum() { return this.height + this.width };
-          }
-        "
-        .to_string();
-        let js_file = "test.js".to_string();
-        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains(
-            "return (__datadog_test_0 = this.height, __datadog_test_1 = this.width, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));",
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn test_class_multiple_block_binary_and_call() -> Result<(), String> {
-        let original_code = "
-        class Polygon {
-            constructor(height, width) {
-              this.height = height;
-              this.width = width;
-              if (this.height > 100) {
-                this.greaterThan100 = true;
-              }
-            }
-            w() {return this.width;}
-            sum() { return this.height + this.w(); }
-          }
-        "
-        .to_string();
-        let js_file = "test.js".to_string();
-        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("(__datadog_test_0 = this.height, __datadog_test_1 = this.w(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
-        Ok(())
-    }
-
-    #[test]
     fn test_simple_plus_literal() -> Result<(), String> {
         let original_code = "{const result = 'a' + 'b'}".to_string();
         let js_file = "test.js".to_string();
@@ -99,7 +45,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("const result = (__datadog_test_1 = (__datadog_test_0 = a, _ddiast.plusOperator(__datadog_test_0 + 'b', __datadog_test_0, 'b')), _ddiast.plusOperator(__datadog_test_1 + 'c', __datadog_test_1, 'c'));");
+            .contains("const result = (__datadog_test_0 = _ddiast.plusOperator(a + 'b', a, 'b'), _ddiast.plusOperator(__datadog_test_0 + 'c', __datadog_test_0, 'c'));");
         Ok(())
     }
 
@@ -117,8 +63,7 @@ mod tests {
         let original_code = "{const result = a + b}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
-    const result = (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
+        assert_that(&rewritten.code).contains("const result = _ddiast.plusOperator(a + b, a, b);");
         Ok(())
     }
 
@@ -138,8 +83,8 @@ mod tests {
         let original_code = "{const result = a + b + c + d}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5;
-    const result = (__datadog_test_4 = (__datadog_test_2 = (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), __datadog_test_3 = c, _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3)), __datadog_test_5 = d, _ddiast.plusOperator(__datadog_test_4 + __datadog_test_5, __datadog_test_4, __datadog_test_5));");
+        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
+    const result = (__datadog_test_1 = (__datadog_test_0 = _ddiast.plusOperator(a + b, a, b), _ddiast.plusOperator(__datadog_test_0 + c, __datadog_test_0, c)), _ddiast.plusOperator(__datadog_test_1 + d, __datadog_test_1, d));");
         Ok(())
     }
 
@@ -148,22 +93,21 @@ mod tests {
         let original_code = "{const result = a + b + c() + d}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5;
-    const result = (__datadog_test_4 = (__datadog_test_2 = (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), __datadog_test_3 = c(), _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3)), __datadog_test_5 = d, _ddiast.plusOperator(__datadog_test_4 + __datadog_test_5, __datadog_test_4, __datadog_test_5));");
+        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+    const result = (__datadog_test_2 = (__datadog_test_0 = _ddiast.plusOperator(a + b, a, b), __datadog_test_1 = c(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator(__datadog_test_2 + d, __datadog_test_2, d));");
         Ok(())
     }
 
     #[test]
     fn test_multiple_plus_and_inlined_func() -> Result<(), String> {
         let original_code =
-            "{const result = a + b + (function(a){return a + 'epa';})(a)}".to_string();
+            "{const result = a + b + (function(a){return a + 'hello';})(a)}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("const result = (__datadog_test_2 = (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), __datadog_test_3 = (function(a) {
-        let __datadog_test_0;
-        return (__datadog_test_0 = a, _ddiast.plusOperator(__datadog_test_0 + 'epa', __datadog_test_0, 'epa'));
-    })(a), _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3));");
+            .contains("const result = (__datadog_test_0 = _ddiast.plusOperator(a + b, a, b), __datadog_test_1 = (function(a) {
+        return _ddiast.plusOperator(a + 'hello', a, 'hello');
+    })(a), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));");
         Ok(())
     }
 
@@ -185,15 +129,16 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.code)
-            .contains("return (__datadog_test_1 = (__datadog_test_0 = a, _ddiast.plusOperator(__datadog_test_0 + '.', __datadog_test_0, '.')), __datadog_test_2 = a, _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, __datadog_test_1, __datadog_test_2));");
+            .contains("return (__datadog_test_0 = _ddiast.plusOperator(a + '.', a, '.'), _ddiast.plusOperator(__datadog_test_0 + a, __datadog_test_0, a));");
 
         assert_that(&rewritten.code)
-            .contains("return (__datadog_test_1 = (__datadog_test_0 = a, _ddiast.plusOperator(__datadog_test_0 + '-', __datadog_test_0, '-')), __datadog_test_2 = a, _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, __datadog_test_1, __datadog_test_2));");
+            .contains("return (__datadog_test_0 = _ddiast.plusOperator(a + '-', a, '-'), _ddiast.plusOperator(__datadog_test_0 + a, __datadog_test_0, a));");
 
-        assert_that!(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;");
+        assert_that!(&rewritten.code).contains("let __datadog_test_0;");
 
         assert_that(&rewritten.code)
-            .contains("const c = a === 'hello' ? (__datadog_test_0 = fn1(b), _ddiast.plusOperator('foo' + __datadog_test_0, 'foo', __datadog_test_0)) : (__datadog_test_0 = fn2(b), _ddiast.plusOperator('bar' + __datadog_test_0, 'bar', __datadog_test_0));\n    return (__datadog_test_0 = fn2(a), __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));");
+            .contains("const c = a === 'hello' ? (__datadog_test_0 = fn1(b), _ddiast.plusOperator('foo' + __datadog_test_0, 'foo', __datadog_test_0)) : (__datadog_test_0 = fn2(b), _ddiast.plusOperator('bar' + __datadog_test_0, 'bar', __datadog_test_0));
+    return (__datadog_test_0 = fn2(a), _ddiast.plusOperator(__datadog_test_0 + c, __datadog_test_0, c));");
         Ok(())
     }
 
@@ -212,8 +157,9 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;\n    let b;
-    const a = (__datadog_test_2 = (b = '_b_', (__datadog_test_0 = b, __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))), _ddiast.plusOperator('a' + __datadog_test_2, 'a', __datadog_test_2));");
+            .contains("let __datadog_test_0;
+    let b;
+    const a = (__datadog_test_0 = (b = '_b_', _ddiast.plusOperator(b + c, b, c)), _ddiast.plusOperator('a' + __datadog_test_0, 'a', __datadog_test_0));");
         Ok(())
     }
 
@@ -222,9 +168,12 @@ mod tests {
         let original_code = "{const a = [a + b, c + d];}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code)
-            .contains("const a = [\n        (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)),
-        (__datadog_test_0 = c, __datadog_test_1 = d, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))\n    ]");
+        assert_that(&rewritten.code).contains(
+            "const a = [
+        _ddiast.plusOperator(a + b, a, b),
+        _ddiast.plusOperator(c + d, c, d)
+    ];",
+        );
         Ok(())
     }
 
@@ -234,8 +183,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains(
-            "const a = Object.assign({
-        [prop]: (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))",
+            "const a = Object.assign({\n        [prop]: _ddiast.plusOperator(a + b, a, b)\n    });",
         );
         Ok(())
     }
@@ -313,7 +261,7 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.code)
-            .contains("'use strict';\n    let __datadog_test_0;\n    const a = (__datadog_test_0 = b, _ddiast.plusOperator(1 + __datadog_test_0, 1, __datadog_test_0));");
+            .contains("'use strict';\n    const a = _ddiast.plusOperator(1 + b, 1, b);");
         Ok(())
     }
 
@@ -325,7 +273,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("'use strict';\n    let __datadog_test_0;\n    const a = (__datadog_test_0 = b, _ddiast.plusOperator(1 + __datadog_test_0, 1, __datadog_test_0));");
+            .contains("'use strict';\n    const a = _ddiast.plusOperator(1 + b, 1, b);");
         Ok(())
     }
 
@@ -338,6 +286,60 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.code).contains("let [a, b, ,] = f();"); // result after rewrite: let [a, b, ] = f();
+        Ok(())
+    }
+
+    #[test]
+    #[ignore]
+    #[allow(unused_must_use)]
+    fn test_paren_stmt() -> Result<(), Error> {
+        let original_code = "(a,b,c)".to_string();
+        debug_js(original_code);
+        Ok(())
+    }
+
+    #[test]
+    fn test_class_multiple_block() -> Result<(), String> {
+        let original_code = "
+        class Polygon {
+            constructor(height, width) {
+              this.height = height;
+              this.width = width;
+              if (this.height > 100) {
+                this.greaterThan100 = true;
+              }
+            }
+            sum() { return this.height + this.width };
+          }
+        "
+        .to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains(
+            "return (__datadog_test_0 = this.height, __datadog_test_1 = this.width, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));",
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_class_multiple_block_binary_and_call() -> Result<(), String> {
+        let original_code = "
+        class Polygon {
+            constructor(height, width) {
+              this.height = height;
+              this.width = width;
+              if (this.height > 100) {
+                this.greaterThan100 = true;
+              }
+            }
+            w() {return this.width;}
+            sum() { return this.height + this.w(); }
+          }
+        "
+        .to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("(__datadog_test_0 = this.height, __datadog_test_1 = this.w(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
         Ok(())
     }
 }

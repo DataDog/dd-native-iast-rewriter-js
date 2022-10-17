@@ -10,7 +10,7 @@ use swc_ecma_visit::swc_ecma_ast::{
     AssignExpr, AssignOp, BindingIdent, Expr, Ident, Pat, PatOrExpr,
 };
 
-use super::visitor_util::get_dd_local_variable_name;
+use super::{transform_status::TransformStatus, visitor_util::get_dd_local_variable_name};
 
 pub trait IdentProvider {
     fn get_ident_used_in_assignation(
@@ -82,4 +82,6 @@ pub trait IdentProvider {
     fn register_ident(&mut self, ident: Ident);
 
     fn next_ident(&mut self) -> usize;
+
+    fn set_status(&mut self, status: TransformStatus);
 }

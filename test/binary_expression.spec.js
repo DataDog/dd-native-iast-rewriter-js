@@ -18,9 +18,7 @@ describe('binary expression', () => {
     rewriteAndExpect(
       js,
       `{
-        let __datadog_test_0;
-        const result = (__datadog_test_0 = a, _ddiast.plusOperator(__datadog_test_0 + " hey!", \
-__datadog_test_0, " hey!"));
+        const result = _ddiast.plusOperator(a + " hey!", a, " hey!");
     }`
     )
   })
@@ -42,10 +40,9 @@ _ddiast.plusOperator(1 + __datadog_test_0, 1, __datadog_test_0));\n\
 const a = "a" + (c = "_b_", c + message);'
     rewriteAndExpect(
       js,
-      '{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2;\n\
-        let c;\nconst a = (__datadog_test_2 = (c = "_b_", (__datadog_test_0 = c, __datadog_test_1 = message, \
-_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))), _ddiast.plusOperator(\
-"a" + __datadog_test_2, "a", __datadog_test_2));\n}'
+      '{\nlet __datadog_test_0;\nlet c;\n\
+        const a = (__datadog_test_0 = (c = "_b_", _ddiast.plusOperator(c + message, c, message)), \
+_ddiast.plusOperator("a" + __datadog_test_0, "a", __datadog_test_0));\n}'
     )
   })
 
@@ -54,9 +51,7 @@ _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __da
     rewriteAndExpect(
       js,
       `{
-        let __datadog_test_0, __datadog_test_1;
-        const result = a || (__datadog_test_0 = b, __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + \
-__datadog_test_1, __datadog_test_0, __datadog_test_1));
+        const result = a || _ddiast.plusOperator(b + c, b, c);
     }`
     )
   })
@@ -66,9 +61,7 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1));
     rewriteAndExpect(
       js,
       `{
-        let __datadog_test_0, __datadog_test_1;
-        const result = (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + \
-__datadog_test_1, __datadog_test_0, __datadog_test_1)) || c;
+        const result = _ddiast.plusOperator(a + b, a, b) || c;
     }`
     )
   })
@@ -90,17 +83,12 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1)) || c;
   itEach(
     'does change + operator with datadog _ddiast.*plusOperator functions',
     [
-      [
-        'const result = a + b;',
-        'let __datadog_test_0, __datadog_test_1;\nconst result = (__datadog_test_0 = a, __datadog_test_1 = b, \
-_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));'
-      ],
+      ['const result = a + b;', 'const result = _ddiast.plusOperator(a + b, a, b);'],
       [
         'const result = a + b + c;',
-        'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;\n\
-const result = (__datadog_test_2 = (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 \
-+ __datadog_test_1, __datadog_test_0, __datadog_test_1)), __datadog_test_3 = c, _ddiast.plusOperator(__datadog_test_2 \
-+ __datadog_test_3, __datadog_test_2, __datadog_test_3));'
+        'let __datadog_test_0;\n\
+        const result = (__datadog_test_0 = _ddiast.plusOperator(a + b, a, b), _ddiast.plusOperator(__datadog_test_0 \
++ c, __datadog_test_0, c));'
       ]
     ],
     (value) => {
@@ -139,31 +127,23 @@ _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __da
       //
       // Literals expanding from the beginning
       //
-      [
-        'const result = "a" + b;',
-        'let __datadog_test_0;\nconst result = (__datadog_test_0 = b, _ddiast.plusOperator("a" + __datadog_test_0, \
-"a", __datadog_test_0));'
-      ],
+      ['const result = "a" + b;', 'const result = _ddiast.plusOperator("a" + b, "a", b);'],
       [
         'const result = "a" + b + c;',
-        'let __datadog_test_0, __datadog_test_1, __datadog_test_2;\nconst result = (__datadog_test_1 = (\
-__datadog_test_0 = b, _ddiast.plusOperator("a" + __datadog_test_0, "a", __datadog_test_0)), __datadog_test_2 \
-= c, _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, __datadog_test_1, __datadog_test_2));'
+        'let __datadog_test_0;\n\
+const result = (__datadog_test_0 = _ddiast.plusOperator("a" + b, "a", b), _ddiast.plusOperator(__datadog_test_0 + c, \
+__datadog_test_0, c));'
       ],
 
       //
       // Literals expanding from the end
       //
-      [
-        'const result = a + "b";',
-        'let __datadog_test_0;\nconst result = (__datadog_test_0 = a, _ddiast.plusOperator(__datadog_test_0 + "b", \
-__datadog_test_0, "b"));'
-      ],
+      ['const result = a + "b";', 'const result = _ddiast.plusOperator(a + "b", a, "b");'],
       [
         'const result = a + b + "c";',
-        'let __datadog_test_0, __datadog_test_1, __datadog_test_2;\nconst result = (__datadog_test_2 = (\
-__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0\
-, __datadog_test_1)), _ddiast.plusOperator(__datadog_test_2 + "c", __datadog_test_2, "c"));'
+        'let __datadog_test_0;\n\
+const result = (__datadog_test_0 = _ddiast.plusOperator(a + b, a, b), _ddiast.plusOperator(__datadog_test_0 + "c", \
+__datadog_test_0, "c"));'
       ],
 
       //
@@ -171,18 +151,15 @@ __datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_
       //
       [
         'const result = a + "b" + c;',
-        'let __datadog_test_0, __datadog_test_1, __datadog_test_2;\n\
-const result = (__datadog_test_1 = (__datadog_test_0 = a, _ddiast.plusOperator(__datadog_test_0 + "b", \
-__datadog_test_0, "b")), __datadog_test_2 = c, _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, \
-__datadog_test_1, __datadog_test_2));'
+        'let __datadog_test_0;\n\
+const result = (__datadog_test_0 = _ddiast.plusOperator(a + "b", a, "b"), _ddiast.plusOperator(__datadog_test_0 + c, \
+__datadog_test_0, c));'
       ],
       [
         'const result = a + "b" + c + d;',
-        'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4;\n\
-const result = (__datadog_test_3 = (__datadog_test_1 = (__datadog_test_0 = a, _ddiast.plusOperator(__datadog_test_0 \
-+ "b", __datadog_test_0, "b")), __datadog_test_2 = c, _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, \
-__datadog_test_1, __datadog_test_2)), __datadog_test_4 = d, _ddiast.plusOperator(__datadog_test_3 + __datadog_test_4, \
-__datadog_test_3, __datadog_test_4));'
+        'let __datadog_test_0, __datadog_test_1;\n\
+const result = (__datadog_test_1 = (__datadog_test_0 = _ddiast.plusOperator(a + "b", a, "b"), _ddiast.plusOperator(\
+__datadog_test_0 + c, __datadog_test_0, c)), _ddiast.plusOperator(__datadog_test_1 + d, __datadog_test_1, d));'
       ],
 
       //
@@ -196,55 +173,42 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1));'
       ],
       [
         'const result = a * b + c;',
-        'let __datadog_test_0, __datadog_test_1;\n\
-const result = (__datadog_test_0 = a * b, __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + \
-__datadog_test_1, __datadog_test_0, __datadog_test_1));'
+        'let __datadog_test_0;\n\
+const result = (__datadog_test_0 = a * b, _ddiast.plusOperator(__datadog_test_0 + c, __datadog_test_0, c));'
       ],
       [
         'const result = a + b + "c" + d + e + "f";',
-        'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, \
-__datadog_test_5, __datadog_test_6, __datadog_test_7;\n\
-const result = (__datadog_test_7 = (__datadog_test_5 = (__datadog_test_3 = (__datadog_test_2 = (__datadog_test_0 \
-= a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, \
-__datadog_test_1)), _ddiast.plusOperator(__datadog_test_2 + "c", __datadog_test_2, "c")), __datadog_test_4 = d, \
-_ddiast.plusOperator(__datadog_test_3 + __datadog_test_4, __datadog_test_3, __datadog_test_4)), __datadog_test_6 = \
-e, _ddiast.plusOperator(__datadog_test_5 + __datadog_test_6, __datadog_test_5, __datadog_test_6)), \
-_ddiast.plusOperator(__datadog_test_7 + "f", __datadog_test_7, "f"));'
+        'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;\n\
+const result = (__datadog_test_3 = (__datadog_test_2 = (__datadog_test_1 = (__datadog_test_0 = _ddiast.plusOperator(\
+a + b, a, b), _ddiast.plusOperator(__datadog_test_0 + "c", __datadog_test_0, "c")), _ddiast.plusOperator(\
+__datadog_test_1 + d, __datadog_test_1, d)), _ddiast.plusOperator(__datadog_test_2 + e, __datadog_test_2, e)), \
+_ddiast.plusOperator(__datadog_test_3 + "f", __datadog_test_3, "f"));'
       ],
       [
         'const result = a + b() + "c" + d + e() + "f";',
         'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, \
-__datadog_test_5, __datadog_test_6, __datadog_test_7;\n\
-const result = (__datadog_test_7 = (__datadog_test_5 = (__datadog_test_3 = (__datadog_test_2 = (__datadog_test_0 = a, \
-__datadog_test_1 = b(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))\
-, _ddiast.plusOperator(__datadog_test_2 + "c", __datadog_test_2, "c")), __datadog_test_4 = d, _ddiast.plusOperator(\
-__datadog_test_3 + __datadog_test_4, __datadog_test_3, __datadog_test_4)), __datadog_test_6 = e(), \
-_ddiast.plusOperator(__datadog_test_5 + __datadog_test_6, __datadog_test_5, __datadog_test_6)), _ddiast.plusOperator(\
-__datadog_test_7 + "f", __datadog_test_7, "f"));'
+__datadog_test_5, __datadog_test_6;\n\
+const result = (__datadog_test_6 = (__datadog_test_4 = (__datadog_test_3 = (__datadog_test_2 = (__datadog_test_0 = a\
+, __datadog_test_1 = b(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1\
+)), _ddiast.plusOperator(__datadog_test_2 + "c", __datadog_test_2, "c")), _ddiast.plusOperator(__datadog_test_3 + d, \
+__datadog_test_3, d)), __datadog_test_5 = e(), _ddiast.plusOperator(__datadog_test_4 + __datadog_test_5, \
+__datadog_test_4, __datadog_test_5)), _ddiast.plusOperator(__datadog_test_6 + "f", __datadog_test_6, "f"));'
       ],
 
       // Assignations
-      [
-        'a += b;',
-        'let __datadog_test_0, __datadog_test_1;\n\
-a = (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, \
-__datadog_test_0, __datadog_test_1));'
-      ],
+      ['a += b;', 'a = _ddiast.plusOperator(a + b, a, b);'],
       [
         'a += b + c;',
-        'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;\n\
-a = (__datadog_test_2 = a, __datadog_test_3 = (__datadog_test_0 = b, __datadog_test_1 = c, _ddiast.plusOperator(\
-__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator(__datadog_test_2 \
-+ __datadog_test_3, __datadog_test_2, __datadog_test_3));'
+        'let __datadog_test_0, __datadog_test_1;\n\
+a = (__datadog_test_0 = a, __datadog_test_1 = _ddiast.plusOperator(b + c, b, c), _ddiast.plusOperator(\
+__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));'
       ],
       [
         'a += b + c + d;',
-        'let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, \
-__datadog_test_5;\n\
-a = (__datadog_test_4 = a, __datadog_test_5 = (__datadog_test_2 = (__datadog_test_0 = b, __datadog_test_1 = c, \
-_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), __datadog_test_3 = d, \
-_ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3)), _ddiast.plusOperator(\
-__datadog_test_4 + __datadog_test_5, __datadog_test_4, __datadog_test_5));'
+        'let __datadog_test_0, __datadog_test_1, __datadog_test_2;\n\
+        a = (__datadog_test_1 = a, __datadog_test_2 = (__datadog_test_0 = _ddiast.plusOperator(b + c, b, c), \
+_ddiast.plusOperator(__datadog_test_0 + d, __datadog_test_0, d)), _ddiast.plusOperator(__datadog_test_1 + \
+__datadog_test_2, __datadog_test_1, __datadog_test_2));'
       ]
     ],
     (value) => {
@@ -262,10 +226,9 @@ __datadog_test_4 + __datadog_test_5, __datadog_test_4, __datadog_test_5));'
       js,
       `{
         for(let i = 0; i < buf.length; i++){
-          let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-          res1[i] = (__datadog_test_1 = res1[i], __datadog_test_2 = s.write(buf.slice(i, (__datadog_test_0 = i, \
-_ddiast.plusOperator(__datadog_test_0 + 1, __datadog_test_0, 1)))), _ddiast.plusOperator(__datadog_test_1 + \
-__datadog_test_2, __datadog_test_1, __datadog_test_2));
+          let __datadog_test_0, __datadog_test_1;
+          res1[i] = (__datadog_test_0 = res1[i], __datadog_test_1 = s.write(buf.slice(i, _ddiast.plusOperator(i + 1, \
+i, 1))), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));
 }
 }`
     )
@@ -283,10 +246,8 @@ __datadog_test_2, __datadog_test_1, __datadog_test_2));
     rewriteAndExpect(
       js,
       `{
-        let __datadog_test_0, __datadog_test_1;
         let a = 0;
-        a -= (__datadog_test_0 = b, __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, \
-__datadog_test_0, __datadog_test_1));
+        a -= _ddiast.plusOperator(b + c, b, c);
     }`
     )
   })
@@ -320,10 +281,10 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1));
     rewriteAndExpect(
       js,
       `{
-        let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;
-        a = (__datadog_test_2 = a, __datadog_test_3 = b ? c((__datadog_test_0 = e(), __datadog_test_1 = f, \
-_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))) : d, \
-_ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3));
+        let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+a = (__datadog_test_1 = a, __datadog_test_2 = b ? c((__datadog_test_0 = e(), _ddiast.plusOperator(__datadog_test_0 \
++ f, __datadog_test_0, f))) : d, _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, __datadog_test_1, \
+__datadog_test_2));
     }`
     )
   })
@@ -333,8 +294,7 @@ _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __da
     rewriteAndExpect(
       js,
       `{
-        let __datadog_test_0, __datadog_test_1;\nif ((result = ((__datadog_test_0 = a, __datadog_test_1 = b, \
-_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)))) > 100) {}
+        if ((result = (_ddiast.plusOperator(a + b, a, b))) > 100) {}
       }`
     )
   })
@@ -359,9 +319,9 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1)))) > 100) {}
       `{
         function a() {}
         function b() {
-          let __datadog_test_0, __datadog_test_1;
-          if ((result = ((__datadog_test_0 = a(), __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + \
-__datadog_test_1, __datadog_test_0, __datadog_test_1)))) > 100) {}
+          let __datadog_test_0;
+          if ((result = ((__datadog_test_0 = a(), _ddiast.plusOperator(__datadog_test_0 + b, __datadog_test_0, b)))) \
+> 100) {}
         }
       }`
     )
@@ -400,9 +360,9 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1)))) > 100) {}
       `{
         function b() {
           let __datadog_test_0, __datadog_test_1;
-          if ((result = ((__datadog_test_0 = a(), __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + \
-__datadog_test_1, __datadog_test_0, __datadog_test_1)))) > 100) return (__datadog_test_0 = c, __datadog_test_1 = d(), \
-_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));
+          if ((result = ((__datadog_test_0 = a(), _ddiast.plusOperator(__datadog_test_0 + b, __datadog_test_0, b)))) \
+> 100) return (__datadog_test_0 = c, __datadog_test_1 = d(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1\
+, __datadog_test_0, __datadog_test_1));
         }
       }`
     )
@@ -415,9 +375,10 @@ _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __da
       js,
       `{
         function b() {
-          let __datadog_test_0, __datadog_test_1;
-          if ((result = ((__datadog_test_0 = a(), __datadog_test_1 = b, _ddiast.plusOperator(__datadog_test_0 + \
-__datadog_test_1, __datadog_test_0, __datadog_test_1)))) > 100) {\nlet __datadog_test_0, __datadog_test_1;
+          let __datadog_test_0;
+          if ((result = ((__datadog_test_0 = a(), _ddiast.plusOperator(__datadog_test_0 + b, __datadog_test_0, b)))) \
+> 100) {
+let __datadog_test_0, __datadog_test_1;
   return (__datadog_test_0 = c, __datadog_test_1 = d(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, \
 __datadog_test_0, __datadog_test_1));\n}\n}
       }`
@@ -453,10 +414,9 @@ __datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));
     rewriteAndExpect(
       js,
       `{
-        let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;
-        const result = (__datadog_test_2 = a, __datadog_test_3 = await fs.readFile((__datadog_test_0 = c, \
-__datadog_test_1 = d, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)))\
-, _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3));
+        let __datadog_test_0, __datadog_test_1;
+const result = (__datadog_test_0 = a, __datadog_test_1 = await fs.readFile(_ddiast.plusOperator(c + d, c, d)), \
+_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));
       }`
     )
   })
@@ -491,9 +451,8 @@ __datadog_test_1, __datadog_test_0, __datadog_test_1));
     rewriteAndExpect(
       js,
       `{
-        let __datadog_test_0, __datadog_test_1;
-        const a = (__datadog_test_0 = b++, __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + \
-__datadog_test_1, __datadog_test_0, __datadog_test_1));
+        let __datadog_test_0;
+const a = (__datadog_test_0 = b++, _ddiast.plusOperator(__datadog_test_0 + c, __datadog_test_0, c));
       }`
     )
   })
@@ -540,10 +499,9 @@ __datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3));
     rewriteAndExpect(
       js,
       `{
-        let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;
-        const a = (__datadog_test_2 = b, __datadog_test_3 = ((__datadog_test_0 = c, __datadog_test_1 = d, \
-_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))), _ddiast.plusOperator(\
-__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3));
+        let __datadog_test_0, __datadog_test_1;
+        const a = (__datadog_test_0 = b, __datadog_test_1 = (_ddiast.plusOperator(c + d, c, d)), _ddiast.plusOperator(\
+__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));
       }`
     )
   })
