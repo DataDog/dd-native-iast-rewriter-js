@@ -7,9 +7,16 @@ use swc_ecma_visit::swc_ecma_ast::{BinaryOp, Expr};
 
 use crate::visitor::ident_provider::IdentProvider;
 
+#[derive(PartialEq, Eq)]
+pub enum IdentMode {
+    Replace,
+    Keep,
+}
+
 pub trait OperandHandler {
     fn replace_expressions_in_operand(
         operand: &mut Expr,
+        ident_mode: IdentMode,
         assignations: &mut Vec<Expr>,
         arguments: &mut Vec<Expr>,
         span: &Span,
@@ -17,6 +24,20 @@ pub trait OperandHandler {
     ) {
         match operand {
             Expr::Lit(_) => Self::replace_literals(operand, arguments),
+            Expr::Ident(_) => {
+                if ident_mode == IdentMode::Replace {
+                    operand.map_with_mut(|op| {
+                        Expr::Ident(ident_provider.get_ident_used_in_assignation(
+                            &op,
+                            assignations,
+                            arguments,
+                            span,
+                        ))
+                    })
+                } else {
+                    arguments.push(operand.clone())
+                }
+            }
             Expr::Bin(ref binary) => Self::replace_binary(
                 binary.op,
                 operand,

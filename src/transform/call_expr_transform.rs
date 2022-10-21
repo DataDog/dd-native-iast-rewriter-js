@@ -4,16 +4,20 @@
  **/
 use swc_ecma_visit::swc_ecma_ast::{CallExpr, Callee, Expr, Ident, MemberExpr, MemberProp};
 
-use crate::transform::{
-    function_prototype_transform::FunctionPrototypeTransform,
-    operand_handler::{DefaultOperandHandler, OperandHandler},
+use crate::{
+    transform::{
+        function_prototype_transform::FunctionPrototypeTransform,
+        operand_handler::{DefaultOperandHandler, OperandHandler},
+    },
+    visitor::transform_status::TransformStatus,
 };
 
 use crate::visitor::{ident_provider::IdentProvider, visitor_util::get_dd_paren_expr};
 
+use super::operand_handler::IdentMode;
+
 pub const STRING_CLASS_NAME: &str = "String";
 
-// TODO: make vector static with Once?
 fn get_methods() -> Vec<String> {
     vec!["substring".to_string()]
 }
@@ -131,12 +135,15 @@ fn replace_call_expr_if_match(
         call_replacement.args.iter_mut().for_each(|expr_or_spread| {
             DefaultOperandHandler::replace_expressions_in_operand(
                 &mut *expr_or_spread.expr,
+                IdentMode::Replace,
                 &mut assignations,
                 &mut arguments,
                 &span,
                 ident_provider,
             )
         });
+
+        ident_provider.set_status(TransformStatus::modified());
 
         return Some(get_dd_paren_expr(
             &Expr::Call(call_replacement),

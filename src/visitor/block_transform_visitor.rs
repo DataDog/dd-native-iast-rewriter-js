@@ -75,14 +75,6 @@ fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>) -> bool
 
 fn insert_var_declaration(ident_expressions: &Vec<Ident>, expr: &mut BlockStmt) {
     if !ident_expressions.is_empty() {
-fn insert_var_declaration(
-    ident_expressions: &Vec<Ident>,
-    expr: &mut BlockStmt,
-    btv: &mut BlockTransformVisitor,
-) {
-    if !ident_expressions.is_empty() {
-        btv.mark_modified();
-
         let span = expr.span;
         let mut vec = Vec::new();
         ident_expressions.iter().for_each(|ident| {

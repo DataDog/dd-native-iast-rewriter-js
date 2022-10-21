@@ -13,7 +13,6 @@ use crate::transform::{
 
 use super::{
     ident_provider::IdentProvider,
-    template_transform::TemplateTransform,
     transform_status::TransformStatus,
     visitor_with_context::{Ctx, VisitorWithContext, WithCtx},
 };
@@ -47,7 +46,6 @@ impl OperationTransformVisitor {
     }
 
     fn with_child_ctx(&mut self) -> WithCtx<'_, OperationTransformVisitor> {
-        self.with_ctx(self.ctx.child(false))
         self.with_ctx(self.ctx.child(true))
     }
 }

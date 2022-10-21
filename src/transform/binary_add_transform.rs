@@ -4,13 +4,15 @@
 **/
 use swc::ecmascript::ast::*;
 
-use super::{
-    ident_provider::IdentProvider, transform_status::TransformStatus,
-    visitor_util::get_dd_plus_operator_paren_expr,
 use crate::{
     transform::operand_handler::{DefaultOperandHandler, OperandHandler},
-    visitor::{ident_provider::IdentProvider, visitor_util::get_dd_plus_operator_paren_expr},
+    visitor::{
+        ident_provider::IdentProvider, transform_status::TransformStatus,
+        visitor_util::get_dd_plus_operator_paren_expr,
+    },
 };
+
+use super::operand_handler::IdentMode;
 
 pub struct BinaryAddTransform {}
 
@@ -51,27 +53,18 @@ fn prepare_replace_expressions_in_binary(
     arguments: &mut Vec<Expr>,
     ident_provider: &mut dyn IdentProvider,
 ) -> bool {
-    let left = binary.left.deref_mut();
-    let right = binary.right.deref_mut();
-
-    let left = &mut *binary.left;
-    replace_expressions_in_binary_operand(
-        left,
-        right,
     DefaultOperandHandler::replace_expressions_in_operand(
         &mut *binary.left,
+        get_ident_mode_operand_type_is_excluded(&mut *binary.right),
         assignations,
         arguments,
         &binary.span,
         ident_provider,
     );
 
-    let right = &mut *binary.right;
-    replace_expressions_in_binary_operand(
-        right,
-        left,
     DefaultOperandHandler::replace_expressions_in_operand(
         &mut *binary.right,
+        get_ident_mode_operand_type_is_excluded(&mut *binary.left),
         assignations,
         arguments,
         &binary.span,
@@ -86,55 +79,10 @@ fn must_replace_binary_expression(arguments: &[Expr]) -> bool {
     arguments.iter().any(|arg| !matches!(arg, Expr::Lit(_)))
 }
 
-fn replace_expressions_in_binary_operand(
-    operand: &mut Expr,
-    other_operand: &mut Expr,
-    assignations: &mut Vec<Expr>,
-    arguments: &mut Vec<Expr>,
-    span: &Span,
-    ident_provider: &mut dyn IdentProvider,
-) {
-    match operand {
-        Expr::Lit(_) => arguments.push(operand.clone()),
-        Expr::Ident(_) => {
-            if operand_type_is_excluded(other_operand) {
-                arguments.push(operand.clone())
-            } else {
-                operand.map_with_mut(|op| {
-                    Expr::Ident(ident_provider.get_ident_used_in_assignation(
-                        &op,
-                        assignations,
-                        arguments,
-                        span,
-                    ))
-                })
-            }
-        }
-        Expr::Bin(binary) => {
-            if binary.op == BinaryOp::Add {
-                to_dd_binary_expr_binary(binary, ident_provider);
-            } else {
-                operand.map_with_mut(|op| {
-                    Expr::Ident(ident_provider.get_ident_used_in_assignation(
-                        &op,
-                        assignations,
-                        arguments,
-                        span,
-                    ))
-                })
-            }
-        }
-        _ => operand.map_with_mut(|op| {
-            Expr::Ident(ident_provider.get_ident_used_in_assignation(
-                &op,
-                assignations,
-                arguments,
-                span,
-            ))
-        }),
+fn get_ident_mode_operand_type_is_excluded(operand: &mut Expr) -> IdentMode {
+    if operand.is_ident() || operand.is_lit() {
+        IdentMode::Keep
+    } else {
+        IdentMode::Replace
     }
-}
-
-fn operand_type_is_excluded(operand: &mut Expr) -> bool {
-    operand.is_ident() || operand.is_lit()
 }

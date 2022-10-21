@@ -97,10 +97,9 @@ let __datadog_test_0;
     rewriteAndExpect(
       js,
       `{
-let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-(__datadog_test_2 = (__datadog_test_0 = b, __datadog_test_1 = c, _ddiast.plusOperator(__datadog_test_0 + \
-__datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.substring(__datadog_test_2.substring(2), \
-__datadog_test_2, 2));\n}`
+let __datadog_test_0;
+(__datadog_test_0 = _ddiast.plusOperator(b + c, b, c), _ddiast.substring(__datadog_test_0.substring(2), \
+__datadog_test_0, 2));\n}`
     )
   })
 
