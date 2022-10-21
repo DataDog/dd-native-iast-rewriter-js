@@ -12,8 +12,6 @@ use crate::{
     },
 };
 
-use super::operand_handler::IdentMode;
-
 pub struct BinaryAddTransform {}
 
 impl BinaryAddTransform {
@@ -53,18 +51,20 @@ fn prepare_replace_expressions_in_binary(
     arguments: &mut Vec<Expr>,
     ident_provider: &mut dyn IdentProvider,
 ) -> bool {
+    let left_ident_mode = DefaultOperandHandler::get_ident_mode(&mut *binary.right);
     DefaultOperandHandler::replace_expressions_in_operand(
         &mut *binary.left,
-        get_ident_mode_operand_type_is_excluded(&mut *binary.right),
+        left_ident_mode,
         assignations,
         arguments,
         &binary.span,
         ident_provider,
     );
 
+    let right_ident_mode = DefaultOperandHandler::get_ident_mode(&mut *binary.left);
     DefaultOperandHandler::replace_expressions_in_operand(
         &mut *binary.right,
-        get_ident_mode_operand_type_is_excluded(&mut *binary.left),
+        right_ident_mode,
         assignations,
         arguments,
         &binary.span,
@@ -77,12 +77,4 @@ fn prepare_replace_expressions_in_binary(
 
 fn must_replace_binary_expression(arguments: &[Expr]) -> bool {
     arguments.iter().any(|arg| !matches!(arg, Expr::Lit(_)))
-}
-
-fn get_ident_mode_operand_type_is_excluded(operand: &mut Expr) -> IdentMode {
-    if operand.is_ident() || operand.is_lit() {
-        IdentMode::Keep
-    } else {
-        IdentMode::Replace
-    }
 }

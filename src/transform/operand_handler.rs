@@ -50,6 +50,14 @@ pub trait OperandHandler {
         }
     }
 
+    fn get_ident_mode(operand: &mut Expr) -> IdentMode {
+        if operand.is_ident() || operand.is_lit() {
+            IdentMode::Keep
+        } else {
+            IdentMode::Replace
+        }
+    }
+
     fn replace_literals(operand: &mut Expr, arguments: &mut Vec<Expr>) {
         arguments.push(operand.clone())
     }
