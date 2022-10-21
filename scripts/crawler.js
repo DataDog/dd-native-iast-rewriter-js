@@ -20,10 +20,6 @@ const V8_NATIVE_CALL_FLAGS_COMMENT_REGEX = /\/\/\s*Flags:.*(--allow-natives-synt
 
 const GLOBAL_METHODS =
   ";(function(globals){globals._ddiast = globals._ddiast || {plusOperator(res) {return res;}};}((1,eval)('this')));"
-const GLOBAL_METHODS = `(function(globals){globals._ddiast = globals._ddiast || {
-    plusOperator(res) {return res;},
-    substring(res){return res}};
-  }((1,eval)('this')));`
 
 const DEFAULT_OPTIONS = {
   restore: false,
