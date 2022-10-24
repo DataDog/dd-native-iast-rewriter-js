@@ -9,24 +9,21 @@ use crate::{
         function_prototype_transform::FunctionPrototypeTransform,
         operand_handler::{DefaultOperandHandler, OperandHandler},
     },
-    visitor::transform_status::TransformStatus,
+    visitor::{
+        csi_methods::CsiMethods, ident_provider::IdentProvider, transform_status::TransformStatus,
+    },
 };
 
-use crate::visitor::{ident_provider::IdentProvider, visitor_util::get_dd_paren_expr};
+use crate::visitor::visitor_util::get_dd_paren_expr;
 
 use super::operand_handler::IdentMode;
-
-pub const STRING_CLASS_NAME: &str = "String";
-
-fn get_methods() -> Vec<String> {
-    vec!["substring".to_string()]
-}
 
 pub struct CallExprTransform {}
 
 impl CallExprTransform {
     pub fn to_dd_call_expr(
         call: &mut CallExpr,
+        csi_methods: &CsiMethods,
         ident_provider: &mut dyn IdentProvider,
     ) -> Option<Expr> {
         let callee = call.callee.clone();
@@ -34,14 +31,19 @@ impl CallExprTransform {
             Callee::Expr(expr) => match *expr {
                 Expr::Member(member) => match (*member.obj, &member.prop) {
                     // replace ident and call members but exclude literal "".substring() calls
-                    (Expr::Ident(obj), MemberProp::Ident(ident)) => {
-                        replace_call_expr_if_match(&Expr::Ident(obj), ident, call, ident_provider)
-                    }
+                    (Expr::Ident(obj), MemberProp::Ident(ident)) => replace_call_expr_if_match(
+                        &Expr::Ident(obj),
+                        ident,
+                        call,
+                        csi_methods,
+                        ident_provider,
+                    ),
                     (Expr::Call(callee_call), MemberProp::Ident(ident)) => {
                         replace_call_expr_if_match(
                             &Expr::Call(callee_call),
                             ident,
                             call,
+                            csi_methods,
                             ident_provider,
                         )
                     }
@@ -53,6 +55,7 @@ impl CallExprTransform {
                                 call,
                                 &member_obj,
                                 ident,
+                                csi_methods,
                                 ident_provider,
                             )
 
@@ -66,6 +69,7 @@ impl CallExprTransform {
                                 &Expr::Member(member_obj),
                                 ident,
                                 call,
+                                csi_methods,
                                 ident_provider,
                             )
                         }
@@ -83,13 +87,14 @@ fn replace_prototype_call_or_apply(
     call: &CallExpr,
     member: &MemberExpr,
     ident: &Ident,
+    csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<Expr> {
     let prototype_call_option = FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(
         call,
         member,
         ident,
-        STRING_CLASS_NAME,
+        csi_methods,
     );
 
     match prototype_call_option {
@@ -97,6 +102,7 @@ fn replace_prototype_call_or_apply(
             &prototype_call.0,
             &prototype_call.1,
             &mut prototype_call.2,
+            csi_methods,
             ident_provider,
         ),
         _ => None,
@@ -107,10 +113,11 @@ fn replace_call_expr_if_match(
     expr: &Expr,
     ident: &Ident,
     call: &mut CallExpr,
+    csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<Expr> {
-    let method_name = ident.sym.to_string();
-    if get_methods().contains(&method_name) {
+    let method_name = &ident.sym.to_string();
+    if csi_methods.contains(&method_name) {
         let mut assignations = Vec::new();
         let mut arguments = Vec::new();
         let span = call.span;

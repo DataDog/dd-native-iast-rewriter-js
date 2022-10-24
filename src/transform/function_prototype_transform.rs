@@ -6,6 +6,8 @@ use swc_ecma_visit::swc_ecma_ast::{
     CallExpr, Callee, Expr, ExprOrSpread, Ident, MemberExpr, MemberProp,
 };
 
+use crate::visitor::csi_methods::CsiMethods;
+
 pub const PROTOTYPE: &str = "prototype";
 pub const CALL_METHOD_NAME: &str = "call";
 pub const APPLY_METHOD_NAME: &str = "apply";
@@ -33,7 +35,7 @@ impl FunctionPrototypeTransform {
         call: &CallExpr,
         member: &MemberExpr,
         ident: &Ident,
-        class_name: &str,
+        csi_methods: &CsiMethods,
     ) -> Option<(Expr, Ident, CallExpr)> {
         if !Self::is_call_or_apply(ident) {
             return None;
@@ -42,7 +44,7 @@ impl FunctionPrototypeTransform {
         let method_name = ident.sym.to_string();
         let mut path_parts = vec![];
         if get_prototype_member_path(member, &mut path_parts)
-            && is_prototype_call_from_class(&mut path_parts, class_name)
+            && is_prototype_call_from_class(&mut path_parts, csi_methods)
         {
             if call.args.is_empty() {
                 return None;
@@ -128,13 +130,15 @@ fn get_prototype_member_path(member: &MemberExpr, parts: &mut Vec<Ident>) -> boo
     !parts.is_empty()
 }
 
-fn is_prototype_call_from_class(parts: &mut [Ident], class_name: &str) -> bool {
+fn is_prototype_call_from_class(parts: &mut [Ident], csi_methods: &CsiMethods) -> bool {
     parts.reverse();
     let call_expr = parts
         .iter()
         .map(|part| part.sym.to_string())
         .collect::<Vec<String>>()
         .join(".");
-    let class_name_prototype = format!("{}.{}", class_name, PROTOTYPE);
-    call_expr.starts_with(&class_name_prototype)
+
+    csi_methods
+        .class_name_prototype_keys()
+        .any(|class_name_prototype| call_expr.starts_with(*class_name_prototype))
 }

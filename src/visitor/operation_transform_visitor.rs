@@ -12,31 +12,24 @@ use crate::transform::{
 };
 
 use super::{
+    csi_methods::CsiMethods,
     ident_provider::IdentProvider,
     transform_status::TransformStatus,
     visitor_with_context::{Ctx, VisitorWithContext, WithCtx},
 };
 
-pub struct OperationTransformVisitor {
+pub struct OperationTransformVisitor<'a> {
     pub ident_counter: usize,
     pub idents: Vec<Ident>,
     pub variable_decl: HashSet<Ident>,
     pub transform_status: TransformStatus,
-    ctx: Ctx,
+    pub csi_methods: &'a CsiMethods,
+
+    pub ctx: Ctx,
 }
 
-impl OperationTransformVisitor {
-    pub fn new() -> Self {
-        OperationTransformVisitor {
-            ident_counter: 0,
-            idents: Vec::new(),
-            variable_decl: HashSet::new(),
-            transform_status: TransformStatus::not_modified(),
-            ctx: Ctx::root(),
-        }
-    }
-
-    fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, OperationTransformVisitor> {
+impl<'a> OperationTransformVisitor<'a> {
+    fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, OperationTransformVisitor<'a>> {
         let orig_ctx = self.ctx;
         self.ctx = ctx;
         WithCtx {
@@ -45,12 +38,12 @@ impl OperationTransformVisitor {
         }
     }
 
-    fn with_child_ctx(&mut self) -> WithCtx<'_, OperationTransformVisitor> {
+    fn with_child_ctx(&mut self) -> WithCtx<'_, OperationTransformVisitor<'a>> {
         self.with_ctx(self.ctx.child(true))
     }
 }
 
-impl VisitorWithContext for OperationTransformVisitor {
+impl VisitorWithContext for OperationTransformVisitor<'_> {
     fn get_ctx(&self) -> Ctx {
         self.ctx
     }
@@ -66,7 +59,7 @@ impl VisitorWithContext for OperationTransformVisitor {
     }
 }
 
-impl IdentProvider for OperationTransformVisitor {
+impl IdentProvider for OperationTransformVisitor<'_> {
     fn register_ident(&mut self, ident: Ident) {
         if !self.idents.contains(&ident) {
             self.idents.push(ident);
@@ -84,9 +77,9 @@ impl IdentProvider for OperationTransformVisitor {
     }
 }
 
-impl Visit for OperationTransformVisitor {}
+impl Visit for OperationTransformVisitor<'_> {}
 
-impl VisitMut for OperationTransformVisitor {
+impl VisitMut for OperationTransformVisitor<'_> {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
         match expr {
             Expr::Bin(binary) => {
@@ -123,9 +116,11 @@ impl VisitMut for OperationTransformVisitor {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 call.visit_mut_children_with(opv_with_child_ctx);
                 if call.callee.is_expr() {
-                    if let Some(method) =
-                        CallExprTransform::to_dd_call_expr(call, opv_with_child_ctx)
-                    {
+                    if let Some(method) = CallExprTransform::to_dd_call_expr(
+                        call,
+                        &opv_with_child_ctx.csi_methods,
+                        opv_with_child_ctx,
+                    ) {
                         expr.map_with_mut(|_| method);
                     }
                 }
