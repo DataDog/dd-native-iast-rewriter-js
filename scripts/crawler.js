@@ -20,7 +20,18 @@ const V8_NATIVE_CALL_FLAGS_COMMENT_REGEX = /\/\/\s*Flags:.*(--allow-natives-synt
 
 const GLOBAL_METHODS = `;(function(globals){globals._ddiast = globals._ddiast || {
       plusOperator(res) {return res;},
-      string_substring(res) {return res}
+      string_substring(res) {return res},
+      string_trim(res) {return res},
+      string_trimStart(res) {return res},
+      string_trimEnd(res) {return res},
+      string_toLowerCase(res) {return res},
+      string_toUpperCase(res) {return res},
+      string_replace(res) {return res},
+      string_replaceAll(res) {return res},
+      string_slice(res) {return res},
+      string_concat(res) {return res},
+      string_toLocaleUpperCase(res) {return res},
+      string_toLocaleLowerCase(res) {return res}
     };
   }((1,eval)('this')));`
 
