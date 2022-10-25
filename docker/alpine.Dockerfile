@@ -12,4 +12,4 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain stable -y
 RUN npm ci --ignore-scripts
 COPY . .
 
-CMD ["npm", "run", "buildAndTest:alpine"]
+CMD ["npm", "run", "build:alpine"]
