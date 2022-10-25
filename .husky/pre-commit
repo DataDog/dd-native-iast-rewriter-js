@@ -3,3 +3,4 @@
 node scripts/version-checker.js
 node scripts/check_licenses.js
 npx lint-staged
+cargo clippy --workspace -- -D warnings
