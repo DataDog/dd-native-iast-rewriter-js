@@ -10,15 +10,23 @@ use std::collections::HashSet;
 use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use super::transform_status::{Status, TransformStatus};
+use super::{
+    csi_methods::CsiMethods,
+    transform_status::{Status, TransformStatus},
+    visitor_with_context::Ctx,
+};
 
 pub struct BlockTransformVisitor<'a> {
     pub transform_status: &'a mut TransformStatus,
+    csi_methods: CsiMethods,
 }
 
 impl BlockTransformVisitor<'_> {
     pub fn default(transform_status: &mut TransformStatus) -> BlockTransformVisitor<'_> {
-        BlockTransformVisitor { transform_status }
+        BlockTransformVisitor {
+            transform_status,
+            csi_methods: CsiMethods::new(),
+        }
     }
 
     fn visit_is_cancelled(&mut self) -> bool {
@@ -37,11 +45,10 @@ impl BlockTransformVisitor<'_> {
     }
 }
 
-//  new algorithm
 //  Block:
 //  - Find items to instrument (+ or template literals in statements or in while, if... test part)
 //  - Replace found items by (__dd_XXX_1=....)
-//  - Create necessary temporal vars in top of block (improve it in the future forcing deletion)
+//  - Create necessary temporal vars in top of block
 
 impl Visit for BlockTransformVisitor<'_> {}
 
@@ -51,18 +58,25 @@ impl VisitMut for BlockTransformVisitor<'_> {
             return;
         }
 
-        let operation_visitor = &mut OperationTransformVisitor::new();
-        expr.visit_mut_children_with(operation_visitor);
-
-        if operation_visitor.transform_status.status == Status::Modified {
-            self.mark_modified();
-        }
+        let mut operation_visitor = OperationTransformVisitor {
+            ident_counter: 0,
+            idents: Vec::new(),
+            variable_decl: HashSet::new(),
+            transform_status: TransformStatus::not_modified(),
+            csi_methods: &self.csi_methods,
+            ctx: Ctx::root(),
+        };
+        expr.visit_mut_children_with(&mut operation_visitor);
 
         if variables_contains_possible_duplicate(&operation_visitor.variable_decl) {
             return self.cancel_visit("Variable name duplicated");
         }
 
         insert_var_declaration(&operation_visitor.idents, expr);
+
+        if operation_visitor.transform_status.status == Status::Modified {
+            self.mark_modified();
+        }
 
         expr.visit_mut_children_with(self);
     }
@@ -107,8 +121,6 @@ fn get_variable_insertion_index(stmts: &Vec<Stmt>) -> usize {
                 Expr::Lit(Lit::Str(lit)) => {
                     if lit.value.eq("use strict") {
                         return 1;
-                    } else {
-                        return 0;
                     }
                 }
                 _ => return 0,

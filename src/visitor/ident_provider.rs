@@ -20,31 +20,12 @@ pub trait IdentProvider {
         arguments: &mut Vec<Expr>,
         span: &Span,
     ) -> Ident {
-        self.get_ident_used_in_assignation_with_definitive(
-            operand,
-            assignations,
-            arguments,
-            span,
-            true,
-        )
-    }
-
-    fn get_ident_used_in_assignation_with_definitive(
-        &mut self,
-        operand: &Expr,
-        assignations: &mut Vec<Expr>,
-        arguments: &mut Vec<Expr>,
-        span: &Span,
-        definitive: bool,
-    ) -> Ident {
         let next_ident = self.next_ident();
         let (assign, id) = self.create_assign_expression(next_ident, operand, span);
 
         // store ident and assignation expression
         let id_clone = id.clone();
-        if definitive {
-            self.register_ident(id_clone);
-        }
+        self.register_ident(id_clone);
 
         assignations.push(Expr::Assign(assign));
 

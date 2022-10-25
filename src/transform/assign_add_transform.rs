@@ -5,12 +5,12 @@
 use swc::ecmascript::ast::*;
 use swc_ecma_visit::VisitMutWith;
 
-use crate::visitor::assign_add_transform::AssignOp::Assign;
-
-use super::{
-    binary_add_transform::BinaryAddTransform,
-    operation_transform_visitor::OperationTransformVisitor,
+use crate::{
+    transform::assign_add_transform::AssignOp::Assign,
+    visitor::operation_transform_visitor::OperationTransformVisitor,
 };
+
+use super::binary_add_transform::BinaryAddTransform;
 
 pub struct AssignAddTransform {}
 
