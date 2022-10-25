@@ -139,6 +139,7 @@ fn is_prototype_call_from_class(parts: &mut [Ident], csi_methods: &CsiMethods) -
         .join(".");
 
     csi_methods
-        .class_name_prototype_keys()
-        .any(|class_name_prototype| call_expr.starts_with(*class_name_prototype))
+        .class_names
+        .iter()
+        .any(|class_name_prototype| call_expr.starts_with(class_name_prototype))
 }

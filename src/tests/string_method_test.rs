@@ -22,7 +22,7 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("let __datadog_test_0;
-    const a = (__datadog_test_0 = b, _ddiast.substring(__datadog_test_0.substring(1), __datadog_test_0, 1));");
+    const a = (__datadog_test_0 = b, _ddiast.string_substring(__datadog_test_0.substring(1), __datadog_test_0, 1));");
         Ok(())
     }
 
@@ -33,7 +33,7 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("let __datadog_test_0;
-    const a = (__datadog_test_0 = b(), _ddiast.substring(__datadog_test_0.substring(1), __datadog_test_0, 1));");
+    const a = (__datadog_test_0 = b(), _ddiast.string_substring(__datadog_test_0.substring(1), __datadog_test_0, 1));");
         Ok(())
     }
 
@@ -44,7 +44,7 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("let __datadog_test_0, __datadog_test_1;
-    const a = (__datadog_test_0 = b, __datadog_test_1 = c(), _ddiast.substring(__datadog_test_0.substring(__datadog_test_1), __datadog_test_0, __datadog_test_1));");
+    const a = (__datadog_test_0 = b, __datadog_test_1 = c(), _ddiast.string_substring(__datadog_test_0.substring(__datadog_test_1), __datadog_test_0, __datadog_test_1));");
         Ok(())
     }
 
@@ -55,7 +55,7 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("let __datadog_test_0, __datadog_test_1;
-    const a = (__datadog_test_0 = b(), __datadog_test_1 = c(), _ddiast.substring(__datadog_test_0.substring(__datadog_test_1), __datadog_test_0, __datadog_test_1));");
+    const a = (__datadog_test_0 = b(), __datadog_test_1 = c(), _ddiast.string_substring(__datadog_test_0.substring(__datadog_test_1), __datadog_test_0, __datadog_test_1));");
         Ok(())
     }
 
@@ -84,7 +84,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains("let __datadog_test_0;
-    const a = (__datadog_test_0 = b, _ddiast.substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
+    const a = (__datadog_test_0 = b, _ddiast.string_substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
         Ok(())
     }
 
@@ -94,7 +94,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains("let __datadog_test_0;
-    const a = (__datadog_test_0 = b, _ddiast.substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
+    const a = (__datadog_test_0 = b, _ddiast.string_substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
         Ok(())
     }
 
@@ -104,7 +104,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains("let __datadog_test_0;
-    const a = (__datadog_test_0 = b(), _ddiast.substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
+    const a = (__datadog_test_0 = b(), _ddiast.string_substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
         Ok(())
     }
 }

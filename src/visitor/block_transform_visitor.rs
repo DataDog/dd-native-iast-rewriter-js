@@ -45,11 +45,10 @@ impl BlockTransformVisitor<'_> {
     }
 }
 
-//  new algorithm
 //  Block:
 //  - Find items to instrument (+ or template literals in statements or in while, if... test part)
 //  - Replace found items by (__dd_XXX_1=....)
-//  - Create necessary temporal vars in top of block (improve it in the future forcing deletion)
+//  - Create necessary temporal vars in top of block
 
 impl Visit for BlockTransformVisitor<'_> {}
 

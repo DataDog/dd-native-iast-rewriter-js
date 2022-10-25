@@ -117,7 +117,7 @@ fn replace_call_expr_if_match(
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<Expr> {
     let method_name = &ident.sym.to_string();
-    if csi_methods.contains(&method_name) {
+    if let Some(csi_method) = csi_methods.get(method_name) {
         let mut assignations = Vec::new();
         let mut arguments = Vec::new();
         let span = call.span;
@@ -156,7 +156,7 @@ fn replace_call_expr_if_match(
             &Expr::Call(call_replacement),
             &arguments,
             &mut assignations,
-            &method_name,
+            csi_method.full_name().as_str(),
             &span,
         ));
     }

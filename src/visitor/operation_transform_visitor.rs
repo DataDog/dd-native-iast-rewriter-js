@@ -103,7 +103,7 @@ impl VisitMut for OperationTransformVisitor<'_> {
             }
             Expr::Tpl(tpl) => {
                 if !tpl.exprs.is_empty() {
-                    // transform tpl into binary and act like it was a binary expr
+                    // transform tpl into binary and act as if it were a binary expr
                     let mut binary = TemplateTransform::get_binary_from_tpl(tpl);
                     let opv_with_child_ctx = &mut *self.with_child_ctx();
                     binary.visit_mut_children_with(opv_with_child_ctx);
@@ -118,7 +118,7 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 if call.callee.is_expr() {
                     if let Some(method) = CallExprTransform::to_dd_call_expr(
                         call,
-                        &opv_with_child_ctx.csi_methods,
+                        opv_with_child_ctx.csi_methods,
                         opv_with_child_ctx,
                     ) {
                         expr.map_with_mut(|_| method);
