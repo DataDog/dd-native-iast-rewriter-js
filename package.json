@@ -86,7 +86,7 @@
     "prepublishOnly": "run-p artifacts:prepare artifacts:prepublish",
     "version": "napi version",
     "test": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js'",
-    "test:junit": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
+    "test:junit": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js' --reporter node_modules/mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
     "prepare": "husky install",
     "clippy": "cargo clippy --workspace -- -D warnings"
   },
