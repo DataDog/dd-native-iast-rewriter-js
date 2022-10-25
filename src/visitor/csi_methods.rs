@@ -32,8 +32,23 @@ impl CsiMethods {
         register(
             &mut methods,
             &mut class_names,
-            "String.prototype",
-            vec!["substring"],
+            &[(
+                "String.prototype",
+                &[
+                    "substring",
+                    "trim",
+                    "trimStart",
+                    "trimEnd",
+                    "toLowerCase",
+                    "toLocaleLowerCase",
+                    "toUpperCase",
+                    "toLocaleUpperCase",
+                    "replace",
+                    "replaceAll",
+                    "slice",
+                    "concat",
+                ],
+            )],
         );
 
         CsiMethods {
@@ -48,18 +63,21 @@ impl CsiMethods {
     }
 }
 
+// a little uggly? :/
 fn register(
     methods: &mut Vec<CsiMethod>,
     class_names: &mut Vec<String>,
-    class_name: &str,
-    method_names: Vec<&'static str>,
+    method_defs: &[(&str, &[&str])], // [(class_name, [method_names])]
 ) {
-    class_names.push(class_name.to_string());
-
-    for method_name in method_names {
-        methods.push(CsiMethod {
-            class_name: class_name.to_string(),
-            method_name: method_name.to_string(),
-        })
+    for def in method_defs {
+        let class_name = def.0;
+        let method_names = def.1;
+        class_names.push(class_name.to_string());
+        for method_name in method_names {
+            methods.push(CsiMethod {
+                class_name: class_name.to_string(),
+                method_name: method_name.to_string(),
+            })
+        }
     }
 }

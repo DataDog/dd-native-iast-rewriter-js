@@ -107,4 +107,24 @@ mod tests {
     const a = (__datadog_test_0 = b(), _ddiast.string_substring(__datadog_test_0.substring(2), __datadog_test_0, 2));");
         Ok(())
     }
+
+    #[test]
+    fn test_ident_trim() -> Result<(), String> {
+        let original_code = "{const a = b.trim();}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = b, _ddiast.string_trim(__datadog_test_0.trim(), __datadog_test_0));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_literal_trim() -> Result<(), String> {
+        let original_code = "{const a = \"b\".trim();}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const a = \"b\".trim();");
+        Ok(())
+    }
 }
