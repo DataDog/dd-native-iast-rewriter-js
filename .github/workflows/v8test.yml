@@ -6,9 +6,7 @@ env:
 on:
   workflow_run:
     workflows: ['Build']
-    branches:
-      - main
-      - feature/iast-chapter-1
+    branches: ['*']
     types:
       - completed
 
