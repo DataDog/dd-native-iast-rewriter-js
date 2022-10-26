@@ -5,13 +5,13 @@ env:
 
 on:
   workflow_run:
-    workflows:
-      - Build
+    workflows: ['Build']
     types:
       - completed
 
 jobs:
   compile-v8-and-run-tests:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
