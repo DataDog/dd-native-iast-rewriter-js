@@ -1,5 +1,7 @@
 const { getSourcePathAndLineFromSourceMaps } = require('../source-map')
 
+const kSymbolPrepareStackTrace = Symbol('_ddiastPrepareStackTrace')
+
 class WrappedCallSite {
   constructor (callSite) {
     const { path, line, column } = getSourcePathAndLineFromSourceMaps(
@@ -71,10 +73,37 @@ class WrappedCallSite {
 }
 
 function getPrepareStackTrace (originalPrepareStackTrace) {
-  return (error, structuredStackTrace) => {
-    const parsedCallSites = structuredStackTrace.map((callSite) => new WrappedCallSite(callSite))
-    return originalPrepareStackTrace(error, parsedCallSites)
+  if (originalPrepareStackTrace && originalPrepareStackTrace[kSymbolPrepareStackTrace]) {
+    return originalPrepareStackTrace
   }
+
+  const wrappedPrepareStackTrace = (error, structuredStackTrace) => {
+    if (originalPrepareStackTrace) {
+      const parsedCallSites = structuredStackTrace.map((callSite) => new WrappedCallSite(callSite))
+      return originalPrepareStackTrace(error, parsedCallSites)
+    }
+    return error.stack
+      .split('\n')
+      .map((stackFrame) => {
+        const start = stackFrame.indexOf('(/')
+        if (start > -1) {
+          const end = stackFrame.indexOf(')')
+          const interesting = stackFrame.substring(start, end)
+          const [filename, originalLine, originalColumn] = interesting.split(':')
+          const { path, line, column } = getSourcePathAndLineFromSourceMaps(filename, originalLine, originalColumn)
+          const startPart = stackFrame.substring(0, start)
+          const endPart = stackFrame.substring(end)
+          return `${startPart}${path}:${line}:${column}${endPart}`
+        } else {
+          return stackFrame
+        }
+      })
+      .join('\n')
+  }
+  Object.defineProperty(wrappedPrepareStackTrace, kSymbolPrepareStackTrace, {
+    value: true
+  })
+  return wrappedPrepareStackTrace
 }
 
 module.exports = {
