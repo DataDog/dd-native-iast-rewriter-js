@@ -6,7 +6,6 @@ env:
 on:
   workflow_run:
     workflows: ['Build']
-    branches: ['${GITHUB_REF##*/}']
     types:
       - completed
 
