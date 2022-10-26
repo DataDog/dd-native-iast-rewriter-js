@@ -26,13 +26,13 @@ const rewriteAst = (code, opts) => {
 
 const wrapBlock = (code) => `{${os.EOL}${code}${os.EOL}}`
 
-const rewriteAndExpectNoTransformation = (code) => {
-  rewriteAndExpect(wrapBlock(code), wrapBlock(code), true)
+const rewriteAndExpectNoTransformation = (code, opts) => {
+  rewriteAndExpect(wrapBlock(code), wrapBlock(code), true, opts)
 }
 
-const rewriteAndExpect = (code, expect, block) => {
+const rewriteAndExpect = (code, expect, block, opts) => {
   code = !block ? `{${code}}` : code
-  const rewrited = rewriteAst(code)
+  const rewrited = rewriteAst(code, opts)
   expectAst(rewrited, expect)
 }
 
@@ -60,5 +60,6 @@ module.exports = {
   rewriteAndExpectNoTransformation,
   rewriteAndExpect,
   rewriteAndExpectError,
-  wrapBlock
+  wrapBlock,
+  Rewriter
 }

@@ -11,7 +11,7 @@ use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use super::{
-    csi_methods::CsiMethods,
+    csi_methods::{CsiExclusions, CsiMethods},
     transform_status::{Status, TransformStatus},
     visitor_with_context::Ctx,
 };
@@ -22,10 +22,13 @@ pub struct BlockTransformVisitor<'a> {
 }
 
 impl BlockTransformVisitor<'_> {
-    pub fn default(transform_status: &mut TransformStatus) -> BlockTransformVisitor<'_> {
+    pub fn default<'a>(
+        transform_status: &'a mut TransformStatus,
+        csi_exclusions: &'a CsiExclusions,
+    ) -> BlockTransformVisitor<'a> {
         BlockTransformVisitor {
             transform_status,
-            csi_methods: CsiMethods::new(),
+            csi_methods: CsiMethods::new(csi_exclusions),
         }
     }
 

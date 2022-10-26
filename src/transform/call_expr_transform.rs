@@ -156,7 +156,7 @@ fn replace_call_expr_if_match(
             &Expr::Call(call_replacement),
             &arguments,
             &mut assignations,
-            csi_method.full_name().as_str(),
+            csi_method.rewritten_name().as_str(),
             &span,
         ));
     }

@@ -13,6 +13,7 @@ mod tests {
     use crate::{
         rewriter::{print_js, rewrite_js, RewrittenOutput},
         tests::{get_test_resources_folder, set_local_var},
+        visitor::csi_methods::CsiExclusions,
     };
 
     #[derive(Clone)]
@@ -91,6 +92,7 @@ mod tests {
             original_code,
             String::from(js_file_to_rewrite.to_str().unwrap()),
             true,
+            CsiExclusions::empty(),
         )
         .map_err(|e| e.to_string())
     }

@@ -6,7 +6,10 @@
 #[cfg(test)]
 mod tests {
 
-    use crate::tests::{rewrite_js, set_local_var};
+    use crate::{
+        tests::{rewrite_js, rewrite_js_with_exclusions, set_local_var},
+        visitor::csi_methods::CsiExclusions,
+    };
     use spectral::{assert_that, string::StrAssertions};
 
     #[cfg(test)]
@@ -125,6 +128,21 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains("const a = \"b\".trim();");
+        Ok(())
+    }
+
+    #[test]
+    fn test_csi_exclusion() -> Result<(), String> {
+        let original_code = "{const a = b.concat('hello')}".to_string();
+        let js_file = "test.js".to_string();
+        let csi_exclusions = Some(vec!["String.prototype.concat".to_string()]);
+        let rewritten = rewrite_js_with_exclusions(
+            original_code,
+            js_file,
+            CsiExclusions::from(&csi_exclusions),
+        )
+        .map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const a = b.concat('hello')");
         Ok(())
     }
 }
