@@ -6,6 +6,9 @@ env:
 on:
   workflow_run:
     workflows: ['Build']
+    branches:
+      - main
+      - feature/iast-chapter-1
     types:
       - completed
 
@@ -20,7 +23,7 @@ jobs:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: build.yml
           workflow_conclusion: success
-      #          branch: ${GITHUB_REF##*/}
+          branch: ${GITHUB_REF##*/}
 
       - name: Restore v8 builder Image
         id: cache-docker-v8
