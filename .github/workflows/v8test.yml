@@ -2,6 +2,7 @@ name: v8 testing
 
 env:
   V8_BRANCH: 10.7.190
+  ARTIFACT_BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
 on:
   workflow_run:
@@ -21,7 +22,7 @@ jobs:
           github_token: ${{secrets.GITHUB_TOKEN}}
           workflow: build.yml
           workflow_conclusion: success
-          branch: ${GITHUB_REF##*/}
+          branch: $ARTIFACT_BRANCH_NAME
 
       - name: Restore v8 builder Image
         id: cache-docker-v8
