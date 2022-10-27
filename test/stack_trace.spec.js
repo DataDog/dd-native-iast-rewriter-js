@@ -50,6 +50,13 @@ describe('V8 prepareStackTrace', () => {
     // eslint-disable-next-line no-unused-expressions
     expect(originalStackTrace).to.be.calledOnce
   })
+
+  it('should not wrap an already wrapped prepareStackTrace', () => {
+    const originalStackTrace = sinon.spy()
+    const prepareStackTrace = getPrepareStackTrace(originalStackTrace)
+    const anotherPrepareStackTrace = getPrepareStackTrace(prepareStackTrace)
+    expect(prepareStackTrace).to.be.equals(anotherPrepareStackTrace)
+  })
 })
 
 const sourceMapResourcesPath = path.join(__dirname, 'resources', 'stacktrace-sourcemap')
