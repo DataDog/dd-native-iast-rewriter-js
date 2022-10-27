@@ -1,5 +1,8 @@
 name: Build
 
+env:
+  V8_BRANCH: 10.7.190
+
 on:
   workflow_dispatch:
 
