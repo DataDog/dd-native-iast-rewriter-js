@@ -1,0 +1,229 @@
+name: Build
+
+env:
+  V8_BRANCH: 10.7.190
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+      - feature/iast-chapter-1
+  pull_request:
+
+jobs:
+  test-native:
+    strategy:
+      matrix:
+        target:
+          - name: linux 64 bits
+            os: ubuntu-latest
+          - name: windows 64 bits
+            os: windows-latest
+          - name: macos 64 bits
+            os: macos-latest
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: test
+        run: |
+          cargo check
+          cargo test
+  build-native:
+    strategy:
+      matrix:
+        target:
+          - name: windows 64 bits
+            buildid: windows
+            os: windows-latest
+            artifact: iast-rewriter.win32-x64-msvc
+          - name: macos 64 bits
+            buildid: darwin
+            os: macos-latest
+            artifact: iast-rewriter.darwin-x64
+          - name: macos aarch64
+            buildid: darwinArm
+            os: macos-latest
+            artifact: iast-rewriter.darwin-arm64
+
+    runs-on: ${{ matrix.target.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - if: ${{ matrix.target.buildid == 'darwinArm' }}
+        run: rustup target add aarch64-apple-darwin
+      - run: npm ci --ignore-scripts
+      - run: npm run build:${{ matrix.target.buildid }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.target.artifact }}
+          path: ${{ matrix.target.artifact }}.node
+
+  build-docker:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - name: linux 64 bits
+            dockerfile: Dockerfile
+            artifact: iast-rewriter.linux-x64-gnu
+          - name: alpine 64 bits
+            dockerfile: alpine.Dockerfile
+            artifact: iast-rewriter.linux-x64-musl
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - run: docker build -t build -f ./docker/${{ matrix.target.dockerfile }} .
+      - run: docker run --name builder build
+      - run: docker cp builder:/build/${{ matrix.target.artifact }}.node .
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.target.artifact }}
+          path: ${{ matrix.target.artifact }}.node
+
+  static-checks:
+    strategy:
+      matrix:
+        run:
+          - lint
+          - clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: npm ci
+      - run: npm run ${{ matrix.run }}
+
+  pack:
+    needs: ['build-native', 'build-docker']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      - run: npm ci --ignore-scripts
+      - run: npm run artifacts
+      - run: npm pack
+      - run: npm pack npm/linux-x64-gnu/
+      - run: npm pack npm/linux-x64-musl/
+      - run: npm pack npm/win32-x64-msvc/
+      - run: npm pack npm/darwin-x64/
+      - run: npm pack npm/darwin-arm64/
+      - uses: codex-team/action-nodejs-package-info@v1
+        id: package
+      - uses: actions/upload-artifact@v3
+        with:
+          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
+          path: '*.tgz'
+
+  test-native-js:
+    needs: ['pack']
+    strategy:
+      matrix:
+        target:
+          - name: linux 64 bits
+            os: ubuntu-latest
+            artifact: linux-x64-gnu
+          - name: windows 64 bits
+            os: windows-latest
+            artifact: win32-x64-msvc
+          - name: macos 64 bits
+            os: macos-latest
+            artifact: darwin-x64
+
+    runs-on: ${{ matrix.target.os }}
+    env:
+      NPM_REWRITER: true
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - run: npm ci --ignore-scripts
+      - uses: codex-team/action-nodejs-package-info@v1
+        id: package
+      - uses: actions/download-artifact@v3
+        with:
+          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
+      - run: npm i --verbose datadog-native-iast-rewriter-${{ matrix.target.artifact }}-${{ steps.package.outputs.version }}.tgz
+      - run: npm i --verbose datadog-native-iast-rewriter-${{ steps.package.outputs.version }}.tgz
+      - run: npm run test:junit
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v3
+        if: always()
+        with:
+          report_paths: '**/build/junit.xml'
+          check_name: junit test report ${{ matrix.target.name }}
+
+  test-docker:
+    needs: ['pack']
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - name: alpine 64 bits
+            dockerfile: test.alpine.Dockerfile
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - uses: codex-team/action-nodejs-package-info@v1
+        id: package
+      - uses: actions/download-artifact@v3
+        with:
+          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
+      - run: docker build -t test -f ./docker/${{ matrix.target.dockerfile }} --build-arg NPM_VERSION=${{ steps.package.outputs.version }} .
+      - run: docker run --name tester test
+      - run: docker cp tester:/test/build/junit.xml ./junit.xml
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v3
+        if: always()
+        with:
+          report_paths: '**/junit.xml'
+          check_name: junit test report ${{ matrix.target.name }}
+
+  compile-v8-and-run-tests:
+    needs: ['pack']
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: codex-team/action-nodejs-package-info@v1
+        id: package
+      - uses: actions/download-artifact@v3
+        with:
+          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
+
+      - name: Restore v8 builder Image
+        id: cache-docker-v8
+        uses: actions/cache@v3
+        with:
+          path: ci/cache/docker/v8builder
+          key: cache-docker-v8builder-${{ env.V8_BRANCH }}
+
+      - name: Update v8 builder Image Cache if cache miss
+        if: steps.cache-docker-v8.outputs.cache-hit != 'true'
+        run: docker build -t v8builder:${{ env.V8_BRANCH }} --build-arg V8_BRANCH=${{ env.V8_BRANCH }} -f ./docker/v8test-builder.Dockerfile . && mkdir -p ci/cache/docker/v8builder && docker image save v8builder:${{ env.V8_BRANCH }} --output ./ci/cache/docker/v8builder/v8builder-${{ env.V8_BRANCH }}.tar
+
+      - name: Use v8 builder Image Cache if cache hit
+        if: steps.cache-docker-v8.outputs.cache-hit == 'true'
+        run: docker image load --input ./ci/cache/docker/v8builder/v8builder-${{ env.V8_BRANCH }}.tar
+
+      - name: Rewrite and run v8 tests
+        id: run-tests
+        run: docker build -t v8tester:${{ env.V8_BRANCH }} --build-arg V8_BRANCH=${{ env.V8_BRANCH }} -f ./docker/v8test.Dockerfile . && docker run --name v8tester v8tester:${{ env.V8_BRANCH }}
+
+  all-good:
+    needs: ['static-checks', 'test-native', 'test-native-js', 'test-docker', 'compile-v8-and-run-tests']
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo '🚀🚀🚀🚀🚀'

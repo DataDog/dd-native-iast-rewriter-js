@@ -1,0 +1,114 @@
+{
+  "name": "@datadog/native-iast-rewriter",
+  "version": "0.1.0-beta.0",
+  "main": "main.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "iast-rewriter",
+    "triples": {
+      "defaults": false,
+      "additional": [
+        "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-linux-musl",
+        "x86_64-pc-windows-msvc",
+        "aarch64-apple-darwin",
+        "x86_64-apple-darwin"
+      ]
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DataDog/dd-native-iast-rewriter-js.git"
+  },
+  "keywords": ["datadog", "iast"],
+  "author": "Datadog Inc. <info@datadoghq.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/DataDog/dd-native-iast-rewriter-js/issues"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.18.10",
+    "@babel/types": "^7.18.10",
+    "@napi-rs/cli": "^2.0.0",
+    "@swc-node/register": "^1.4.2",
+    "@typescript-eslint/eslint-plugin": "^5.37.0",
+    "@typescript-eslint/parser": "^5.38.1",
+    "chai": "^4.3.6",
+    "cross-env": "^7.0.3",
+    "dotenv-cli": "^5.0.0",
+    "eslint": "^7.31.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^5.1.0",
+    "eslint-plugin-standard": "^5.0.0",
+    "husky": "^7.0.0",
+    "lint-staged": "^12.3.7",
+    "mocha": "^9.1.1",
+    "mocha-it-each": "^1.0.2",
+    "mocha-junit-reporter": "^2.0.2",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.5.1",
+    "proxyquire": "^2.1.3",
+    "sinon": "^14.0.0",
+    "sinon-chai": "^3.7.0",
+    "sorcery": "^0.10.0",
+    "source-map": "^0.7.3",
+    "tap-junit": "^5.0.1",
+    "tmp": "^0.2.1",
+    "typescript": "^4.8.4"
+  },
+  "engines": {
+    "node": ">= 10"
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "artifacts:prepare": "node ./scripts/artifacts.mjs",
+    "artifacts:prepublish": "napi prepublish --skip-gh-release",
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "build:linux": "napi build --target x86_64-unknown-linux-gnu --platform --release",
+    "build:alpine": "napi build --target x86_64-unknown-linux-musl --platform --release",
+    "build:windows": "napi build --target x86_64-pc-windows-msvc --platform --release",
+    "build:darwin": "napi build --target x86_64-apple-darwin --platform --release",
+    "build:darwinArm": "napi build --target aarch64-apple-darwin --platform --release",
+    "buildAndTest:debug": "npm run build && npm run test:junit",
+    "buildAndTest:linux": "npm run build:linux && npm run test:junit",
+    "buildAndTest:alpine": "npm run build:alpine && npm run test:junit",
+    "buildAndTest:windows": "npm run build:windows && npm run test:junit",
+    "buildAndTest:darwin": "npm run build:darwin && npm run test:junit",
+    "buildAndTest:darwinArm": "npm run build:darwinArm && npm run test:junit",
+    "format": "run-p format:prettier format:rs",
+    "format:prettier": "prettier . -w",
+    "format:rs": "cargo fmt",
+    "lint": "eslint . -c ./.eslintrc.json",
+    "rustfmt": "rustfmt --config imports_granularity=Crate src/*.rs",
+    "prepublishOnly": "run-p artifacts:prepare artifacts:prepublish",
+    "version": "napi version",
+    "test": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js'",
+    "test:junit": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
+    "prepare": "husky install",
+    "clippy": "cargo clippy --workspace -- -D warnings"
+  },
+  "lint-staged": {
+    "*.@(js|ts|tsx)": ["prettier --write", "eslint -c .eslintrc.json --fix"],
+    "*.@(yml|yaml)": ["prettier --parser yaml --write"],
+    "*.md": ["prettier --parser markdown --write"],
+    "*.json": ["prettier --parser json --write"],
+    "*.rs": ["rustfmt --config imports_granularity=Crate"]
+  },
+  "prettier": {
+    "printWidth": 120,
+    "semi": false,
+    "trailingComma": "all",
+    "singleQuote": true,
+    "arrowParens": "always"
+  },
+  "optionalDependencies": {
+    "@datadog/native-iast-rewriter-darwin-arm64": "0.1.0-beta.0",
+    "@datadog/native-iast-rewriter-darwin-x64": "0.1.0-beta.0",
+    "@datadog/native-iast-rewriter-linux-x64-gnu": "0.1.0-beta.0",
+    "@datadog/native-iast-rewriter-linux-x64-musl": "0.1.0-beta.0",
+    "@datadog/native-iast-rewriter-win32-x64-msvc": "0.1.0-beta.0"
+  }
+}
