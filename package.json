@@ -28,6 +28,9 @@
   "bugs": {
     "url": "https://github.com/DataDog/dd-native-iast-rewriter-js/issues"
   },
+  "dependencies": {
+    "node-gyp-build": "^4.5.0"
+  },
   "devDependencies": {
     "@babel/core": "^7.18.10",
     "@babel/types": "^7.18.10",

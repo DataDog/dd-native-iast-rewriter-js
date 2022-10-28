@@ -8,6 +8,7 @@ require,swc_visit_macros,Apache-2.0,Copyright 강동윤
 require,anyhow,MIT OR Apache-2.0,Copyright (c) 2018 David Tolnay
 require,fastrand,Apache-2.0 OR MIT, Copyright 2020 Stjepan Glavina
 require,base64,MIT and Apache-2.0,Copyright (c) 2015 Alice Maz
+require,node-gyp-build,MIT,Copyright 2017 Mathias Buus
 dev,tempfile,MIT OR Apache-2.0,Copyright (c) 2015 Steven Allen
 dev,spectral,Apache-2.0,Copyright (c) cfrancia
 dev,ctor,Apache-2.0 OR MIT,Copyright (c) 2018 Matt Mastracci

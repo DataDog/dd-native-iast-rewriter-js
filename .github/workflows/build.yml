@@ -108,8 +108,12 @@ jobs:
         with:
           node-version: '16'
       - uses: actions/download-artifact@v3
-        with:
-          path: artifacts
+
+      - run: cp iast-rewriter.linux-x64-gnu.node prebuilds/linux-x64/node.napi.glibc.node
+      - run: cp iast-rewriter.linux-x64-musl.node prebuilds/linux-x64/node.napi.musl.node
+      - run: cp iast-rewriter.win32-x64-msvc.node prebuilds/win32-x64/node.napi.node
+      - run: cp iast-rewriter.darwin-x64.node prebuilds/darwin-x64/node.napi.node
+      - run: cp iast-rewriter.darwin-arm64.node prebuilds/darwin-arm64/node.napi.node
       - run: npm ci --ignore-scripts
       - run: npm pack
       - uses: codex-team/action-nodejs-package-info@v1

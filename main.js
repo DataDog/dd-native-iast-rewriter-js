@@ -1,4 +1,10 @@
-const { Rewriter } = require('./index')
+/**
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+ **/
+'use strict'
+
+const { Rewriter } = require('node-gyp-build')(__dirname)
 const { getPrepareStackTrace } = require('./js/stack-trace/')
 
 module.exports = {
