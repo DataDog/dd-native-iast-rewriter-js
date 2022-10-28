@@ -105,12 +105,5 @@
     "trailingComma": "all",
     "singleQuote": true,
     "arrowParens": "always"
-  },
-  "optionalDependencies": {
-    "@datadog/native-iast-rewriter-darwin-arm64": "0.1.0-beta.0",
-    "@datadog/native-iast-rewriter-darwin-x64": "0.1.0-beta.0",
-    "@datadog/native-iast-rewriter-linux-x64-gnu": "0.1.0-beta.0",
-    "@datadog/native-iast-rewriter-linux-x64-musl": "0.1.0-beta.0",
-    "@datadog/native-iast-rewriter-win32-x64-msvc": "0.1.0-beta.0"
   }
 }
