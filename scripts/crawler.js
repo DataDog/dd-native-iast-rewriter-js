@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const { exit } = require('process')
-const { Rewriter } = require('../index')
+const { Rewriter } = require('../main')
 
 const INCLUDED_FILES = /(.*)\.m?js$/
 const ENCODING = 'utf8'
