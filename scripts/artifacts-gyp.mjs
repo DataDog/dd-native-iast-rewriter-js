@@ -22,7 +22,10 @@ const copyFile = async (src, dest) => {
 
 const copyArtifact = (classifier) => {
     const filename = `iast-rewriter.${classifier.src}.node`
-    const sourceNode = path.join(process.cwd(), filename)
+    let sourceNode = path.join(process.cwd(), filename)
+    if (!fs.existsSync(sourceNode)){
+        sourceNode = path.join(process.cwd(), `iast-rewriter.${classifier.src}`, filename)
+    }
     const destNode = path.join(`${process.cwd()}`, 'prebuilds', classifier.dst)
     return copyFile(sourceNode, destNode)
 }

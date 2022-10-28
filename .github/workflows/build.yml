@@ -108,13 +108,8 @@ jobs:
         with:
           node-version: '16'
       - uses: actions/download-artifact@v3
-      - run: |
-          cp iast-rewriter.linux-x64-gnu/iast-rewriter.linux-x64-gnu.node prebuilds/linux-x64/node.napi.glibc.node
-          cp iast-rewriter.linux-x64-musl/iast-rewriter.linux-x64-musl.node prebuilds/linux-x64/node.napi.musl.node
-          cp iast-rewriter.win32-x64-msvc/iast-rewriter.win32-x64-msvc.node prebuilds/win32-x64/node.napi.node
-          cp iast-rewriter.darwin-x64/iast-rewriter.darwin-x64.node prebuilds/darwin-x64/node.napi.node
-          cp iast-rewriter.darwin-arm64/iast-rewriter.darwin-arm64.node prebuilds/darwin-arm64/node.napi.node
       - run: npm ci --ignore-scripts
+      - run: npm run artifacts:gyp
       - run: npm pack
       - uses: codex-team/action-nodejs-package-info@v1
         id: package
