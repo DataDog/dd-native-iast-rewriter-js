@@ -1,6 +1,8 @@
 {
   "name": "@datadog/native-iast-rewriter",
+  "homepage": "https://github.com/DataDog/dd-native-iast-rewriter-js/blob/main/README.md",
   "version": "0.1.0-beta.0",
+  "description": "Datadog IAST instrumentation addon for NodeJS",
   "main": "main.js",
   "types": "index.d.ts",
   "napi": {
@@ -25,6 +27,9 @@
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/DataDog/dd-native-iast-rewriter-js/issues"
+  },
+  "dependencies": {
+    "node-gyp-build": "^4.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.18.10",
@@ -65,8 +70,9 @@
     "artifacts": "napi artifacts",
     "artifacts:prepare": "node ./scripts/artifacts.mjs",
     "artifacts:prepublish": "napi prepublish --skip-gh-release",
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
+    "artifacts:gyp": "node ./scripts/artifacts-gyp.mjs",
+    "build": "napi build --platform --release && npm run artifacts:gyp",
+    "build:debug": "napi build --platform && npm run artifacts:gyp",
     "build:linux": "napi build --target x86_64-unknown-linux-gnu --platform --release",
     "build:alpine": "napi build --target x86_64-unknown-linux-musl --platform --release",
     "build:windows": "napi build --target x86_64-pc-windows-msvc --platform --release",
@@ -103,12 +109,5 @@
     "trailingComma": "all",
     "singleQuote": true,
     "arrowParens": "always"
-  },
-  "optionalDependencies": {
-    "@datadog/native-iast-rewriter-darwin-arm64": "0.1.0-beta.0",
-    "@datadog/native-iast-rewriter-darwin-x64": "0.1.0-beta.0",
-    "@datadog/native-iast-rewriter-linux-x64-gnu": "0.1.0-beta.0",
-    "@datadog/native-iast-rewriter-linux-x64-musl": "0.1.0-beta.0",
-    "@datadog/native-iast-rewriter-win32-x64-msvc": "0.1.0-beta.0"
   }
 }

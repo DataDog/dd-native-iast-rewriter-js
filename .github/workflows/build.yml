@@ -108,16 +108,9 @@ jobs:
         with:
           node-version: '16'
       - uses: actions/download-artifact@v3
-        with:
-          path: artifacts
       - run: npm ci --ignore-scripts
-      - run: npm run artifacts
+      - run: npm run artifacts:gyp
       - run: npm pack
-      - run: npm pack npm/linux-x64-gnu/
-      - run: npm pack npm/linux-x64-musl/
-      - run: npm pack npm/win32-x64-msvc/
-      - run: npm pack npm/darwin-x64/
-      - run: npm pack npm/darwin-arm64/
       - uses: codex-team/action-nodejs-package-info@v1
         id: package
       - uses: actions/upload-artifact@v3
@@ -154,7 +147,6 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
-      - run: npm i --verbose datadog-native-iast-rewriter-${{ matrix.target.artifact }}-${{ steps.package.outputs.version }}.tgz
       - run: npm i --verbose datadog-native-iast-rewriter-${{ steps.package.outputs.version }}.tgz
       - run: npm run test:junit
       - name: Publish Test Report
