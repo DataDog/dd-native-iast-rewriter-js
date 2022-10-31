@@ -6,11 +6,11 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 const classifiers = [
-    {src: 'linux-x64-gnu', dst: 'linux-x64/node.napi.glibc.node'},
-    {src: 'linux-x64-musl', dst: 'linux-x64/node.napi.musl.node'},
-    {src: 'win32-x64-msvc', dst: 'win32-x64/node.napi.node'},
-    {src: 'darwin-x64', dst: 'darwin-x64/node.napi.node'},
-    {src: 'darwin-arm64', dst: 'darwin-arm64/node.napi.node'},
+    {src: 'linux-x64-gnu', dst: 'linux-x64', dstname: 'node.napi.glibc.node'},
+    {src: 'linux-x64-musl', dst: 'linux-x64', dstname: 'node.napi.musl.node'},
+    {src: 'win32-x64-msvc', dst: 'win32-x64', dstname: 'node.napi.node'},
+    {src: 'darwin-x64', dst: 'darwin-x64', dstname: 'node.napi.node'},
+    {src: 'darwin-arm64', dst: 'darwin-arm64', dstname: 'node.napi.node'},
 ]
 
 const copyFile = async (src, dest) => {
@@ -26,7 +26,12 @@ const copyArtifact = (classifier) => {
     if (!fs.existsSync(sourceNode)){
         sourceNode = path.join(process.cwd(), `iast-rewriter.${classifier.src}`, filename)
     }
-    const destNode = path.join(`${process.cwd()}`, 'prebuilds', classifier.dst)
+
+    const dstPath = path.join('prebuilds', classifier.dst)
+    if (!fs.existsSync(dstPath)){
+        fs.mkdirSync(dstPath, {recursive: true})
+    }
+    const destNode = path.join(`${process.cwd()}`, dstPath, classifier.dstname)
     return copyFile(sourceNode, destNode)
 }
 
