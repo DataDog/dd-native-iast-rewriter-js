@@ -8,7 +8,7 @@ use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
 
 const DATADOG_VAR_PREFIX: &str = "__datadog";
 const DD_GLOBAL_NAMESPACE: &str = "_ddiast";
-const DD_PLUS_OPERATOR: &str = "plusOperator";
+pub const DD_PLUS_OPERATOR: &str = "plusOperator";
 pub const DD_LOCAL_VAR_NAME_HASH_ENV_NAME: &str = "DD_LOCAL_VAR_NAME_HASH";
 
 static mut DD_LOCAL_VAR_NAME_HASH: String = String::new();

@@ -11,4 +11,5 @@ export interface RewriterConfig {
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)
   rewrite(code: string, file: string): string
+  csiMethods(): Array<string>
 }
