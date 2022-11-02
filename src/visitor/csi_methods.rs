@@ -1,3 +1,5 @@
+use super::visitor_util::DD_PLUS_OPERATOR;
+
 /**
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
@@ -10,16 +12,31 @@ pub struct CsiMethod {
 }
 
 impl CsiMethod {
+    pub fn simple(method_name: &str) -> Self {
+        CsiMethod {
+            class_name: "".to_string(),
+            method_name: method_name.to_string(),
+        }
+    }
+
     pub fn rewritten_name(&self) -> String {
-        format!(
-            "{}_{}",
-            self.class_name.to_lowercase().replace(".prototype", ""),
-            self.method_name
-        )
+        if self.class_name.is_empty() {
+            self.method_name.clone()
+        } else {
+            format!(
+                "{}_{}",
+                self.class_name.to_lowercase().replace(".prototype", ""),
+                self.method_name
+            )
+        }
     }
 
     pub fn full_name(&self) -> String {
-        format!("{}.{}", self.class_name, self.method_name)
+        if self.class_name.is_empty() {
+            self.method_name.clone()
+        } else {
+            format!("{}.{}", self.class_name, self.method_name)
+        }
     }
 }
 
@@ -31,7 +48,7 @@ pub struct CsiMethods {
 
 impl CsiMethods {
     pub fn new(csi_exclusions: &CsiExclusions) -> Self {
-        let mut methods = Vec::new();
+        let mut methods = vec![CsiMethod::simple(DD_PLUS_OPERATOR)];
         let mut class_names = Vec::new();
         register(
             &mut methods,
@@ -61,6 +78,7 @@ impl CsiMethods {
             methods,
         }
     }
+
     pub fn get(&self, method_name: &str) -> Option<&CsiMethod> {
         self.methods
             .iter()

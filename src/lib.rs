@@ -15,10 +15,7 @@ mod tests;
 extern crate napi_derive;
 extern crate base64;
 
-use crate::{
-    rewriter::{print_js, rewrite_js},
-    visitor::visitor_util::DD_PLUS_OPERATOR,
-};
+use crate::rewriter::{print_js, rewrite_js};
 use napi::{Error, Status};
 use visitor::csi_methods::{CsiExclusions, CsiMethods};
 
@@ -66,13 +63,10 @@ impl Rewriter {
         let csi_exclusions = CsiExclusions::from(&self.config.csi_exclusions);
         let csi_methods = CsiMethods::new(&csi_exclusions);
 
-        let mut method_names = vec![DD_PLUS_OPERATOR.to_string()];
-        let mut csi_method_names = csi_methods
+        Ok(csi_methods
             .methods
             .iter()
             .map(|csi_method| csi_method.rewritten_name())
-            .collect();
-        method_names.append(&mut csi_method_names);
-        Ok(method_names)
+            .collect())
     }
 }
