@@ -27,7 +27,7 @@ describe('rewriter configuration', () => {
         `{
       let __datadog_test_0;
 const result = (__datadog_test_0 = a, _ddiast.string_substring(__datadog_test_0.substring(2), \
-__datadog_test_0, 2)).concat("b");
+__datadog_test_0.substring, __datadog_test_0, 2)).concat("b");
       }`
       )
     })

@@ -31,15 +31,17 @@ impl CallExprTransform {
             Callee::Expr(expr) => match *expr {
                 Expr::Member(member) => match (*member.obj, &member.prop) {
                     // replace ident and call members but exclude literal "".substring() calls
-                    (Expr::Ident(obj), MemberProp::Ident(ident)) => replace_call_expr_if_match(
-                        &Expr::Ident(obj),
-                        ident,
-                        call,
-                        csi_methods,
-                        ident_provider,
-                    ),
+                    (Expr::Ident(obj), MemberProp::Ident(ident)) => {
+                        replace_call_expr_if_csi_method(
+                            &Expr::Ident(obj),
+                            ident,
+                            call,
+                            csi_methods,
+                            ident_provider,
+                        )
+                    }
                     (Expr::Call(callee_call), MemberProp::Ident(ident)) => {
-                        replace_call_expr_if_match(
+                        replace_call_expr_if_csi_method(
                             &Expr::Call(callee_call),
                             ident,
                             call,
@@ -65,7 +67,7 @@ impl CallExprTransform {
                                 return None;
                             }
 
-                            replace_call_expr_if_match(
+                            replace_call_expr_if_csi_method(
                                 &Expr::Member(member_obj),
                                 ident,
                                 call,
@@ -98,7 +100,7 @@ fn replace_prototype_call_or_apply(
     );
 
     match prototype_call_option {
-        Some(mut prototype_call) => replace_call_expr_if_match(
+        Some(mut prototype_call) => replace_call_expr_if_csi_method(
             &prototype_call.0,
             &prototype_call.1,
             &mut prototype_call.2,
@@ -109,7 +111,7 @@ fn replace_prototype_call_or_apply(
     }
 }
 
-fn replace_call_expr_if_match(
+fn replace_call_expr_if_csi_method(
     expr: &Expr,
     ident: &Ident,
     call: &mut CallExpr,
@@ -126,6 +128,7 @@ fn replace_call_expr_if_match(
         // a.substring() -> __datadog_token_$i.substring()
         // a().substring() -> __datadog_token_$i.substring()
         let mut call_replacement = call.clone();
+
         let ident_replacement = ident_provider.get_ident_used_in_assignation(
             expr,
             &mut assignations,
@@ -133,12 +136,16 @@ fn replace_call_expr_if_match(
             &span,
         );
 
-        call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
+        let member_expr = Expr::Member(MemberExpr {
             span,
             obj: Box::new(Expr::Ident(ident_replacement)),
             prop: MemberProp::Ident(ident.clone()),
-        })));
+        });
 
+        // include __datadog_token_$i.substring as argument to later runtime check
+        arguments.insert(0, member_expr.clone());
+
+        call_replacement.callee = Callee::Expr(Box::new(member_expr));
         call_replacement.args.iter_mut().for_each(|expr_or_spread| {
             DefaultOperandHandler::replace_expressions_in_operand(
                 &mut *expr_or_spread.expr,
