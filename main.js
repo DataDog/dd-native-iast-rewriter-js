@@ -16,9 +16,8 @@ function getRewriter () {
   try {
     return require('node-gyp-build')(__dirname).Rewriter
   } catch (e) {
-    // do nothing
+    return DummyRewriter
   }
-  return DummyRewriter
 }
 
 module.exports = {
