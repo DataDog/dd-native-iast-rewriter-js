@@ -21,8 +21,8 @@ describe('String method', () => {
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-  (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1(1), \
-__datadog_test_1, __datadog_test_0, 1));\n}`
+  (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1\
+.call(__datadog_test_0, 1), __datadog_test_1, __datadog_test_0, 1));\n}`
       )
     })
 
@@ -33,8 +33,8 @@ __datadog_test_1, __datadog_test_0, 1));\n}`
         `{
   let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.substring, __datadog_test_2 = a.lenght - 2, \
-_ddiast.string_substring(__datadog_test_1(1, __datadog_test_2), __datadog_test_1, __datadog_test_0, 1, \
-__datadog_test_2));\n}`
+_ddiast.string_substring(__datadog_test_1.call(__datadog_test_0, 1, __datadog_test_2), __datadog_test_1, \
+__datadog_test_0, 1, __datadog_test_2));\n}`
       )
     })
 
@@ -44,8 +44,8 @@ __datadog_test_2));\n}`
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = a(), __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1(1), \
-__datadog_test_1, __datadog_test_0, 1));\n}`
+(__datadog_test_0 = a(), __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1\
+.call(__datadog_test_0, 1), __datadog_test_1, __datadog_test_0, 1));\n}`
       )
     })
 
@@ -56,8 +56,8 @@ __datadog_test_1, __datadog_test_0, 1));\n}`
         `{
   let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 (__datadog_test_0 = a(), __datadog_test_1 = __datadog_test_0.substring, __datadog_test_2 = b, \
-_ddiast.string_substring(__datadog_test_1(__datadog_test_2), __datadog_test_1, __datadog_test_0, __datadog_test_2));\
-\n}`
+_ddiast.string_substring(__datadog_test_1.call(__datadog_test_0, __datadog_test_2), __datadog_test_1, __datadog_test_0\
+, __datadog_test_2));\n}`
       )
     })
 
@@ -68,8 +68,8 @@ _ddiast.string_substring(__datadog_test_1(__datadog_test_2), __datadog_test_1, _
         `{
   let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 (__datadog_test_0 = a(), __datadog_test_1 = __datadog_test_0.substring, __datadog_test_2 = b(), \
-_ddiast.string_substring(__datadog_test_1(__datadog_test_2), __datadog_test_1, __datadog_test_0, __datadog_test_2));\
-\n}`
+_ddiast.string_substring(__datadog_test_1.call(__datadog_test_0, __datadog_test_2), __datadog_test_1, \
+__datadog_test_0, __datadog_test_2));\n}`
       )
     })
 
@@ -81,8 +81,8 @@ _ddiast.string_substring(__datadog_test_1(__datadog_test_2), __datadog_test_1, _
   let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4;
 (__datadog_test_2 = a(), __datadog_test_3 = __datadog_test_2.substring, __datadog_test_4 = (__datadog_test_0 = c, \
 __datadog_test_1 = b(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))\
-, _ddiast.string_substring(__datadog_test_3(__datadog_test_4), __datadog_test_3, __datadog_test_2, __datadog_test_4));\
-\n}`
+, _ddiast.string_substring(__datadog_test_3.call(__datadog_test_2, __datadog_test_4), __datadog_test_3, \
+__datadog_test_2, __datadog_test_4));\n}`
       )
     })
 
@@ -97,8 +97,8 @@ __datadog_test_1 = b(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1(2), \
-__datadog_test_1, __datadog_test_0, 2));\n}`
+(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1\
+.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));\n}`
       )
     })
 
@@ -109,7 +109,7 @@ __datadog_test_1, __datadog_test_0, 2));\n}`
         `{
   let __datadog_test_0, __datadog_test_1;
   (__datadog_test_0 = _ddiast.plusOperator(b + c, b, c), __datadog_test_1 = __datadog_test_0.substring, \
-_ddiast.string_substring(__datadog_test_1(2), __datadog_test_1, __datadog_test_0, 2));\n}`
+_ddiast.string_substring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));\n}`
       )
     })
 
@@ -119,8 +119,8 @@ _ddiast.string_substring(__datadog_test_1(2), __datadog_test_1, __datadog_test_0
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1(), \
-__datadog_test_1, __datadog_test_0));
+(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1\
+.call(__datadog_test_0), __datadog_test_1, __datadog_test_0));
       }`
       )
     })
@@ -131,8 +131,8 @@ __datadog_test_1, __datadog_test_0));
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1(2), \
-__datadog_test_1, __datadog_test_0, 2));\n}`
+(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1\
+.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));\n}`
       )
     })
 
@@ -142,8 +142,8 @@ __datadog_test_1, __datadog_test_0, 2));\n}`
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1(2), \
-__datadog_test_1, __datadog_test_0, 2));
+(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1\
+.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));
       }`
       )
     })
@@ -169,8 +169,8 @@ __datadog_test_1, __datadog_test_0, 2));
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = a.b.c, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1(1)\
-, __datadog_test_1, __datadog_test_0, 1));
+(__datadog_test_0 = a.b.c, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1\
+.call(__datadog_test_0, 1), __datadog_test_1, __datadog_test_0, 1));
       }`
       )
     })
@@ -182,7 +182,7 @@ __datadog_test_1, __datadog_test_0, 2));
         `{
   let __datadog_test_0, __datadog_test_1;
 (__datadog_test_0 = a.b().c, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1\
-(1), __datadog_test_1, __datadog_test_0, 1));
+.call(__datadog_test_0, 1), __datadog_test_1, __datadog_test_0, 1));
       }`
       )
     })
@@ -194,7 +194,7 @@ __datadog_test_1, __datadog_test_0, 2));
         `{
   let __datadog_test_0, __datadog_test_1;
 (__datadog_test_0 = a.b.c(), __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(__datadog_test_1\
-(1), __datadog_test_1, __datadog_test_0, 1));
+.call(__datadog_test_0, 1), __datadog_test_1, __datadog_test_0, 1));
       }`
       )
     })
@@ -244,7 +244,7 @@ __datadog_test_1, __datadog_test_0, 2));
             `{
       let __datadog_test_0, __datadog_test_1;
       (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.${method}, _ddiast.string_${method}(__datadog_test_1\
-(${args}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
+.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
           )
         })
 
@@ -255,7 +255,7 @@ __datadog_test_1, __datadog_test_0, 2));
             `{
       let __datadog_test_0, __datadog_test_1;
       (__datadog_test_0 = a(), __datadog_test_1 = __datadog_test_0.${method}, _ddiast.string_${method}(\
-__datadog_test_1(${args}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
+__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
           )
         })
 
@@ -266,7 +266,7 @@ __datadog_test_1(${args}), __datadog_test_1, __datadog_test_0${argsWithComma}));
             `{
       let __datadog_test_0, __datadog_test_1;
       (__datadog_test_0 = a.b, __datadog_test_1 = __datadog_test_0.${method}, _ddiast.string_${method}(\
-__datadog_test_1(${args}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
+__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
           )
         })
 
@@ -282,7 +282,7 @@ __datadog_test_1(${args}), __datadog_test_1, __datadog_test_0${argsWithComma}));
             `{
     let __datadog_test_0, __datadog_test_1;
     (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.${method}, _ddiast.string_${method}(\
-__datadog_test_1(${args}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
+__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
           )
         })
 
@@ -293,7 +293,7 @@ __datadog_test_1(${args}), __datadog_test_1, __datadog_test_0${argsWithComma}));
             `{
     let __datadog_test_0, __datadog_test_1;
     (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.${method}, _ddiast.string_${method}(\
-__datadog_test_1(${args}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
+__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
           )
         })
       })
