@@ -44,8 +44,8 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("for(let i = 0; i < buf.length; i++){
-    let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4;
-    res1 = (__datadog_test_3 = res1, __datadog_test_4 = s.write((__datadog_test_0 = buf, __datadog_test_1 = i, __datadog_test_2 = _ddiast.plusOperator(i + 1, i, 1), _ddiast.string_slice(__datadog_test_0.slice(__datadog_test_1, __datadog_test_2), __datadog_test_0.slice, __datadog_test_0, __datadog_test_1, __datadog_test_2))), _ddiast.plusOperator(__datadog_test_3 + __datadog_test_4, __datadog_test_3, __datadog_test_4));\n}");
+    let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5;
+    res1 = (__datadog_test_4 = res1, __datadog_test_5 = s.write((__datadog_test_0 = buf, __datadog_test_1 = __datadog_test_0.slice, __datadog_test_2 = i, __datadog_test_3 = _ddiast.plusOperator(i + 1, i, 1), _ddiast.string_slice(__datadog_test_1(__datadog_test_2, __datadog_test_3), __datadog_test_1, __datadog_test_0, __datadog_test_2, __datadog_test_3))), _ddiast.plusOperator(__datadog_test_4 + __datadog_test_5, __datadog_test_4, __datadog_test_5));\n}");
         Ok(())
     }
 

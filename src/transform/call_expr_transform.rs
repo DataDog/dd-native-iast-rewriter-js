@@ -129,23 +129,26 @@ fn replace_call_expr_if_csi_method(
         // a().substring() -> __datadog_token_$i.substring()
         let mut call_replacement = call.clone();
 
-        let ident_replacement = ident_provider.get_ident_used_in_assignation(
-            expr,
+        let ident_replacement =
+            ident_provider.get_temporal_ident_used_in_assignation(expr, &mut assignations, &span);
+
+        let member_expr = Expr::Member(MemberExpr {
+            span,
+            obj: Box::new(Expr::Ident(ident_replacement.clone())),
+            prop: MemberProp::Ident(ident.clone()),
+        });
+
+        let ident_callee = ident_provider.get_ident_used_in_assignation(
+            &member_expr,
             &mut assignations,
             &mut arguments,
             &span,
         );
 
-        let member_expr = Expr::Member(MemberExpr {
-            span,
-            obj: Box::new(Expr::Ident(ident_replacement)),
-            prop: MemberProp::Ident(ident.clone()),
-        });
-
         // include __datadog_token_$i.substring as argument to later runtime check
-        arguments.insert(0, member_expr.clone());
+        arguments.push(Expr::Ident(ident_replacement));
 
-        call_replacement.callee = Callee::Expr(Box::new(member_expr));
+        call_replacement.callee = Callee::Expr(Box::new(Expr::Ident(ident_callee)));
         call_replacement.args.iter_mut().for_each(|expr_or_spread| {
             DefaultOperandHandler::replace_expressions_in_operand(
                 &mut *expr_or_spread.expr,
