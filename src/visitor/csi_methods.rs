@@ -1,3 +1,5 @@
+use super::visitor_util::DD_PLUS_OPERATOR;
+
 /**
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
@@ -10,12 +12,31 @@ pub struct CsiMethod {
 }
 
 impl CsiMethod {
+    pub fn simple(method_name: &str) -> Self {
+        CsiMethod {
+            class_name: "".to_string(),
+            method_name: method_name.to_string(),
+        }
+    }
+
+    pub fn rewritten_name(&self) -> String {
+        if self.class_name.is_empty() {
+            self.method_name.clone()
+        } else {
+            format!(
+                "{}_{}",
+                self.class_name.to_lowercase().replace(".prototype", ""),
+                self.method_name
+            )
+        }
+    }
+
     pub fn full_name(&self) -> String {
-        format!(
-            "{}_{}",
-            self.class_name.to_lowercase().replace(".prototype", ""),
-            self.method_name
-        )
+        if self.class_name.is_empty() {
+            self.method_name.clone()
+        } else {
+            format!("{}.{}", self.class_name, self.method_name)
+        }
     }
 }
 
@@ -26,12 +47,13 @@ pub struct CsiMethods {
 }
 
 impl CsiMethods {
-    pub fn new() -> Self {
-        let mut methods = Vec::new();
+    pub fn new(csi_exclusions: &CsiExclusions) -> Self {
+        let mut methods = vec![CsiMethod::simple(DD_PLUS_OPERATOR)];
         let mut class_names = Vec::new();
         register(
             &mut methods,
             &mut class_names,
+            csi_exclusions,
             &[(
                 "String.prototype",
                 &[
@@ -56,6 +78,7 @@ impl CsiMethods {
             methods,
         }
     }
+
     pub fn get(&self, method_name: &str) -> Option<&CsiMethod> {
         self.methods
             .iter()
@@ -67,17 +90,52 @@ impl CsiMethods {
 fn register(
     methods: &mut Vec<CsiMethod>,
     class_names: &mut Vec<String>,
+    csi_exclusions: &CsiExclusions,
     method_defs: &[(&str, &[&str])], // [(class_name, [method_names])]
 ) {
     for def in method_defs {
-        let class_name = def.0;
+        let class_name = def.0.to_string();
         let method_names = def.1;
-        class_names.push(class_name.to_string());
-        for method_name in method_names {
-            methods.push(CsiMethod {
-                class_name: class_name.to_string(),
-                method_name: method_name.to_string(),
-            })
+        let mut add_class_name = false;
+        for method_name_str in method_names {
+            let csi_method = CsiMethod {
+                class_name: class_name.clone(),
+                method_name: method_name_str.to_string(),
+            };
+            if csi_exclusions.is_excluded(&csi_method.full_name()) {
+                continue;
+            }
+            methods.push(csi_method);
+            add_class_name = true
         }
+
+        if add_class_name {
+            class_names.push(class_name);
+        }
+    }
+}
+
+pub struct CsiExclusions {
+    exclusions: Vec<String>,
+}
+
+impl CsiExclusions {
+    pub fn from(csi_exclusions: &Option<Vec<String>>) -> Self {
+        match csi_exclusions {
+            Some(exclusions) => CsiExclusions {
+                exclusions: exclusions.clone(),
+            },
+            None => CsiExclusions::empty(),
+        }
+    }
+
+    pub fn empty() -> Self {
+        CsiExclusions {
+            exclusions: Vec::new(),
+        }
+    }
+
+    pub fn is_excluded(&self, method_name: &String) -> bool {
+        self.exclusions.contains(method_name)
     }
 }

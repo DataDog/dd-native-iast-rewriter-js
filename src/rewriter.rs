@@ -6,6 +6,7 @@ use crate::{
     util::{file_name, parse_source_map},
     visitor::{
         block_transform_visitor::BlockTransformVisitor,
+        csi_methods::CsiExclusions,
         transform_status::{Status, TransformStatus},
     },
 };
@@ -42,7 +43,12 @@ pub struct RewrittenOutput {
     pub original_map: Option<SourceMap>,
 }
 
-pub fn rewrite_js(code: String, file: String, print_comments: bool) -> Result<RewrittenOutput> {
+pub fn rewrite_js(
+    code: String,
+    file: String,
+    print_comments: bool,
+    csi_exclusions: CsiExclusions,
+) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let program = parse_js(&code, file.as_str(), handler, compiler.borrow())?;
@@ -59,6 +65,7 @@ pub fn rewrite_js(code: String, file: String, print_comments: bool) -> Result<Re
             &code,
             file.as_str(),
             print_comments,
+            csi_exclusions,
             compiler.borrow(),
         );
 
@@ -134,10 +141,12 @@ fn transform_js(
     code: &str,
     file: &str,
     comments: bool,
+    csi_exclusions: CsiExclusions,
     compiler: &Compiler,
 ) -> Result<TransformOutput, Error> {
     let mut transform_status = TransformStatus::not_modified();
-    let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status);
+    let mut block_transform_visitor =
+        BlockTransformVisitor::default(&mut transform_status, &csi_exclusions);
     program.visit_mut_with(&mut block_transform_visitor);
 
     match transform_status.status {
