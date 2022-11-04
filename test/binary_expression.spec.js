@@ -218,22 +218,6 @@ __datadog_test_2, __datadog_test_1, __datadog_test_2));'
     }
   )
 
-  it('does change + operator with assignation', () => {
-    const js = `for (let i = 0; i < buf.length; i++) {
-      res1[i] += s.write(buf.slice(i, i + 1));
-    }`
-    rewriteAndExpect(
-      js,
-      `{
-        for(let i = 0; i < buf.length; i++){
-          let __datadog_test_0, __datadog_test_1;
-          res1[i] = (__datadog_test_0 = res1[i], __datadog_test_1 = s.write(buf.slice(i, _ddiast.plusOperator(i + 1, \
-i, 1))), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));
-}
-}`
-    )
-  })
-
   it('does not change assignation', () => {
     const js = `let a = 0;
     a -= b;`

@@ -16,11 +16,34 @@ const removeSourceMap = (code) => {
     .join('\n')
 }
 
+const csiMethods = {
+  'String.prototype': [
+    'substring',
+    'trim',
+    'trimStart',
+    'trimEnd',
+    'toLowerCase',
+    'toLocaleLowerCase',
+    'toUpperCase',
+    'toLocaleUpperCase',
+    'replace',
+    'replaceAll',
+    'slice',
+    'concat'
+  ]
+}
+
 const rewriteAst = (code, opts) => {
   opts = opts || {}
   const config = new RewriterConfig()
   config.localVarPrefix = 'test'
   const rewriter = opts.rewriter ?? new Rewriter(config)
+  const rewriter =
+    opts.rewriter ??
+    new Rewriter({
+      chainSourceMap: opts.chainSourceMap ?? false,
+      csiMethods
+    })
   const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
   const rewrited = rewriter.rewrite(code, file)
   return opts.keepSourceMap ? rewrited : removeSourceMap(rewrited)
@@ -28,13 +51,13 @@ const rewriteAst = (code, opts) => {
 
 const wrapBlock = (code) => `{${os.EOL}${code}${os.EOL}}`
 
-const rewriteAndExpectNoTransformation = (code) => {
-  rewriteAndExpect(wrapBlock(code), wrapBlock(code), true)
+const rewriteAndExpectNoTransformation = (code, opts) => {
+  rewriteAndExpect(wrapBlock(code), wrapBlock(code), true, opts)
 }
 
-const rewriteAndExpect = (code, expect, block) => {
+const rewriteAndExpect = (code, expect, block, opts) => {
   code = !block ? `{${code}}` : code
-  const rewrited = rewriteAst(code)
+  const rewrited = rewriteAst(code, opts)
   expectAst(rewrited, expect)
 }
 
@@ -62,5 +85,7 @@ module.exports = {
   rewriteAndExpectNoTransformation,
   rewriteAndExpect,
   rewriteAndExpectError,
-  wrapBlock
+  wrapBlock,
+  Rewriter,
+  csiMethods
 }

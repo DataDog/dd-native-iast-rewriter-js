@@ -1,8 +1,11 @@
+use swc::atoms::JsWord;
 /**
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
-use swc_ecma_visit::swc_ecma_ast::{CallExpr, Callee, Expr, Ident, MemberExpr, MemberProp};
+use swc_ecma_visit::swc_ecma_ast::{
+    CallExpr, Callee, Expr, ExprOrSpread, Ident, MemberExpr, MemberProp,
+};
 
 use crate::{
     transform::{
@@ -31,16 +34,28 @@ impl CallExprTransform {
             Callee::Expr(expr) => match *expr {
                 Expr::Member(member) => match (*member.obj, &member.prop) {
                     // replace ident and call members but exclude literal "".substring() calls
-                    (Expr::Ident(obj), MemberProp::Ident(ident)) => replace_call_expr_if_match(
-                        &Expr::Ident(obj),
-                        ident,
-                        call,
-                        csi_methods,
-                        ident_provider,
-                    ),
+                    (Expr::Ident(obj), MemberProp::Ident(ident)) => {
+                        replace_call_expr_if_csi_method(
+                            &Expr::Ident(obj),
+                            ident,
+                            call,
+                            csi_methods,
+                            ident_provider,
+                        )
+                    }
                     (Expr::Call(callee_call), MemberProp::Ident(ident)) => {
-                        replace_call_expr_if_match(
+                        replace_call_expr_if_csi_method(
                             &Expr::Call(callee_call),
+                            ident,
+                            call,
+                            csi_methods,
+                            ident_provider,
+                        )
+                    }
+
+                    (Expr::Paren(paren), MemberProp::Ident(ident)) => {
+                        replace_call_expr_if_csi_method(
+                            &Expr::Paren(paren),
                             ident,
                             call,
                             csi_methods,
@@ -65,7 +80,7 @@ impl CallExprTransform {
                                 return None;
                             }
 
-                            replace_call_expr_if_match(
+                            replace_call_expr_if_csi_method(
                                 &Expr::Member(member_obj),
                                 ident,
                                 call,
@@ -98,7 +113,7 @@ fn replace_prototype_call_or_apply(
     );
 
     match prototype_call_option {
-        Some(mut prototype_call) => replace_call_expr_if_match(
+        Some(mut prototype_call) => replace_call_expr_if_csi_method(
             &prototype_call.0,
             &prototype_call.1,
             &mut prototype_call.2,
@@ -109,7 +124,7 @@ fn replace_prototype_call_or_apply(
     }
 }
 
-fn replace_call_expr_if_match(
+fn replace_call_expr_if_csi_method(
     expr: &Expr,
     ident: &Ident,
     call: &mut CallExpr,
@@ -122,23 +137,42 @@ fn replace_call_expr_if_match(
         let mut arguments = Vec::new();
         let span = call.span;
 
-        // always generate a new ident and replace the original callee with it:
-        // a.substring() -> __datadog_token_$i.substring()
-        // a().substring() -> __datadog_token_$i.substring()
+        // replace original call expression with an parent expression splitting every component and finally invoking .call
+        // a.substring() ->  __datadog_token_$i = a, __datadog_token_$i2 = __datadog_token_$i.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
+
         let mut call_replacement = call.clone();
-        let ident_replacement = ident_provider.get_ident_used_in_assignation(
-            expr,
+
+        // __datadog_token_$i = a
+        let ident_replacement =
+            ident_provider.get_temporal_ident_used_in_assignation(expr, &mut assignations, &span);
+
+        // __datadog_token_$i.substring
+        let member_expr = Expr::Member(MemberExpr {
+            span,
+            obj: Box::new(Expr::Ident(ident_replacement.clone())),
+            prop: MemberProp::Ident(ident.clone()),
+        });
+
+        // __datadog_token_$i2 = __datadog_token_$i.substring
+        let ident_callee = ident_provider.get_ident_used_in_assignation(
+            &member_expr,
             &mut assignations,
             &mut arguments,
             &span,
         );
 
+        arguments.push(Expr::Ident(ident_replacement.clone()));
+
+        // change callee to __datadog_token_$i2.call
         call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
             span,
-            obj: Box::new(Expr::Ident(ident_replacement)),
-            prop: MemberProp::Ident(ident.clone()),
+            obj: Box::new(Expr::Ident(ident_callee)),
+            prop: MemberProp::Ident(Ident {
+                span,
+                sym: JsWord::from("call"),
+                optional: false,
+            }),
         })));
-
         call_replacement.args.iter_mut().for_each(|expr_or_spread| {
             DefaultOperandHandler::replace_expressions_in_operand(
                 &mut *expr_or_spread.expr,
@@ -149,6 +183,14 @@ fn replace_call_expr_if_match(
                 ident_provider,
             )
         });
+        // insert .call(this) argument
+        call_replacement.args.insert(
+            0,
+            ExprOrSpread {
+                spread: None,
+                expr: Box::new(Expr::Ident(ident_replacement)),
+            },
+        );
 
         ident_provider.set_status(TransformStatus::modified());
 
@@ -156,7 +198,7 @@ fn replace_call_expr_if_match(
             &Expr::Call(call_replacement),
             &arguments,
             &mut assignations,
-            csi_method.full_name().as_str(),
+            csi_method.rewritten_name().as_str(),
             &span,
         ));
     }

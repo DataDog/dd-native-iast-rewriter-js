@@ -30,13 +30,17 @@ impl BlockTransformVisitor<'_> {
             transform_status,
             local_var_prefix,
     csi_methods: CsiMethods,
+    csi_methods: &'a CsiMethods,
 }
 
 impl BlockTransformVisitor<'_> {
-    pub fn default(transform_status: &mut TransformStatus) -> BlockTransformVisitor<'_> {
+    pub fn default<'a>(
+        transform_status: &'a mut TransformStatus,
+        csi_methods: &'a CsiMethods,
+    ) -> BlockTransformVisitor<'a> {
         BlockTransformVisitor {
             transform_status,
-            csi_methods: CsiMethods::new(),
+            csi_methods,
         }
     }
 
@@ -80,7 +84,7 @@ impl VisitMut for BlockTransformVisitor<'_> {
             idents: Vec::new(),
             variable_decl: HashSet::new(),
             transform_status: TransformStatus::not_modified(),
-            csi_methods: &self.csi_methods,
+            csi_methods: self.csi_methods,
             ctx: Ctx::root(),
         };
         expr.visit_mut_children_with(&mut operation_visitor);

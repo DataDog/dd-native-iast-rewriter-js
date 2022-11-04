@@ -7,8 +7,12 @@ export interface RewriterConfig {
   chainSourceMap?: boolean
   comments?: boolean
   localVarPrefix?: string
+  chainSourceMap?: boolean | undefined | null
+  comments?: boolean | undefined | null
+  csiMethods?: Record<string, Array<string>> | undefined | null
 }
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)
   rewrite(code: string, file: string): string
+  csiMethods(): Array<string>
 }

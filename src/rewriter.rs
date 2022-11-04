@@ -6,6 +6,7 @@ use crate::{
     util::{file_name, parse_source_map, rnd_string},
     visitor::{
         block_transform_visitor::BlockTransformVisitor,
+        csi_methods::CsiMethods,
         transform_status::{Status, TransformStatus},
     },
 };
@@ -47,6 +48,7 @@ pub fn rewrite_js(
     file: String,
     print_comments: bool,
     local_var_prefix: Option<String>,
+    csi_methods: &CsiMethods,
 ) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
@@ -65,6 +67,7 @@ pub fn rewrite_js(
             file.as_str(),
             print_comments,
             local_var_prefix,
+            csi_methods,
             compiler.borrow(),
         );
 
@@ -148,6 +151,12 @@ fn transform_js(
         &mut transform_status,
         local_var_prefix.unwrap_or_else(|| rnd_string(6)),
     );
+    csi_methods: &CsiMethods,
+    compiler: &Compiler,
+) -> Result<TransformOutput, Error> {
+    let mut transform_status = TransformStatus::not_modified();
+    let mut block_transform_visitor =
+        BlockTransformVisitor::default(&mut transform_status, csi_methods);
     program.visit_mut_with(&mut block_transform_visitor);
 
     match transform_status.status {
