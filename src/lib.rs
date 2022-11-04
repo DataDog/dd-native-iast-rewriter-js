@@ -15,16 +15,18 @@ mod tests;
 extern crate napi_derive;
 extern crate base64;
 
+use std::collections::HashMap;
+
 use crate::rewriter::{print_js, rewrite_js};
 use napi::{Error, Status};
-use visitor::csi_methods::{CsiExclusions, CsiMethods};
+use visitor::csi_methods::CsiMethods;
 
 #[napi(object)]
 #[derive(Debug)]
 pub struct RewriterConfig {
     pub chain_source_map: Option<bool>,
     pub comments: Option<bool>,
-    pub csi_exclusions: Option<Vec<String>>,
+    pub csi_methods: Option<HashMap<String, Vec<String>>>,
 }
 
 #[napi]
@@ -39,7 +41,7 @@ impl Rewriter {
         let rewriter_config: RewriterConfig = config.unwrap_or(RewriterConfig {
             chain_source_map: Some(false),
             comments: Some(false),
-            csi_exclusions: None,
+            csi_methods: None,
         });
         Self {
             config: rewriter_config,
@@ -52,7 +54,7 @@ impl Rewriter {
             code,
             file,
             self.config.comments.unwrap_or(false),
-            CsiExclusions::from(&self.config.csi_exclusions),
+            &CsiMethods::from(&self.config.csi_methods),
         )
         .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))
         .map_err(|e| Error::new(Status::Unknown, format!("{}", e)))
@@ -60,8 +62,7 @@ impl Rewriter {
 
     #[napi]
     pub fn csi_methods(&self) -> napi::Result<Vec<String>> {
-        let csi_exclusions = CsiExclusions::from(&self.config.csi_exclusions);
-        let csi_methods = CsiMethods::new(&csi_exclusions);
+        let csi_methods = CsiMethods::from(&self.config.csi_methods);
 
         Ok(csi_methods
             .methods

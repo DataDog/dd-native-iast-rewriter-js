@@ -6,9 +6,11 @@
 #[cfg(test)]
 mod tests {
 
+    use std::collections::HashMap;
+
     use crate::{
-        tests::{rewrite_js, rewrite_js_with_exclusions, set_local_var},
-        visitor::csi_methods::CsiExclusions,
+        tests::{rewrite_js, rewrite_js_with_csi_methods, set_local_var},
+        visitor::csi_methods::CsiMethods,
     };
     use spectral::{assert_that, string::StrAssertions};
 
@@ -132,16 +134,34 @@ mod tests {
     }
 
     #[test]
+    fn test_chained_calls() -> Result<(), String> {
+        let original_code = "{const a = b.concat('a').substring(2).trim();}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5;
+    const a = (__datadog_test_4 = (__datadog_test_2 = (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.concat, _ddiast.string_concat(__datadog_test_1.call(__datadog_test_0, 'a'), __datadog_test_1, __datadog_test_0, 'a')), __datadog_test_3 = __datadog_test_2.substring, _ddiast.string_substring(__datadog_test_3.call(__datadog_test_2, 2), __datadog_test_3, __datadog_test_2, 2)), __datadog_test_5 = __datadog_test_4.trim, _ddiast.string_trim(__datadog_test_5.call(__datadog_test_4), __datadog_test_5, __datadog_test_4));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_chained_calls_with_exclusions() -> Result<(), String> {
+        let original_code = "{const a = b.concat('a').substring(2).trim();}".to_string();
+        let js_file = "test.js".to_string();
+        let mut map = HashMap::new();
+        map.insert("String.prototype".to_string(), vec!["concat".to_string()]);
+        let rewritten = rewrite_js_with_csi_methods(original_code, js_file, &CsiMethods::new(&map))
+            .map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
+    const a = (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.concat, _ddiast.string_concat(__datadog_test_1.call(__datadog_test_0, 'a'), __datadog_test_1, __datadog_test_0, 'a')).substring(2).trim();");
+        Ok(())
+    }
+
+    #[test]
     fn test_csi_exclusion() -> Result<(), String> {
         let original_code = "{const a = b.concat('hello')}".to_string();
         let js_file = "test.js".to_string();
-        let csi_exclusions = Some(vec!["String.prototype.concat".to_string()]);
-        let rewritten = rewrite_js_with_exclusions(
-            original_code,
-            js_file,
-            CsiExclusions::from(&csi_exclusions),
-        )
-        .map_err(|e| e.to_string())?;
+        let rewritten = rewrite_js_with_csi_methods(original_code, js_file, &CsiMethods::empty())
+            .map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains("const a = b.concat('hello')");
         Ok(())
     }

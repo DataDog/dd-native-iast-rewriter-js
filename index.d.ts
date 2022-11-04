@@ -6,7 +6,7 @@
 export interface RewriterConfig {
   chainSourceMap?: boolean | undefined | null
   comments?: boolean | undefined | null
-  csiExclusions?: Array<string> | undefined | null
+  csiMethods?: Record<string, Array<string>> | undefined | null
 }
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)

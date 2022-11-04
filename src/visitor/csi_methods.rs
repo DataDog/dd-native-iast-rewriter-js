@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::visitor_util::DD_PLUS_OPERATOR;
 
 /**
@@ -30,14 +32,6 @@ impl CsiMethod {
             )
         }
     }
-
-    pub fn full_name(&self) -> String {
-        if self.class_name.is_empty() {
-            self.method_name.clone()
-        } else {
-            format!("{}.{}", self.class_name, self.method_name)
-        }
-    }
 }
 
 #[derive(Clone)]
@@ -47,31 +41,24 @@ pub struct CsiMethods {
 }
 
 impl CsiMethods {
-    pub fn new(csi_exclusions: &CsiExclusions) -> Self {
+    pub fn from(csi_methods: &Option<HashMap<String, Vec<String>>>) -> Self {
+        match csi_methods {
+            Some(methods) => CsiMethods::new(methods),
+            None => Self::empty(),
+        }
+    }
+
+    pub fn empty() -> Self {
+        CsiMethods {
+            class_names: vec![],
+            methods: vec![],
+        }
+    }
+
+    pub fn new(csi_methods: &HashMap<String, Vec<String>>) -> Self {
         let mut methods = vec![CsiMethod::simple(DD_PLUS_OPERATOR)];
         let mut class_names = Vec::new();
-        register(
-            &mut methods,
-            &mut class_names,
-            csi_exclusions,
-            &[(
-                "String.prototype",
-                &[
-                    "substring",
-                    "trim",
-                    "trimStart",
-                    "trimEnd",
-                    "toLowerCase",
-                    "toLocaleLowerCase",
-                    "toUpperCase",
-                    "toLocaleUpperCase",
-                    "replace",
-                    "replaceAll",
-                    "slice",
-                    "concat",
-                ],
-            )],
-        );
+        register(&mut methods, &mut class_names, csi_methods);
 
         CsiMethods {
             class_names,
@@ -86,56 +73,21 @@ impl CsiMethods {
     }
 }
 
-// a little uggly? :/
 fn register(
     methods: &mut Vec<CsiMethod>,
     class_names: &mut Vec<String>,
-    csi_exclusions: &CsiExclusions,
-    method_defs: &[(&str, &[&str])], // [(class_name, [method_names])]
+    csi_methods: &HashMap<String, Vec<String>>,
 ) {
-    for def in method_defs {
+    for def in csi_methods {
         let class_name = def.0.to_string();
         let method_names = def.1;
-        let mut add_class_name = false;
         for method_name_str in method_names {
             let csi_method = CsiMethod {
                 class_name: class_name.clone(),
                 method_name: method_name_str.to_string(),
             };
-            if csi_exclusions.is_excluded(&csi_method.full_name()) {
-                continue;
-            }
             methods.push(csi_method);
-            add_class_name = true
         }
-
-        if add_class_name {
-            class_names.push(class_name);
-        }
-    }
-}
-
-pub struct CsiExclusions {
-    exclusions: Vec<String>,
-}
-
-impl CsiExclusions {
-    pub fn from(csi_exclusions: &Option<Vec<String>>) -> Self {
-        match csi_exclusions {
-            Some(exclusions) => CsiExclusions {
-                exclusions: exclusions.clone(),
-            },
-            None => CsiExclusions::empty(),
-        }
-    }
-
-    pub fn empty() -> Self {
-        CsiExclusions {
-            exclusions: Vec::new(),
-        }
-    }
-
-    pub fn is_excluded(&self, method_name: &String) -> bool {
-        self.exclusions.contains(method_name)
+        class_names.push(class_name);
     }
 }

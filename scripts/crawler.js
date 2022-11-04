@@ -18,6 +18,23 @@ const V8_NATIVE_CALL_REPLACEMENT_PREFIX = '__v8_native_remainder'
 const V8_NATIVE_CALL_REPLACEMENT_REGEX = /__v8_native_remainder(\w+\(\S*?|\s*\))/gm
 const V8_NATIVE_CALL_FLAGS_COMMENT_REGEX = /\/\/\s*Flags:.*(--allow-natives-syntax)+/gm
 
+const CSI_METHODS = {
+  'String.prototype': [
+    'substring',
+    'trim',
+    'trimStart',
+    'trimEnd',
+    'toLowerCase',
+    'toLocaleLowerCase',
+    'toUpperCase',
+    'toLocaleUpperCase',
+    'replace',
+    'replaceAll',
+    'slice',
+    'concat'
+  ]
+}
+
 const GLOBAL_METHODS_TEMPLATE = `;(function(globals){
   globals._ddiast = globals._ddiast || { __CSI_METHODS__ };
 }((1,eval)('this')));`
@@ -40,7 +57,7 @@ const red = console.log.bind(this, '\x1b[31m%s\x1b[0m')
 const blue = console.log.bind(this, '\x1b[34m%s\x1b[0m')
 const cyan = console.log.bind(this, '\x1b[35m%s\x1b[0m')
 
-const rewriter = new Rewriter({ comments: true })
+const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS })
 
 const getGlobalMethods = function (methods) {
   const fnSignAndBody = '(res) {return res;}'

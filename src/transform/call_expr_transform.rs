@@ -53,6 +53,16 @@ impl CallExprTransform {
                         )
                     }
 
+                    (Expr::Paren(paren), MemberProp::Ident(ident)) => {
+                        replace_call_expr_if_csi_method(
+                            &Expr::Paren(paren),
+                            ident,
+                            call,
+                            csi_methods,
+                            ident_provider,
+                        )
+                    }
+
                     (Expr::Member(member_obj), MemberProp::Ident(ident)) => {
                         // may be something like String.prototype.substring.call
                         if FunctionPrototypeTransform::is_call_or_apply(ident) {

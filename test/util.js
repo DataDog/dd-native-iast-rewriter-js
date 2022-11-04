@@ -16,9 +16,31 @@ const removeSourceMap = (code) => {
     .join('\n')
 }
 
+const csiMethods = {
+  'String.prototype': [
+    'substring',
+    'trim',
+    'trimStart',
+    'trimEnd',
+    'toLowerCase',
+    'toLocaleLowerCase',
+    'toUpperCase',
+    'toLocaleUpperCase',
+    'replace',
+    'replaceAll',
+    'slice',
+    'concat'
+  ]
+}
+
 const rewriteAst = (code, opts) => {
   opts = opts || {}
-  const rewriter = opts.rewriter ?? new Rewriter({ chainSourceMap: opts.chainSourceMap ?? false })
+  const rewriter =
+    opts.rewriter ??
+    new Rewriter({
+      chainSourceMap: opts.chainSourceMap ?? false,
+      csiMethods
+    })
   const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
   const rewrited = rewriter.rewrite(code, file)
   return opts.keepSourceMap ? rewrited : removeSourceMap(rewrited)
@@ -61,5 +83,6 @@ module.exports = {
   rewriteAndExpect,
   rewriteAndExpectError,
   wrapBlock,
-  Rewriter
+  Rewriter,
+  csiMethods
 }
