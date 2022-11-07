@@ -87,7 +87,7 @@ describe('getFilenameFromSourceMap', () => {
       path: path.join(sourceMapResourcesPath, 'test-inline.js'),
       line: 5
     }
-    const pathAndLine = getSourcePathAndLineFromSourceMaps(originalPathAndLine.path, originalPathAndLine.line)
+    const pathAndLine = getSourcePathAndLineFromSourceMaps(originalPathAndLine.path, originalPathAndLine.line, 10)
     expect(pathAndLine.path).to.be.equals(path.join(sourceMapResourcesPath, 'test-inline.ts'))
     expect(pathAndLine.line).to.be.equals(2)
   })
