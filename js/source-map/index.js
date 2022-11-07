@@ -6,9 +6,9 @@ const SOURCE_MAP_LINE_START = '//# sourceMappingURL='
 const SOURCE_MAP_INLINE_LINE_START = '//# sourceMappingURL=data:application/json;base64,'
 const CACHE_MAX_SIZE = 100
 const pathSourceMapsCache = new Map()
+const rewrittenSourceMapsCache = new Map()
 
-function readAndCacheSourceMap (filename, filePath) {
-  const fileContent = fs.readFileSync(filename).toString()
+function generateSourceMapFromFileContent (fileContent, filePath) {
   const fileLines = fileContent.trim().split('\n')
   const lastLine = fileLines[fileLines.length - 1]
   let rawSourceMap
@@ -23,7 +23,19 @@ function readAndCacheSourceMap (filename, filePath) {
     }
   }
   if (rawSourceMap) {
-    const sm = new SourceMap(JSON.parse(rawSourceMap))
+    return new SourceMap(JSON.parse(rawSourceMap))
+  }
+}
+
+function cacheRewrittenSourceMap (filename, fileContent) {
+  const sm = generateSourceMapFromFileContent(fileContent, getFilePathFromName(filename))
+  rewrittenSourceMapsCache.set(filename, sm)
+}
+
+function readAndCacheSourceMap (filename, filePath) {
+  const fileContent = fs.readFileSync(filename).toString()
+  const sm = generateSourceMapFromFileContent(fileContent, filePath)
+  if (sm) {
     if (pathSourceMapsCache.size >= CACHE_MAX_SIZE) {
       pathSourceMapsCache.clear()
     }
@@ -33,12 +45,16 @@ function readAndCacheSourceMap (filename, filePath) {
   return null
 }
 
+function getFilePathFromName (filename) {
+  const filenameParts = filename.split(path.sep)
+  filenameParts.pop()
+  return filenameParts.join(path.sep)
+}
+
 function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
   try {
-    let sourceMap = pathSourceMapsCache.get(filename)
-    const filenameParts = filename.split(path.sep)
-    filenameParts.pop()
-    const filePath = filenameParts.join(path.sep)
+    let sourceMap = rewrittenSourceMapsCache.get(filename) || pathSourceMapsCache.get(filename)
+    const filePath = getFilePathFromName(filename)
     if (!sourceMap) {
       sourceMap = readAndCacheSourceMap(filename, filePath)
     }
@@ -57,5 +73,6 @@ function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
 }
 
 module.exports = {
-  getSourcePathAndLineFromSourceMaps
+  getSourcePathAndLineFromSourceMaps,
+  cacheRewrittenSourceMap
 }

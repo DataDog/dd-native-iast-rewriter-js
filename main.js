@@ -5,6 +5,7 @@
 'use strict'
 
 const { getPrepareStackTrace } = require('./js/stack-trace/')
+const { cacheRewrittenSourceMap } = require('./js/source-map')
 
 class DummyRewriter {
   rewrite (code, file) {
@@ -12,9 +13,27 @@ class DummyRewriter {
   }
 }
 
+let NativeRewriter
+class CacheRewriter {
+  constructor () {
+    if (NativeRewriter) {
+      this.nativeRewriter = new NativeRewriter()
+    } else {
+      this.nativeRewriter = new DummyRewriter()
+    }
+  }
+
+  rewrite (code, file) {
+    const content = this.nativeRewriter.rewrite(code, file)
+    cacheRewrittenSourceMap(file, content)
+    return content
+  }
+}
+
 function getRewriter () {
   try {
-    return require('node-gyp-build')(__dirname).Rewriter
+    NativeRewriter = require('node-gyp-build')(__dirname).Rewriter
+    return CacheRewriter
   } catch (e) {
     return DummyRewriter
   }
