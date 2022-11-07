@@ -15,9 +15,9 @@ class DummyRewriter {
 
 let NativeRewriter
 class CacheRewriter {
-  constructor () {
+  constructor (config) {
     if (NativeRewriter) {
-      this.nativeRewriter = new NativeRewriter()
+      this.nativeRewriter = new NativeRewriter(config)
     } else {
       this.nativeRewriter = new DummyRewriter()
     }
