@@ -59,11 +59,11 @@ function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
       sourceMap = readAndCacheSourceMap(filename, filePath)
     }
     if (sourceMap) {
-      const { originalSource, originalLine, originalColumn } = sourceMap.findEntry(line, column)
+      const { originalSource, originalLine, originalColumn } = sourceMap.findEntry(line - 1, column - 1)
       return {
         path: path.join(filePath, originalSource),
-        line: originalLine,
-        column: originalColumn
+        line: originalLine + 1,
+        column: originalColumn + 1
       }
     }
   } catch (e) {
