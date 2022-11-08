@@ -16,22 +16,20 @@ const removeSourceMap = (code) => {
     .join('\n')
 }
 
-const csiMethods = {
-  'String.prototype': [
-    'substring',
-    'trim',
-    'trimStart',
-    'trimEnd',
-    'toLowerCase',
-    'toLocaleLowerCase',
-    'toUpperCase',
-    'toLocaleUpperCase',
-    'replace',
-    'replaceAll',
-    'slice',
-    'concat'
-  ]
-}
+const csiMethods = [
+  { src: 'substring', dst: 'stringSubstring' },
+  { src: 'trim' },
+  { src: 'trimStart' },
+  { src: 'trimEnd' },
+  { src: 'toLowerCase' },
+  { src: 'toLocaleLowerCase' },
+  { src: 'toUpperCase' },
+  { src: 'toLocaleUpperCase' },
+  { src: 'replace' },
+  { src: 'replaceAll' },
+  { src: 'slice' },
+  { src: 'concat' }
+]
 
 const rewriteAst = (code, opts) => {
   opts = opts || {}

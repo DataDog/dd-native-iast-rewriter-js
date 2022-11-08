@@ -18,22 +18,20 @@ const V8_NATIVE_CALL_REPLACEMENT_PREFIX = '__v8_native_remainder'
 const V8_NATIVE_CALL_REPLACEMENT_REGEX = /__v8_native_remainder(\w+\(\S*?|\s*\))/gm
 const V8_NATIVE_CALL_FLAGS_COMMENT_REGEX = /\/\/\s*Flags:.*(--allow-natives-syntax)+/gm
 
-const CSI_METHODS = {
-  'String.prototype': [
-    'substring',
-    'trim',
-    'trimStart',
-    'trimEnd',
-    'toLowerCase',
-    'toLocaleLowerCase',
-    'toUpperCase',
-    'toLocaleUpperCase',
-    'replace',
-    'replaceAll',
-    'slice',
-    'concat'
-  ]
-}
+const CSI_METHODS = [
+  { src: 'substring' },
+  { src: 'trim' },
+  { src: 'trimStart' },
+  { src: 'trimEnd' },
+  { src: 'toLowerCase' },
+  { src: 'toLocaleLowerCase' },
+  { src: 'toUpperCase' },
+  { src: 'toLocaleUpperCase' },
+  { src: 'replace' },
+  { src: 'replaceAll' },
+  { src: 'slice' },
+  { src: 'concat' }
+]
 
 const GLOBAL_METHODS_TEMPLATE = `;(function(globals){
   globals._ddiast = globals._ddiast || { __CSI_METHODS__ };

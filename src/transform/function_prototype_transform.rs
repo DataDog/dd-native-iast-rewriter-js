@@ -6,8 +6,6 @@ use swc_ecma_visit::swc_ecma_ast::{
     CallExpr, Callee, Expr, ExprOrSpread, Ident, MemberExpr, MemberProp,
 };
 
-use crate::visitor::csi_methods::CsiMethods;
-
 pub const PROTOTYPE: &str = "prototype";
 pub const CALL_METHOD_NAME: &str = "call";
 pub const APPLY_METHOD_NAME: &str = "apply";
@@ -35,7 +33,6 @@ impl FunctionPrototypeTransform {
         call: &CallExpr,
         member: &MemberExpr,
         ident: &Ident,
-        csi_methods: &CsiMethods,
     ) -> Option<(Expr, Ident, CallExpr)> {
         if !Self::is_call_or_apply(ident) {
             return None;
@@ -43,9 +40,7 @@ impl FunctionPrototypeTransform {
 
         let method_name = ident.sym.to_string();
         let mut path_parts = vec![];
-        if get_prototype_member_path(member, &mut path_parts)
-            && is_prototype_call_from_class(&mut path_parts, csi_methods)
-        {
+        if get_prototype_member_path(member, &mut path_parts) {
             if call.args.is_empty() {
                 return None;
             }
@@ -64,7 +59,7 @@ impl FunctionPrototypeTransform {
                 return None;
             }
 
-            let method_ident = path_parts[path_parts.len() - 1].clone();
+            let method_ident = path_parts[0].clone();
 
             let new_callee = MemberExpr {
                 obj: this_expr.clone(),
@@ -128,18 +123,4 @@ fn get_prototype_member_path(member: &MemberExpr, parts: &mut Vec<Ident>) -> boo
         }
     }
     !parts.is_empty()
-}
-
-fn is_prototype_call_from_class(parts: &mut [Ident], csi_methods: &CsiMethods) -> bool {
-    parts.reverse();
-    let call_expr = parts
-        .iter()
-        .map(|part| part.sym.to_string())
-        .collect::<Vec<String>>()
-        .join(".");
-
-    csi_methods
-        .class_names
-        .iter()
-        .any(|class_name_prototype| call_expr.starts_with(class_name_prototype))
 }

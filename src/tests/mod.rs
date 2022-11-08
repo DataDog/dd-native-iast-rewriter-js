@@ -7,34 +7,19 @@ use anyhow::Error;
 use std::path::PathBuf;
 use crate::{
     rewriter::RewrittenOutput,
-    visitor::{csi_methods::CsiMethods, visitor_util::DD_LOCAL_VAR_NAME_HASH_ENV_NAME},
+    visitor::{
+        csi_methods::{CsiMethod, CsiMethods},
+        visitor_util::DD_LOCAL_VAR_NAME_HASH_ENV_NAME,
+    },
 };
 use anyhow::Error;
-use std::{collections::HashMap, env, path::PathBuf};
+use std::{env, path::PathBuf};
 
 mod binary_assignation_test;
 mod binary_expression_test;
 mod source_map_test;
 mod string_method_test;
 mod template_literal_test;
-
-const CSI_METHOD_DEF: &[(&str, &[&str; 12]); 1] = &[(
-    "String.prototype",
-    &[
-        "substring",
-        "trim",
-        "trimStart",
-        "trimEnd",
-        "toLowerCase",
-        "toLocaleLowerCase",
-        "toUpperCase",
-        "toLocaleUpperCase",
-        "replace",
-        "replaceAll",
-        "slice",
-        "concat",
-    ],
-)];
 
 fn set_local_var() {
     match env::var(DD_LOCAL_VAR_NAME_HASH_ENV_NAME) {
@@ -65,16 +50,21 @@ fn rewrite_js_with_csi_methods(
 }
 
 fn get_default_csi_methods() -> CsiMethods {
-    let mut map = HashMap::new();
-    for def in CSI_METHOD_DEF {
-        let class_name = def.0.to_string();
-        let method_names = def.1;
-        let mut methods = vec![];
-        for method_name_str in method_names {
-            methods.push(method_name_str.to_string());
-        }
-        map.insert(class_name, methods);
-    }
+    let mut methods = vec![
+        from_str("substring", Some("stringSubstring")),
+        from_str("trim", Some("stringTrim")),
+        from_str("trimStart", Some("stringTrim")),
+        from_str("trimEnd", Some("stringTrim")),
+        from_str("concat", Some("stringConcat")),
+        from_str("slice", None),
+    ];
+    CsiMethods::new(&mut methods)
+}
 
-    CsiMethods::new(&map)
+fn from_str(src: &str, dst: Option<&str>) -> CsiMethod {
+    let dst_string = match dst {
+        Some(str) => Some(String::from(str)),
+        None => None,
+    };
+    CsiMethod::new(String::from(src), dst_string)
 }

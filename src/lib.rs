@@ -24,14 +24,35 @@ use std::collections::HashMap;
 
 use crate::rewriter::{print_js, rewrite_js};
 use napi::{Error, Status};
-use visitor::csi_methods::CsiMethods;
+use visitor::csi_methods::{CsiMethod, CsiMethods};
+
+#[napi(object)]
+#[derive(Debug)]
+pub struct CsiMethodNapi {
+    pub src: String,
+    pub dst: Option<String>,
+}
 
 #[napi(object)]
 #[derive(Debug)]
 pub struct RewriterConfig {
     pub chain_source_map: Option<bool>,
     pub comments: Option<bool>,
-    pub csi_methods: Option<HashMap<String, Vec<String>>>,
+    pub csi_methods: Option<Vec<CsiMethodNapi>>,
+}
+
+impl RewriterConfig {
+    fn get_csi_methods(&self) -> CsiMethods {
+        match &self.csi_methods {
+            Some(methods_napi) => CsiMethods::new(
+                &mut methods_napi
+                    .iter()
+                    .map(|m| CsiMethod::new(m.src.clone(), m.dst.clone()))
+                    .collect::<Vec<CsiMethod>>(),
+            ),
+            None => CsiMethods::empty(),
+        }
+    }
 }
 
 #[napi]
@@ -59,7 +80,7 @@ impl Rewriter {
             code,
             file,
             self.config.comments.unwrap_or(false),
-            &CsiMethods::from(&self.config.csi_methods),
+            &self.config.get_csi_methods(),
         )
         .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))
         .map_err(|e| Error::new(Status::Unknown, format!("{}", e)))
@@ -67,12 +88,12 @@ impl Rewriter {
 
     #[napi]
     pub fn csi_methods(&self) -> napi::Result<Vec<String>> {
-        let csi_methods = CsiMethods::from(&self.config.csi_methods);
+        let csi_methods = &self.config.get_csi_methods();
 
         Ok(csi_methods
             .methods
             .iter()
-            .map(|csi_method| csi_method.rewritten_name())
+            .map(|csi_method| csi_method.get_dst())
             .collect())
     }
 }

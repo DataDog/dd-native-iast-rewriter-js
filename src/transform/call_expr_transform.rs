@@ -105,12 +105,8 @@ fn replace_prototype_call_or_apply(
     csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<Expr> {
-    let prototype_call_option = FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(
-        call,
-        member,
-        ident,
-        csi_methods,
-    );
+    let prototype_call_option =
+        FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(call, member, ident);
 
     match prototype_call_option {
         Some(mut prototype_call) => replace_call_expr_if_csi_method(
@@ -198,7 +194,7 @@ fn replace_call_expr_if_csi_method(
             &Expr::Call(call_replacement),
             &arguments,
             &mut assignations,
-            csi_method.rewritten_name().as_str(),
+            csi_method.get_dst().as_str(),
             &span,
         ));
     }

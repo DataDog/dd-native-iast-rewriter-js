@@ -14,9 +14,7 @@ describe('rewriter configuration', () => {
       return rewriteAndExpect(js, expect, false, { rewriter })
     }
 
-    const onlySubstringCsiMethod = {
-      'String.prototype': ['substring']
-    }
+    const onlySubstringCsiMethod = [{ src: 'substring', dst: 'string_substring' }]
 
     it('does not rewrite excluded method', () => {
       const rewriter = new Rewriter()
@@ -51,8 +49,8 @@ __datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 
       // eslint-disable-next-line no-unused-expressions
       expect(rewriter.csiMethods()).to.not.be.empty
       expect(rewriter.csiMethods()).to.include('plusOperator')
-      expect(rewriter.csiMethods()).to.include('string_substring')
-      expect(rewriter.csiMethods()).to.include('string_concat')
+      expect(rewriter.csiMethods()).to.include('stringSubstring')
+      expect(rewriter.csiMethods()).to.include('_concat')
     })
   })
 })
