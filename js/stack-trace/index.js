@@ -82,26 +82,39 @@ function getPrepareStackTrace (originalPrepareStackTrace) {
       const parsedCallSites = structuredStackTrace.map((callSite) => new WrappedCallSite(callSite))
       return originalPrepareStackTrace(error, parsedCallSites)
     }
-    const splittedStack = error.stack.split('\n')
+    const stackLines = error.stack.split('\n')
     let firstIndex = -1
-    for (let i = 0; i < splittedStack.length; i++) {
-      if (splittedStack[i].match(/^\s*at/gm)) {
+    for (let i = 0; i < stackLines.length; i++) {
+      if (stackLines[i].match(/^\s*at/gm)) {
         firstIndex = i
         break
       }
     }
-    return splittedStack
+    return stackLines
       .map((stackFrame, index) => {
         if (index < firstIndex) {
           return stackFrame
         }
         index = index - firstIndex
-        if (!structuredStackTrace[index]) {
+        const stackTraceItem = structuredStackTrace[index]
+        if (!stackTraceItem) {
           return stackFrame
         }
-        const filename = structuredStackTrace[index].getFileName()
-        const originalLine = structuredStackTrace[index].getLineNumber()
-        const originalColumn = structuredStackTrace[index].getColumnNumber()
+        let filename = stackTraceItem.getFileName()
+        let originalLine = stackTraceItem.getLineNumber()
+        let originalColumn = stackTraceItem.getColumnNumber()
+        if (stackTraceItem.isEval()) {
+          const evalOrigin = stackTraceItem.getEvalOrigin()
+          const evalRegex = /.*\(((?:.:\/)?\/.*):(\d*):(\d*)\)/g
+          const evalData = evalRegex.exec(evalOrigin)
+          if (evalData) {
+            filename = evalData[1]
+            originalLine = evalData[2]
+            originalColumn = evalData[3]
+          } else {
+            return stackFrame
+          }
+        }
         const { path, line, column } = getSourcePathAndLineFromSourceMaps(filename, originalLine, originalColumn)
         if (path !== filename || line !== originalLine || column !== originalColumn) {
           return stackFrame.replace(`${filename}:${originalLine}:${originalColumn}`, `${path}:${line}:${column}`)
