@@ -105,7 +105,7 @@ function getPrepareStackTrace (originalPrepareStackTrace) {
         let originalColumn = stackTraceItem.getColumnNumber()
         if (stackTraceItem.isEval()) {
           const evalOrigin = stackTraceItem.getEvalOrigin()
-          const evalRegex = /.*\(((?:.:\/)?\/.*):(\d*):(\d*)\)/g
+          const evalRegex = /.*\(((?:.:[/\\]?)?[/\\].*):(\d*):(\d*)\)/g
           const evalData = evalRegex.exec(evalOrigin)
           if (evalData) {
             filename = evalData[1]
