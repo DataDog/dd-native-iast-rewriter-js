@@ -82,21 +82,31 @@ function getPrepareStackTrace (originalPrepareStackTrace) {
       const parsedCallSites = structuredStackTrace.map((callSite) => new WrappedCallSite(callSite))
       return originalPrepareStackTrace(error, parsedCallSites)
     }
-    return error.stack
-      .split('\n')
-      .map((stackFrame) => {
-        const start = stackFrame.indexOf('(/')
-        if (start > -1) {
-          const end = stackFrame.indexOf(')')
-          const interesting = stackFrame.substring(start, end)
-          const [filename, originalLine, originalColumn] = interesting.split(':')
-          const { path, line, column } = getSourcePathAndLineFromSourceMaps(filename, originalLine, originalColumn)
-          const startPart = stackFrame.substring(0, start)
-          const endPart = stackFrame.substring(end)
-          return `${startPart}${path}:${line}:${column}${endPart}`
-        } else {
+    const splittedStack = error.stack.split('\n')
+    let firstIndex = -1
+    for (let i = 0; i < splittedStack.length; i++) {
+      if (splittedStack[i].match(/^\s*at/gm)) {
+        firstIndex = i
+        break
+      }
+    }
+    return splittedStack
+      .map((stackFrame, index) => {
+        if (index < firstIndex) {
           return stackFrame
         }
+        index = index - firstIndex
+        if (!structuredStackTrace[index]) {
+          return stackFrame
+        }
+        const filename = structuredStackTrace[index].getFileName()
+        const originalLine = structuredStackTrace[index].getLineNumber()
+        const originalColumn = structuredStackTrace[index].getColumnNumber()
+        const { path, line, column } = getSourcePathAndLineFromSourceMaps(filename, originalLine, originalColumn)
+        if (path !== filename || line !== originalLine || column !== originalColumn) {
+          return stackFrame.replace(`${filename}:${originalLine}:${originalColumn}`, `${path}:${line}:${column}`)
+        }
+        return stackFrame
       })
       .join('\n')
   }
