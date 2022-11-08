@@ -93,7 +93,7 @@
     "version": "napi version",
     "test": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js' test/**/*.spec.js",
     "test:junit": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml test/**/*.spec.js",
-    "test:integration": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'integration-test/setup.js' integration-test/**/*.spec.js",
+    "test:integration": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'integration-test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit-integration.xml integration-test/**/*.spec.js",
     "prepare": "husky install",
     "clippy": "cargo clippy --workspace -- -D warnings"
   },

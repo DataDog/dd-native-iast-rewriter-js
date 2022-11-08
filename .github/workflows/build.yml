@@ -154,7 +154,7 @@ jobs:
         uses: mikepenz/action-junit-report@v3
         if: always()
         with:
-          report_paths: '**/build/junit.xml'
+          report_paths: '**/build/junit*.xml'
           check_name: junit test report ${{ matrix.target.name }}
 
   test-docker:
