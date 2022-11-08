@@ -109,11 +109,12 @@ fn replace_prototype_call_or_apply(
         FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(call, member, ident);
 
     match prototype_call_option {
-        Some(mut prototype_call) => replace_call_expr_if_csi_method(
+        Some(mut prototype_call) => replace_call_expr_if_csi_method_with_member(
             &prototype_call.0,
             &prototype_call.1,
             &mut prototype_call.2,
             csi_methods,
+            Some(member),
             ident_provider,
         ),
         _ => None,
@@ -127,6 +128,24 @@ fn replace_call_expr_if_csi_method(
     csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<Expr> {
+    replace_call_expr_if_csi_method_with_member(
+        expr,
+        ident,
+        call,
+        csi_methods,
+        None,
+        ident_provider,
+    )
+}
+
+fn replace_call_expr_if_csi_method_with_member(
+    expr: &Expr,
+    ident: &Ident,
+    call: &mut CallExpr,
+    csi_methods: &CsiMethods,
+    member_expr_opt: Option<&MemberExpr>,
+    ident_provider: &mut dyn IdentProvider,
+) -> Option<Expr> {
     let method_name = &ident.sym.to_string();
     if let Some(csi_method) = csi_methods.get(method_name) {
         let mut assignations = Vec::new();
@@ -134,28 +153,41 @@ fn replace_call_expr_if_csi_method(
         let span = call.span;
 
         // replace original call expression with an parent expression splitting every component and finally invoking .call
-        // a.substring() ->  __datadog_token_$i = a, __datadog_token_$i2 = __datadog_token_$i.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
-
+        //  a) a.substring() -> __datadog_token_$i = a, __datadog_token_$i2 = __datadog_token_$i.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
+        //  b) String.prototype.substring.[call|apply](a) -> __datadog_token_$i = a, __datadog_token_$i2 = String.prototype.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
         let mut call_replacement = call.clone();
 
         // __datadog_token_$i = a
         let ident_replacement =
             ident_provider.get_temporal_ident_used_in_assignation(expr, &mut assignations, &span);
 
-        // __datadog_token_$i.substring
-        let member_expr = Expr::Member(MemberExpr {
-            span,
-            obj: Box::new(Expr::Ident(ident_replacement.clone())),
-            prop: MemberProp::Ident(ident.clone()),
-        });
+        let ident_callee = match member_expr_opt {
+            Some(member_expr) => {
+                // __datadog_token_$i2 = member
+                ident_provider.get_ident_used_in_assignation(
+                    &Expr::Member(member_expr.clone()),
+                    &mut assignations,
+                    &mut arguments,
+                    &span,
+                )
+            }
+            None => {
+                // __datadog_token_$i.substring
+                let member_expr = MemberExpr {
+                    span,
+                    obj: Box::new(Expr::Ident(ident_replacement.clone())),
+                    prop: MemberProp::Ident(ident.clone()),
+                };
 
-        // __datadog_token_$i2 = __datadog_token_$i.substring
-        let ident_callee = ident_provider.get_ident_used_in_assignation(
-            &member_expr,
-            &mut assignations,
-            &mut arguments,
-            &span,
-        );
+                // __datadog_token_$i2 = __datadog_token_$i.substring
+                ident_provider.get_ident_used_in_assignation(
+                    &Expr::Member(member_expr),
+                    &mut assignations,
+                    &mut arguments,
+                    &span,
+                )
+            }
+        };
 
         arguments.push(Expr::Ident(ident_replacement.clone()));
 

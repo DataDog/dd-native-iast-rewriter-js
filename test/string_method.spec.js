@@ -97,7 +97,7 @@ __datadog_test_2, __datadog_test_4));\n}`
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.stringSubstring(__datadog_test_1\
+(__datadog_test_0 = b, __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1\
 .call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));\n}`
       )
     })
@@ -108,7 +108,7 @@ __datadog_test_2, __datadog_test_4));\n}`
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-  (__datadog_test_0 = _ddiast.plusOperator(b + c, b, c), __datadog_test_1 = __datadog_test_0.substring, \
+  (__datadog_test_0 = _ddiast.plusOperator(b + c, b, c), __datadog_test_1 = String.prototype.substring, \
 _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));\n}`
       )
     })
@@ -119,7 +119,7 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.stringSubstring(__datadog_test_1\
+(__datadog_test_0 = b, __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1\
 .call(__datadog_test_0), __datadog_test_1, __datadog_test_0));
       }`
       )
@@ -131,7 +131,7 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.stringSubstring(__datadog_test_1\
+(__datadog_test_0 = b, __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1\
 .call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));\n}`
       )
     })
@@ -142,7 +142,7 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.stringSubstring(__datadog_test_1\
+(__datadog_test_0 = b, __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1\
 .call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));
       }`
       )
@@ -281,7 +281,7 @@ __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __dat
             js,
             `{
     let __datadog_test_0, __datadog_test_1;
-    (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.${method}, _ddiast._${method}(\
+    (__datadog_test_0 = b, __datadog_test_1 = String.prototype.${method}, _ddiast._${method}(\
 __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
           )
         })
@@ -292,7 +292,7 @@ __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __dat
             js,
             `{
     let __datadog_test_0, __datadog_test_1;
-    (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.${method}, _ddiast._${method}(\
+    (__datadog_test_0 = b, __datadog_test_1 = String.prototype.${method}, _ddiast._${method}(\
 __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
           )
         })
