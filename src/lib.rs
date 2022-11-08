@@ -24,11 +24,11 @@ use std::collections::HashMap;
 
 use crate::rewriter::{print_js, rewrite_js};
 use napi::{Error, Status};
-use visitor::csi_methods::{CsiMethod, CsiMethods};
+use visitor::csi_methods::CsiMethods;
 
 #[napi(object)]
 #[derive(Debug)]
-pub struct CsiMethodNapi {
+pub struct CsiMethod {
     pub src: String,
     pub dst: Option<String>,
 }
@@ -38,7 +38,7 @@ pub struct CsiMethodNapi {
 pub struct RewriterConfig {
     pub chain_source_map: Option<bool>,
     pub comments: Option<bool>,
-    pub csi_methods: Option<Vec<CsiMethodNapi>>,
+    pub csi_methods: Option<Vec<CsiMethod>>,
 }
 
 impl RewriterConfig {
@@ -47,8 +47,8 @@ impl RewriterConfig {
             Some(methods_napi) => CsiMethods::new(
                 &mut methods_napi
                     .iter()
-                    .map(|m| CsiMethod::new(m.src.clone(), m.dst.clone()))
-                    .collect::<Vec<CsiMethod>>(),
+                    .map(|m| visitor::csi_methods::CsiMethod::new(m.src.clone(), m.dst.clone()))
+                    .collect::<Vec<visitor::csi_methods::CsiMethod>>(),
             ),
             None => CsiMethods::empty(),
         }

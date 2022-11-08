@@ -12,6 +12,10 @@ class DummyRewriter {
   rewrite (code, file) {
     return code
   }
+
+  csiMethods () {
+    return []
+  }
 }
 
 let RewriterConfig = DummyRewriterConfig
