@@ -1,7 +1,7 @@
 {
   "name": "@datadog/native-iast-rewriter",
   "homepage": "https://github.com/DataDog/dd-native-iast-rewriter-js/blob/main/README.md",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "description": "Datadog IAST instrumentation addon for NodeJS",
   "main": "main.js",
   "types": "index.d.ts",
@@ -91,8 +91,9 @@
     "rustfmt": "rustfmt --config imports_granularity=Crate src/*.rs",
     "prepublishOnly": "run-p artifacts:prepare artifacts:prepublish",
     "version": "napi version",
-    "test": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js'",
-    "test:junit": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml",
+    "test": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js' test/**/*.spec.js",
+    "test:junit": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml test/**/*.spec.js",
+    "test:integration": "cross-env DD_LOCAL_VAR_NAME_HASH=test mocha --file 'integration-test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit-integration.xml integration-test/**/*.spec.js",
     "prepare": "husky install",
     "clippy": "cargo clippy --workspace -- -D warnings"
   },

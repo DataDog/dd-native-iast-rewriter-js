@@ -82,21 +82,44 @@ function getPrepareStackTrace (originalPrepareStackTrace) {
       const parsedCallSites = structuredStackTrace.map((callSite) => new WrappedCallSite(callSite))
       return originalPrepareStackTrace(error, parsedCallSites)
     }
-    return error.stack
-      .split('\n')
-      .map((stackFrame) => {
-        const start = stackFrame.indexOf('(/')
-        if (start > -1) {
-          const end = stackFrame.indexOf(')')
-          const interesting = stackFrame.substring(start, end)
-          const [filename, originalLine, originalColumn] = interesting.split(':')
-          const { path, line, column } = getSourcePathAndLineFromSourceMaps(filename, originalLine, originalColumn)
-          const startPart = stackFrame.substring(0, start)
-          const endPart = stackFrame.substring(end)
-          return `${startPart}${path}:${line}:${column}${endPart}`
-        } else {
+    const stackLines = error.stack.split('\n')
+    let firstIndex = -1
+    for (let i = 0; i < stackLines.length; i++) {
+      if (stackLines[i].match(/^\s*at/gm)) {
+        firstIndex = i
+        break
+      }
+    }
+    return stackLines
+      .map((stackFrame, index) => {
+        if (index < firstIndex) {
           return stackFrame
         }
+        index = index - firstIndex
+        const stackTraceItem = structuredStackTrace[index]
+        if (!stackTraceItem) {
+          return stackFrame
+        }
+        let filename = stackTraceItem.getFileName()
+        let originalLine = stackTraceItem.getLineNumber()
+        let originalColumn = stackTraceItem.getColumnNumber()
+        if (stackTraceItem.isEval()) {
+          const evalOrigin = stackTraceItem.getEvalOrigin()
+          const evalRegex = /.*\(((?:.:[/\\]?)?[/\\].*):(\d*):(\d*)\)/g
+          const evalData = evalRegex.exec(evalOrigin)
+          if (evalData) {
+            filename = evalData[1]
+            originalLine = evalData[2]
+            originalColumn = evalData[3]
+          } else {
+            return stackFrame
+          }
+        }
+        const { path, line, column } = getSourcePathAndLineFromSourceMaps(filename, originalLine, originalColumn)
+        if (path !== filename || line !== originalLine || column !== originalColumn) {
+          return stackFrame.replace(`${filename}:${originalLine}:${originalColumn}`, `${path}:${line}:${column}`)
+        }
+        return stackFrame
       })
       .join('\n')
   }
