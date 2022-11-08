@@ -69,7 +69,7 @@ function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
   } catch (e) {
     // can not read the source maps, return original path and line
   }
-  return { path: filename, line }
+  return { path: filename, line, column }
 }
 
 module.exports = {
