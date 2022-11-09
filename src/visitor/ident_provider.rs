@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 /**
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
@@ -80,4 +82,51 @@ pub trait IdentProvider {
     fn set_status(&mut self, status: TransformStatus);
 
     fn get_local_var_prefix(&mut self) -> String;
+    fn reset_counter(&mut self);
+
+    fn register_variable(&mut self, variable: &Ident);
+}
+
+pub struct DefaultIdentProvider {
+    pub ident_counter: usize,
+    pub idents: Vec<Ident>,
+    pub variable_decl: HashSet<Ident>,
+    pub transform_status: TransformStatus,
+}
+
+impl DefaultIdentProvider {
+    pub fn new() -> Self {
+        DefaultIdentProvider {
+            ident_counter: 0,
+            idents: Vec::new(),
+            variable_decl: HashSet::new(),
+            transform_status: TransformStatus::not_modified(),
+        }
+    }
+}
+
+impl IdentProvider for DefaultIdentProvider {
+    fn register_ident(&mut self, ident: Ident) {
+        if !self.idents.contains(&ident) {
+            self.idents.push(ident);
+        }
+    }
+
+    fn next_ident(&mut self) -> usize {
+        let counter = self.ident_counter;
+        self.ident_counter += 1;
+        counter
+    }
+
+    fn set_status(&mut self, status: TransformStatus) {
+        self.transform_status = status;
+    }
+
+    fn reset_counter(&mut self) {
+        self.ident_counter = 0;
+    }
+
+    fn register_variable(&mut self, variable: &Ident) {
+        self.variable_decl.insert(variable.clone());
+    }
 }

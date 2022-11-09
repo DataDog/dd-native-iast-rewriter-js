@@ -12,6 +12,8 @@ use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use super::{
     csi_methods::CsiMethods,
+    ident_provider::DefaultIdentProvider,
+    no_plus_operator_visitor::NoPlusOperatorVisitor,
     transform_status::{Status, TransformStatus},
     visitor_with_context::Ctx,
 };
@@ -93,12 +95,30 @@ impl VisitMut for BlockTransformVisitor<'_> {
             &operation_visitor.variable_decl,
             &self.local_var_prefix,
         ) {
+        let mut ident_provider = DefaultIdentProvider::new();
+        if self.csi_methods.plus_operator_is_enabled() {
+            let mut operation_visitor = OperationTransformVisitor {
+                ident_provider: &mut ident_provider,
+                csi_methods: self.csi_methods,
+                ctx: Ctx::root(),
+            };
+            expr.visit_mut_children_with(&mut operation_visitor);
+        } else {
+            let mut operation_visitor = NoPlusOperatorVisitor {
+                ident_provider: &mut ident_provider,
+                csi_methods: self.csi_methods,
+                ctx: Ctx::root(),
+            };
+            expr.visit_mut_children_with(&mut operation_visitor);
+        }
+
+        if variables_contains_possible_duplicate(&ident_provider.variable_decl) {
             return self.cancel_visit("Variable name duplicated");
         }
 
-        insert_var_declaration(&operation_visitor.idents, expr);
+        insert_var_declaration(&ident_provider.idents, expr);
 
-        if operation_visitor.transform_status.status == Status::Modified {
+        if ident_provider.transform_status.status == Status::Modified {
             self.mark_modified();
         }
 

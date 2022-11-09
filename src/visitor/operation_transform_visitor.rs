@@ -2,20 +2,19 @@
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
-use std::collections::HashSet;
 use swc::{common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use crate::transform::{
     assign_add_transform::AssignAddTransform, binary_add_transform::BinaryAddTransform,
-    call_expr_transform::CallExprTransform, template_transform::TemplateTransform,
+    template_transform::TemplateTransform,
 };
 
 use super::{
     csi_methods::CsiMethods,
     ident_provider::IdentProvider,
-    transform_status::TransformStatus,
-    visitor_with_context::{Ctx, VisitorWithContext, WithCtx},
+    no_plus_operator_visitor::NoPlusOperatorVisitor,
+    visitor_with_context::{Ctx, VisitorWithContext},
 };
 
 pub struct OperationTransformVisitor<'a> {
@@ -40,24 +39,9 @@ impl OperationTransformVisitor {
     }
 
     fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, OperationTransformVisitor> {
+    pub ident_provider: &'a mut dyn IdentProvider,
     pub csi_methods: &'a CsiMethods,
-
     pub ctx: Ctx,
-}
-
-impl<'a> OperationTransformVisitor<'a> {
-    fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, OperationTransformVisitor<'a>> {
-        let orig_ctx = self.ctx;
-        self.ctx = ctx;
-        WithCtx {
-            reducer: self,
-            orig_ctx,
-        }
-    }
-
-    fn with_child_ctx(&mut self) -> WithCtx<'_, OperationTransformVisitor<'a>> {
-        self.with_ctx(self.ctx.child(true))
-    }
 }
 
 impl VisitorWithContext for OperationTransformVisitor<'_> {
@@ -71,7 +55,7 @@ impl VisitorWithContext for OperationTransformVisitor<'_> {
 
     fn reset_ctx(&mut self) {
         if self.ctx.root {
-            self.ident_counter = 0;
+            self.ident_provider.reset_counter();
         }
     }
 }
@@ -109,7 +93,10 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 binary.visit_mut_children_with(opv_with_child_ctx);
                 if binary.op == BinaryOp::Add {
                     expr.map_with_mut(|bin| {
-                        BinaryAddTransform::to_dd_binary_expr(&bin, opv_with_child_ctx)
+                        BinaryAddTransform::to_dd_binary_expr(
+                            &bin,
+                            opv_with_child_ctx.ident_provider,
+                        )
                     });
                 }
             }
@@ -129,21 +116,22 @@ impl VisitMut for OperationTransformVisitor<'_> {
                     let opv_with_child_ctx = &mut *self.with_child_ctx();
                     binary.visit_mut_children_with(opv_with_child_ctx);
                     expr.map_with_mut(|_| {
-                        BinaryAddTransform::to_dd_binary_expr(&binary, opv_with_child_ctx)
+                        BinaryAddTransform::to_dd_binary_expr(
+                            &binary,
+                            opv_with_child_ctx.ident_provider,
+                        )
                     });
                 }
             }
             Expr::Call(call) => {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 call.visit_mut_children_with(opv_with_child_ctx);
-                if call.callee.is_expr() {
-                    if let Some(method) = CallExprTransform::to_dd_call_expr(
-                        call,
-                        opv_with_child_ctx.csi_methods,
-                        opv_with_child_ctx,
-                    ) {
-                        expr.map_with_mut(|_| method);
-                    }
+                if let Some(method) = NoPlusOperatorVisitor::get_dd_call_expr(
+                    call,
+                    opv_with_child_ctx.csi_methods,
+                    opv_with_child_ctx.ident_provider,
+                ) {
+                    expr.map_with_mut(|_| method);
                 }
             }
             _ => {
@@ -153,7 +141,7 @@ impl VisitMut for OperationTransformVisitor<'_> {
     }
 
     fn visit_mut_ident(&mut self, ident: &mut Ident) {
-        self.variable_decl.insert(ident.clone());
+        self.ident_provider.register_variable(ident);
     }
 
     fn visit_mut_if_stmt(&mut self, if_stmt: &mut IfStmt) {

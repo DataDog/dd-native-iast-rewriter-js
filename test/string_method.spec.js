@@ -6,7 +6,7 @@
 
 const { itEach } = require('mocha-it-each')
 
-const { rewriteAndExpectNoTransformation, rewriteAndExpect } = require('./util')
+const { rewriteAndExpectNoTransformation, rewriteAndExpect, rewriteAndExpectAndExpectEval, fn } = require('./util')
 
 describe('String method', () => {
   describe('substring', () => {
@@ -209,7 +209,6 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
       'toLowerCase',
       'toUpperCase',
       "replace('dog', 'monkey')",
-      "replaceAll('dog', 'monkey')",
       'slice(4, 5)',
       "concat('hello', 'world')",
       "toLocaleUpperCase('en-US')",
@@ -233,40 +232,40 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
 
       describe(value, () => {
         it(`does not modify "literal".${value}`, () => {
-          const js = `"a".${method}(${args});`
+          const js = `'a'.${method}(${args});`
           rewriteAndExpectNoTransformation(js)
         })
 
         it(`does modify ident.${value}`, () => {
-          const js = `a.${method}(${args});`
-          rewriteAndExpect(
+          const builder = fn().args('heLLo')
+          const js = builder.build(`return a.${method}(${args});`)
+          rewriteAndExpectAndExpectEval(
             js,
-            `{
-      let __datadog_test_0, __datadog_test_1;
-      (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.${method}, _ddiast._${method}(__datadog_test_1\
-.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
+            builder.build(`let __datadog_test_0, __datadog_test_1;
+      return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.${method}, _ddiast._${method}(__datadog_test_1\
+.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
           )
         })
 
         it(`does modify call().${value}`, () => {
-          const js = `a().${method}(${args});`
-          rewriteAndExpect(
+          const builder = fn().args(() => 'heLLo')
+          const js = builder.build(`a().${method}(${args});`)
+          rewriteAndExpectAndExpectEval(
             js,
-            `{
-      let __datadog_test_0, __datadog_test_1;
+            builder.build(`let __datadog_test_0, __datadog_test_1;
       (__datadog_test_0 = a(), __datadog_test_1 = __datadog_test_0.${method}, _ddiast._${method}(\
-__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
+__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
           )
         })
 
         it(`does modify member.${value}`, () => {
-          const js = `a.b.${method}(${args});`
-          rewriteAndExpect(
+          const builder = fn().args({ b: 'heLLo' })
+          const js = builder.build(`a.b.${method}(${args});`)
+          rewriteAndExpectAndExpectEval(
             js,
-            `{
-      let __datadog_test_0, __datadog_test_1;
+            builder.build(`let __datadog_test_0, __datadog_test_1;
       (__datadog_test_0 = a.b, __datadog_test_1 = __datadog_test_0.${method}, _ddiast._${method}(\
-__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
+__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
           )
         })
 
@@ -276,24 +275,24 @@ __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __dat
         })
 
         it(`does modify String.prototype.${method}.call`, () => {
-          const js = `String.prototype.${method}.call(b${argsWithComma});`
-          rewriteAndExpect(
+          const builder = fn().args('heLLo')
+          const js = builder.build(`String.prototype.${method}.call(a${argsWithComma});`)
+          rewriteAndExpectAndExpectEval(
             js,
-            `{
-    let __datadog_test_0, __datadog_test_1;
-    (__datadog_test_0 = b, __datadog_test_1 = String.prototype.${method}, _ddiast._${method}(\
-__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
+            builder.build(`let __datadog_test_0, __datadog_test_1;
+    (__datadog_test_0 = a, __datadog_test_1 = String.prototype.${method}, _ddiast._${method}(\
+__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
           )
         })
 
         it(`does modify String.prototype.${value}.apply with variable argument`, () => {
-          const js = `String.prototype.${method}.apply(b, [${args}]);`
-          rewriteAndExpect(
+          const builder = fn().args('heLLo')
+          const js = builder.build(`String.prototype.${method}.apply(a, [${args}]);`)
+          rewriteAndExpectAndExpectEval(
             js,
-            `{
-    let __datadog_test_0, __datadog_test_1;
-    (__datadog_test_0 = b, __datadog_test_1 = String.prototype.${method}, _ddiast._${method}(\
-__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));\n}`
+            builder.build(`let __datadog_test_0, __datadog_test_1;
+    (__datadog_test_0 = a, __datadog_test_1 = String.prototype.${method}, _ddiast._${method}(\
+__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
           )
         })
       })

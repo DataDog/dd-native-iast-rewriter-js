@@ -30,11 +30,14 @@ pub struct CsiMethods {
 
 impl CsiMethods {
     pub fn new(csi_methods: &mut Vec<CsiMethod>) -> Self {
-        let mut methods = vec![CsiMethod::new(
-            DD_PLUS_OPERATOR.to_string(),
-            Some(DD_PLUS_OPERATOR.to_string()),
-        )];
-        methods.append(csi_methods);
+        let mut methods = vec![];
+        if !csi_methods.is_empty() {
+            methods.push(CsiMethod::new(
+                DD_PLUS_OPERATOR.to_string(),
+                Some(DD_PLUS_OPERATOR.to_string()),
+            ));
+            methods.append(csi_methods);
+        }
         CsiMethods { methods }
     }
 
@@ -46,5 +49,9 @@ impl CsiMethods {
         self.methods
             .iter()
             .find(|csi_method| csi_method.src == method_name)
+    }
+
+    pub fn plus_operator_is_enabled(&self) -> bool {
+        self.get(DD_PLUS_OPERATOR).is_some()
     }
 }
