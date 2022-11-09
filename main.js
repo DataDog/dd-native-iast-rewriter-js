@@ -34,6 +34,10 @@ class CacheRewriter {
     cacheRewrittenSourceMap(file, content)
     return content
   }
+
+  csiMethods () {
+    return this.nativeRewriter.csiMethods()
+  }
 }
 
 function getRewriter () {
