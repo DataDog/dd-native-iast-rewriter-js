@@ -18,7 +18,7 @@ impl CsiMethod {
     pub fn get_dst(&self) -> String {
         match &self.dst {
             Some(dst) => dst.clone(),
-            None => format!("_{}", self.src),
+            None => self.src.clone(),
         }
     }
 }
@@ -29,16 +29,10 @@ pub struct CsiMethods {
 }
 
 impl CsiMethods {
-    pub fn new(csi_methods: &mut Vec<CsiMethod>) -> Self {
-        let mut methods = vec![];
-        if !csi_methods.is_empty() {
-            methods.push(CsiMethod::new(
-                DD_PLUS_OPERATOR.to_string(),
-                Some(DD_PLUS_OPERATOR.to_string()),
-            ));
-            methods.append(csi_methods);
+    pub fn new(csi_methods: &mut [CsiMethod]) -> Self {
+        CsiMethods {
+            methods: csi_methods.to_vec(),
         }
-        CsiMethods { methods }
     }
 
     pub fn empty() -> Self {
@@ -53,5 +47,12 @@ impl CsiMethods {
 
     pub fn plus_operator_is_enabled(&self) -> bool {
         self.get(DD_PLUS_OPERATOR).is_some()
+    }
+
+    pub fn get_dd_plus_operator_name(&self) -> String {
+        match self.get(DD_PLUS_OPERATOR) {
+            Some(csi_method) => csi_method.get_dst(),
+            _ => DD_PLUS_OPERATOR.to_string(),
+        }
     }
 }

@@ -12,7 +12,7 @@ use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use super::{
     csi_methods::CsiMethods,
-    ident_provider::DefaultIdentProvider,
+    ident_provider::{DefaultIdentProvider, IdentProvider},
     no_plus_operator_visitor::NoPlusOperatorVisitor,
     transform_status::{Status, TransformStatus},
     visitor_with_context::Ctx,
@@ -96,21 +96,11 @@ impl VisitMut for BlockTransformVisitor<'_> {
             &self.local_var_prefix,
         ) {
         let mut ident_provider = DefaultIdentProvider::new();
-        if self.csi_methods.plus_operator_is_enabled() {
-            let mut operation_visitor = OperationTransformVisitor {
-                ident_provider: &mut ident_provider,
-                csi_methods: self.csi_methods,
-                ctx: Ctx::root(),
-            };
-            expr.visit_mut_children_with(&mut operation_visitor);
-        } else {
-            let mut operation_visitor = NoPlusOperatorVisitor {
-                ident_provider: &mut ident_provider,
-                csi_methods: self.csi_methods,
-                ctx: Ctx::root(),
-            };
-            expr.visit_mut_children_with(&mut operation_visitor);
-        }
+        expr.visit_mut_children_with(&mut get_visitor(
+            &mut ident_provider,
+            self.csi_methods,
+            self.csi_methods.plus_operator_is_enabled(),
+        ));
 
         if variables_contains_possible_duplicate(&ident_provider.variable_decl) {
             return self.cancel_visit("Variable name duplicated");
@@ -128,6 +118,28 @@ impl VisitMut for BlockTransformVisitor<'_> {
 
 fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>, prefix: &String) -> bool {
     let prefix = get_dd_local_variable_prefix(prefix);
+fn get_visitor<'a>(
+    ident_provider: &'a mut dyn IdentProvider,
+    csi_methods: &'a CsiMethods,
+    plus_operator_is_enabled: bool,
+) -> Box<dyn VisitMut + 'a> {
+    if plus_operator_is_enabled {
+        Box::new(OperationTransformVisitor {
+            ident_provider,
+            csi_methods,
+            ctx: Ctx::root(),
+        })
+    } else {
+        Box::new(NoPlusOperatorVisitor {
+            ident_provider,
+            csi_methods,
+            ctx: Ctx::root(),
+        })
+    }
+}
+
+fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>) -> bool {
+    let prefix = get_dd_local_variable_prefix();
     variable_decl.iter().any(|var| var.sym.starts_with(&prefix))
 }
 

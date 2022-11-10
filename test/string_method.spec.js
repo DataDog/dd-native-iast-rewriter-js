@@ -242,7 +242,7 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
           rewriteAndExpectAndExpectEval(
             js,
             builder.build(`let __datadog_test_0, __datadog_test_1;
-      return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.${method}, _ddiast._${method}(__datadog_test_1\
+      return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.${method}, _ddiast.${method}(__datadog_test_1\
 .call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
           )
         })
@@ -253,7 +253,7 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
           rewriteAndExpectAndExpectEval(
             js,
             builder.build(`let __datadog_test_0, __datadog_test_1;
-      (__datadog_test_0 = a(), __datadog_test_1 = __datadog_test_0.${method}, _ddiast._${method}(\
+      (__datadog_test_0 = a(), __datadog_test_1 = __datadog_test_0.${method}, _ddiast.${method}(\
 __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
           )
         })
@@ -264,7 +264,7 @@ __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __dat
           rewriteAndExpectAndExpectEval(
             js,
             builder.build(`let __datadog_test_0, __datadog_test_1;
-      (__datadog_test_0 = a.b, __datadog_test_1 = __datadog_test_0.${method}, _ddiast._${method}(\
+      (__datadog_test_0 = a.b, __datadog_test_1 = __datadog_test_0.${method}, _ddiast.${method}(\
 __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
           )
         })
@@ -280,7 +280,7 @@ __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __dat
           rewriteAndExpectAndExpectEval(
             js,
             builder.build(`let __datadog_test_0, __datadog_test_1;
-    (__datadog_test_0 = a, __datadog_test_1 = String.prototype.${method}, _ddiast._${method}(\
+    (__datadog_test_0 = a, __datadog_test_1 = String.prototype.${method}, _ddiast.${method}(\
 __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
           )
         })
@@ -291,7 +291,7 @@ __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __dat
           rewriteAndExpectAndExpectEval(
             js,
             builder.build(`let __datadog_test_0, __datadog_test_1;
-    (__datadog_test_0 = a, __datadog_test_1 = String.prototype.${method}, _ddiast._${method}(\
+    (__datadog_test_0 = a, __datadog_test_1 = String.prototype.${method}, _ddiast.${method}(\
 __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
           )
         })

@@ -64,15 +64,6 @@ pub fn get_dd_call_expr(expr: &Expr, arguments: &[Expr], method_name: &str, span
     })
 }
 
-pub fn get_dd_plus_operator_paren_expr(
-    expr: &Expr,
-    arguments: &[Expr],
-    assignations: &mut Vec<Expr>,
-    span: &Span,
-) -> Expr {
-    get_dd_paren_expr(expr, arguments, assignations, DD_PLUS_OPERATOR, span)
-}
-
 pub fn get_dd_paren_expr(
     expr: &Expr,
     arguments: &[Expr],

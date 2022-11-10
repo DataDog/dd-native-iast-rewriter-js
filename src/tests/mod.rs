@@ -51,6 +51,7 @@ fn rewrite_js_with_csi_methods(
 
 fn get_default_csi_methods() -> CsiMethods {
     let mut methods = vec![
+        from_str("plusOperator", None),
         from_str("substring", Some("stringSubstring")),
         from_str("trim", Some("stringTrim")),
         from_str("trimStart", Some("stringTrim")),

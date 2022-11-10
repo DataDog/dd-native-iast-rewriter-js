@@ -46,6 +46,7 @@ impl AssignAddTransform {
                     left: assign.left.clone(),
                     right: Box::new(BinaryAddTransform::to_dd_binary_expr(
                         &binary,
+                        opv.csi_methods,
                         opv.ident_provider,
                     )),
                 }

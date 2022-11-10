@@ -7,24 +7,32 @@ use swc::ecmascript::ast::*;
 use crate::{
     transform::operand_handler::{DefaultOperandHandler, OperandHandler},
     visitor::{
-        ident_provider::IdentProvider, transform_status::TransformStatus,
-        visitor_util::get_dd_plus_operator_paren_expr,
+        csi_methods::CsiMethods, ident_provider::IdentProvider, transform_status::TransformStatus,
+        visitor_util::get_dd_paren_expr,
     },
 };
 
 pub struct BinaryAddTransform {}
 
 impl BinaryAddTransform {
-    pub fn to_dd_binary_expr(expr: &Expr, ident_provider: &mut dyn IdentProvider) -> Expr {
+    pub fn to_dd_binary_expr(
+        expr: &Expr,
+        csi_methods: &CsiMethods,
+        ident_provider: &mut dyn IdentProvider,
+    ) -> Expr {
         let expr_clone = expr.clone();
         if let Expr::Bin(mut binary) = expr_clone {
-            return to_dd_binary_expr_binary(&mut binary, ident_provider);
+            return to_dd_binary_expr_binary(&mut binary, csi_methods, ident_provider);
         }
         expr_clone
     }
 }
 
-fn to_dd_binary_expr_binary(binary: &mut BinExpr, ident_provider: &mut dyn IdentProvider) -> Expr {
+fn to_dd_binary_expr_binary(
+    binary: &mut BinExpr,
+    csi_methods: &CsiMethods,
+    ident_provider: &mut dyn IdentProvider,
+) -> Expr {
     let mut assignations = Vec::new();
     let mut arguments = Vec::new();
 
@@ -35,10 +43,11 @@ fn to_dd_binary_expr_binary(binary: &mut BinExpr, ident_provider: &mut dyn Ident
         ident_provider,
     ) {
         ident_provider.set_status(TransformStatus::modified());
-        return get_dd_plus_operator_paren_expr(
+        return get_dd_paren_expr(
             &Expr::Bin(binary.clone()),
             &arguments,
             &mut assignations,
+            &csi_methods.get_dd_plus_operator_name(),
             &binary.span,
         );
     }

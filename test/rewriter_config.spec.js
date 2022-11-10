@@ -15,6 +15,10 @@ describe('rewriter configuration', () => {
     }
 
     const onlySubstringCsiMethod = [{ src: 'substring', dst: 'string_substring' }]
+    const plusOperatorAndSubstringCsiMethod = [
+      { src: 'plusOperator', dst: 'plus' },
+      { src: 'substring', dst: 'string_substring' }
+    ]
 
     it('does not rewrite excluded method', () => {
       const rewriter = new Rewriter()
@@ -40,6 +44,39 @@ __datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 
       const js = 'const result = a.substring(2).concat("b");'
       rewriteAndExpectNoTransformation(js, { rewriter })
     })
+
+    it('does not rewrite + operation', () => {
+      const rewriter = new Rewriter()
+      const js = 'const result = a.concat("b" + c);'
+      rewriteAndExpectNoTransformation(js, { rewriter })
+    })
+
+    it('does not rewrite += operation', () => {
+      const rewriter = new Rewriter()
+      const js = 'result += a.concat("b");'
+      rewriteAndExpectNoTransformation(js, { rewriter })
+    })
+
+    it('does not rewrite template literals operation', () => {
+      const rewriter = new Rewriter()
+      // eslint-disable-next-line no-template-curly-in-string
+      const js = 'const result = `hello ${a}`'
+      rewriteAndExpectNoTransformation(js, { rewriter })
+    })
+
+    it('does rewrite + with altenative dst name and substring and keep excluded', () => {
+      const js = 'const result = a.substring(2).concat("b" + c);'
+      rewriteAndExpectWithCsiMethods(
+        js,
+        `{
+      let __datadog_test_0, __datadog_test_1;
+const result = (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(\
+__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2)).concat(\
+_ddiast.plus("b" + c, "b", c));
+      }`,
+        plusOperatorAndSubstringCsiMethod
+      )
+    })
   })
 
   describe('csi methods list', () => {
@@ -50,7 +87,7 @@ __datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 
       expect(rewriter.csiMethods()).to.not.be.empty
       expect(rewriter.csiMethods()).to.include('plusOperator')
       expect(rewriter.csiMethods()).to.include('stringSubstring')
-      expect(rewriter.csiMethods()).to.include('_concat')
+      expect(rewriter.csiMethods()).to.include('concat')
     })
   })
 })

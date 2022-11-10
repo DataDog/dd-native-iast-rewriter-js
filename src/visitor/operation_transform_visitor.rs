@@ -95,6 +95,7 @@ impl VisitMut for OperationTransformVisitor<'_> {
                     expr.map_with_mut(|bin| {
                         BinaryAddTransform::to_dd_binary_expr(
                             &bin,
+                            opv_with_child_ctx.csi_methods,
                             opv_with_child_ctx.ident_provider,
                         )
                     });
@@ -118,6 +119,7 @@ impl VisitMut for OperationTransformVisitor<'_> {
                     expr.map_with_mut(|_| {
                         BinaryAddTransform::to_dd_binary_expr(
                             &binary,
+                            opv_with_child_ctx.csi_methods,
                             opv_with_child_ctx.ident_provider,
                         )
                     });
