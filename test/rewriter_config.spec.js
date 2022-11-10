@@ -15,9 +15,10 @@ describe('rewriter configuration', () => {
     }
 
     const onlySubstringCsiMethod = [{ src: 'substring', dst: 'string_substring' }]
-    const plusOperatorAndSubstringCsiMethod = [
+    const plusOperatorAndOthersCsiMethods = [
       { src: 'plusOperator', dst: 'plus' },
-      { src: 'substring', dst: 'string_substring' }
+      { src: 'substring', dst: 'string_substring' },
+      { src: 'custom_method' }
     ]
 
     it('does not rewrite excluded method', () => {
@@ -74,7 +75,35 @@ const result = (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.substr
 __datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2)).concat(\
 _ddiast.plus("b" + c, "b", c));
       }`,
-        plusOperatorAndSubstringCsiMethod
+        plusOperatorAndOthersCsiMethods
+      )
+    })
+
+    it('does rewrite custom_method method', () => {
+      const js = 'const result = a.custom_method(2).concat("b" + c);'
+      rewriteAndExpectWithCsiMethods(
+        js,
+        `{
+      let __datadog_test_0, __datadog_test_1;
+const result = (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.custom_method, _ddiast.custom_method(\
+__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2)).concat(\
+_ddiast.plus("b" + c, "b", c));
+      }`,
+        plusOperatorAndOthersCsiMethods
+      )
+    })
+
+    it('does rewrite Whatever.prototype.custom_method method', () => {
+      const js = 'const result = Whatever.prototype.custom_method.call(a, 2).concat("b" + c);'
+      rewriteAndExpectWithCsiMethods(
+        js,
+        `{
+      let __datadog_test_0, __datadog_test_1;
+const result = (__datadog_test_0 = a, __datadog_test_1 = Whatever.prototype.custom_method, _ddiast.custom_method(\
+__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2)).concat(\
+_ddiast.plus("b" + c, "b", c));
+      }`,
+        plusOperatorAndOthersCsiMethods
       )
     })
   })
