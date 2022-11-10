@@ -26,7 +26,7 @@ impl Ctx {
     }
 }
 
-pub trait VisitorWithContext: swc_ecma_visit::VisitMut {
+pub trait VisitorWithContext {
     fn get_ctx(&self) -> Ctx;
     fn set_ctx(&mut self, ctx: Ctx);
     fn reset_ctx(&mut self);
@@ -50,8 +50,6 @@ pub trait VisitorWithContext: swc_ecma_visit::VisitMut {
         self.with_ctx(self.get_ctx().child(true))
     }
 }
-
-//pub trait VisitMutWithContext: VisitorWithContext + swc_ecma_visit::VisitMut{}
 
 pub struct WithCtx<'a, V>
 where
