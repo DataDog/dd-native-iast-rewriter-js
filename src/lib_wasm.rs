@@ -32,7 +32,7 @@ impl Rewriter {
         }
     }
 
-    #[wasm_bindgen(catch, method)]
+    #[wasm_bindgen]
     pub fn rewrite(&self, code: String, file: String) -> anyhow::Result<String, JsValue> {
         rewrite_js(code, file, self.config.comments.unwrap_or(false))
             .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))

@@ -29,6 +29,7 @@
     "url": "https://github.com/DataDog/dd-native-iast-rewriter-js/issues"
   },
   "dependencies": {
+    "env": "0.0.2",
     "node-gyp-build": "^4.5.0"
   },
   "devDependencies": {
@@ -78,7 +79,7 @@
     "build:windows": "napi build --target x86_64-pc-windows-msvc --platform --release",
     "build:darwin": "napi build --target x86_64-apple-darwin --platform --release",
     "build:darwinArm": "napi build --target aarch64-apple-darwin --platform --release",
-    "build:wasm": "wasm-pack build --features \"wasm\"",
+    "build:wasm": "wasm-pack build --target nodejs --features \"wasm\"",
     "pack:wasm": "npm run build:wasm && wasm-pack pack",
     "buildAndTest:debug": "npm run build && npm run test:junit",
     "buildAndTest:linux": "npm run build:linux && npm run test:junit",
