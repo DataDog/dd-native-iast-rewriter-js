@@ -15,7 +15,6 @@ swc_ecma_visit = "0.70.0"
 swc_visit_macros = "0.5.3"
 swc_ecma_parser = "0.111.0"
 anyhow = "1.0.56"
-
 fastrand = "1.8.0"
 instant = "0.1"
 base64 = "0.13.0"
@@ -29,8 +28,8 @@ ctor = "0.1.23"
 [build-dependencies]
 napi-build = "1.2.1"
 
-# [profile.release]
-# lto = false
+[profile.release]
+lto = false
 
 [features]
 default = []
