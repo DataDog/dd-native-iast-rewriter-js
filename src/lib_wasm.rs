@@ -6,7 +6,7 @@ extern crate base64;
 
 use crate::rewriter::{print_js, rewrite_js};
 
-use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
+use wasm_bindgen::{prelude::wasm_bindgen, JsError};
 
 #[wasm_bindgen]
 pub struct RewriterConfig {

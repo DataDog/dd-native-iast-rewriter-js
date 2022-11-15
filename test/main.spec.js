@@ -14,7 +14,7 @@ function requireMain () {
     'node-gyp-build': function () {
       throw new Error()
     },
-    './pkg/native_iast_rewriter': function () {
+    './wasm/native_iast_rewriter': function () {
       throw new Error()
     }
   })
@@ -34,7 +34,7 @@ describe('main', () => {
       expect(rewriter.rewrite).to.not.be.null
     })
 
-    // commented out: proxyquire does not intercept './pkg/native_iast_rewriter' load
+    // commented out: proxyquire does not intercept './wasm/native_iast_rewriter' load
     // it('returns original code when rewrite is invoked', () => {
     //   const Rewriter = requireMain().Rewriter
     //   const js = 'function fn(a, b) { return a + b }'

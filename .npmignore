@@ -1,5 +1,5 @@
 *
-!prebuilds/**/*
+!wasm/**/*
 !CONTRIBUTING.md
 !LICENSE
 !LICENSE-3rdparty.csv

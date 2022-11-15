@@ -64,9 +64,9 @@ function testDefault () {
 
 function testWasm () {
   console.log('start wasm')
-  const { Rewriter, RewriterConfig } = require('../pkg/native_iast_rewriter.js')
+  const { Rewriter } = require('../wasm/native_iast_rewriter.js')
   const start = process.hrtime.bigint()
-  const rewriter = new Rewriter(new RewriterConfig())
+  const rewriter = new Rewriter()
   rewriteFilesToRewrite(rewriter)
   const end = process.hrtime.bigint()
   const totalTime = end - start
