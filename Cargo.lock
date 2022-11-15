@@ -401,27 +401,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "datadog-native-iast-rewriter"
-version = "0.1.0-beta.3"
-dependencies = [
- "anyhow",
- "base64",
- "ctor",
- "fastrand",
- "instant",
- "napi",
- "napi-build",
- "napi-derive",
- "spectral",
- "swc",
- "swc_ecma_parser",
- "swc_ecma_visit",
- "swc_visit_macros 0.5.4",
- "tempfile",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "debug_unreachable"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -909,6 +888,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "529671ebfae679f2ce9630b62dd53c72c56b3eb8b2c852e7e2fa91704ff93d67"
 dependencies = [
  "libloading",
+]
+
+[[package]]
+name = "native-iast-rewriter"
+version = "0.1.0-beta.3"
+dependencies = [
+ "anyhow",
+ "base64",
+ "ctor",
+ "fastrand",
+ "instant",
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "spectral",
+ "swc",
+ "swc_ecma_parser",
+ "swc_ecma_visit",
+ "swc_visit_macros 0.5.4",
+ "tempfile",
+ "wasm-bindgen",
 ]
 
 [[package]]

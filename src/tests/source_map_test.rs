@@ -12,7 +12,7 @@ mod tests {
 
     use crate::{
         rewriter::{print_js, rewrite_js, RewrittenOutput},
-        tests::{get_test_resources_folder, set_local_var},
+        tests::get_test_resources_folder,
     };
 
     #[derive(Clone)]
@@ -91,6 +91,7 @@ mod tests {
             original_code,
             String::from(js_file_to_rewrite.to_str().unwrap()),
             true,
+            None,
         )
         .map_err(|e| e.to_string())
     }
@@ -108,12 +109,6 @@ mod tests {
             }
             None => panic!("No sourcemap"),
         }
-    }
-
-    #[cfg(test)]
-    #[ctor::ctor]
-    fn init() {
-        set_local_var();
     }
 
     #[test]

@@ -14,11 +14,18 @@ use super::transform_status::{Status, TransformStatus};
 
 pub struct BlockTransformVisitor<'a> {
     pub transform_status: &'a mut TransformStatus,
+    pub local_var_prefix: String,
 }
 
 impl BlockTransformVisitor<'_> {
-    pub fn default(transform_status: &mut TransformStatus) -> BlockTransformVisitor<'_> {
-        BlockTransformVisitor { transform_status }
+    pub fn default(
+        transform_status: &mut TransformStatus,
+        local_var_prefix: String,
+    ) -> BlockTransformVisitor<'_> {
+        BlockTransformVisitor {
+            transform_status,
+            local_var_prefix,
+        }
     }
 
     fn visit_is_cancelled(&mut self) -> bool {
@@ -51,14 +58,17 @@ impl VisitMut for BlockTransformVisitor<'_> {
             return;
         }
 
-        let operation_visitor = &mut OperationTransformVisitor::new();
+        let operation_visitor = &mut OperationTransformVisitor::new(self.local_var_prefix.clone());
         expr.visit_mut_children_with(operation_visitor);
 
         if operation_visitor.transform_status.status == Status::Modified {
             self.mark_modified();
         }
 
-        if variables_contains_possible_duplicate(&operation_visitor.variable_decl) {
+        if variables_contains_possible_duplicate(
+            &operation_visitor.variable_decl,
+            &self.local_var_prefix,
+        ) {
             return self.cancel_visit("Variable name duplicated");
         }
 
@@ -68,8 +78,8 @@ impl VisitMut for BlockTransformVisitor<'_> {
     }
 }
 
-fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>) -> bool {
-    let prefix = get_dd_local_variable_prefix();
+fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>, prefix: &String) -> bool {
+    let prefix = get_dd_local_variable_prefix(prefix);
     variable_decl.iter().any(|var| var.sym.starts_with(&prefix))
 }
 

@@ -10,16 +10,7 @@ mod tests {
 
     use anyhow::Error;
 
-    use crate::{
-        rewriter::debug_js,
-        tests::{rewrite_js, set_local_var},
-    };
-
-    #[cfg(test)]
-    #[ctor::ctor]
-    fn init() {
-        set_local_var();
-    }
+    use crate::{rewriter::debug_js, tests::rewrite_js};
 
     #[test]
     fn test_simple_plus_literal() -> Result<(), String> {

@@ -1,6 +1,6 @@
 [package]
 edition = "2021"
-name = "datadog-native-iast-rewriter"
+name = "native-iast-rewriter"
 version = "0.1.0-beta.3"
 
 [lib]

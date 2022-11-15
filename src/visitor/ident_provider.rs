@@ -62,7 +62,10 @@ pub trait IdentProvider {
     ) -> (AssignExpr, Ident) {
         let id = Ident {
             span: DUMMY_SP,
-            sym: JsWord::from(get_dd_local_variable_name(index)),
+            sym: JsWord::from(get_dd_local_variable_name(
+                index,
+                &self.get_local_var_prefix(),
+            )),
             optional: false,
         };
         (
@@ -84,4 +87,6 @@ pub trait IdentProvider {
     fn next_ident(&mut self) -> usize;
 
     fn set_status(&mut self, status: TransformStatus);
+
+    fn get_local_var_prefix(&mut self) -> String;
 }

@@ -3,7 +3,7 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use crate::{
-    util::{file_name, parse_source_map},
+    util::{file_name, parse_source_map, rnd_string},
     visitor::{
         block_transform_visitor::BlockTransformVisitor,
         transform_status::{Status, TransformStatus},
@@ -42,7 +42,12 @@ pub struct RewrittenOutput {
     pub original_map: Option<SourceMap>,
 }
 
-pub fn rewrite_js(code: String, file: String, print_comments: bool) -> Result<RewrittenOutput> {
+pub fn rewrite_js(
+    code: String,
+    file: String,
+    print_comments: bool,
+    local_var_prefix: Option<String>,
+) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let program = parse_js(&code, file.as_str(), handler, compiler.borrow())?;
@@ -59,6 +64,7 @@ pub fn rewrite_js(code: String, file: String, print_comments: bool) -> Result<Re
             &code,
             file.as_str(),
             print_comments,
+            local_var_prefix,
             compiler.borrow(),
         );
 
@@ -134,10 +140,14 @@ fn transform_js(
     code: &str,
     file: &str,
     comments: bool,
+    local_var_prefix: Option<String>,
     compiler: &Compiler,
 ) -> Result<TransformOutput, Error> {
     let mut transform_status = TransformStatus::not_modified();
-    let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status);
+    let mut block_transform_visitor = BlockTransformVisitor::default(
+        &mut transform_status,
+        local_var_prefix.unwrap_or_else(|| rnd_string(6)),
+    );
     program.visit_mut_with(&mut block_transform_visitor);
 
     match transform_status.status {

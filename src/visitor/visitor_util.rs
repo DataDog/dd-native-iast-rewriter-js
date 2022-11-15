@@ -2,36 +2,17 @@
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
-use crate::util::rnd_string;
-use std::{env, sync::Once};
 use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
 
 pub const DD_GLOBAL_NAMESPACE: &str = "_ddiast";
 const DD_PLUS_OPERATOR: &str = "plusOperator";
-pub const DD_LOCAL_VAR_NAME_HASH_ENV_NAME: &str = "DD_LOCAL_VAR_NAME_HASH";
 
-static mut DD_LOCAL_VAR_NAME_HASH: String = String::new();
-static DD_LOCAL_VAR_NAME_HASH_INIT: Once = Once::new();
-pub fn get_dd_local_var_name_hash() -> String {
-    unsafe {
-        DD_LOCAL_VAR_NAME_HASH_INIT.call_once(|| match env::var(DD_LOCAL_VAR_NAME_HASH_ENV_NAME) {
-            Ok(val) => {
-                DD_LOCAL_VAR_NAME_HASH = val;
-            }
-            Err(_) => {
-                DD_LOCAL_VAR_NAME_HASH = rnd_string(6);
-            }
-        });
-        DD_LOCAL_VAR_NAME_HASH.clone()
-    }
+pub fn get_dd_local_variable_name(n: usize, prefix: &String) -> String {
+    format!("{}{}", get_dd_local_variable_prefix(prefix), n)
 }
 
-pub fn get_dd_local_variable_name(n: usize) -> String {
-    format!("{}{}", get_dd_local_variable_prefix(), n)
-}
-
-pub fn get_dd_local_variable_prefix() -> String {
-    format!("__datadog_{}_", get_dd_local_var_name_hash())
+pub fn get_dd_local_variable_prefix(prefix: &String) -> String {
+    format!("__datadog_{}_", prefix)
 }
 
 pub fn get_plus_operator_based_on_num_of_args_for_span(arguments_len: usize, span: Span) -> Callee {

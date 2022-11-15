@@ -13,6 +13,7 @@ use napi::{Error, Status};
 pub struct RewriterConfig {
     pub chain_source_map: Option<bool>,
     pub comments: Option<bool>,
+    pub local_var_prefix: Option<String>,
 }
 
 #[napi]
@@ -27,6 +28,7 @@ impl Rewriter {
         let rewriter_config: RewriterConfig = config.unwrap_or(RewriterConfig {
             chain_source_map: Some(false),
             comments: Some(false),
+            local_var_prefix: None,
         });
         Self {
             config: rewriter_config,
@@ -35,8 +37,13 @@ impl Rewriter {
 
     #[napi]
     pub fn rewrite(&self, code: String, file: String) -> napi::Result<String> {
-        rewrite_js(code, file, self.config.comments.unwrap_or(false))
-            .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))
-            .map_err(|e| Error::new(Status::Unknown, format!("{}", e)))
+        rewrite_js(
+            code,
+            file,
+            self.config.comments.unwrap_or(false),
+            self.config.local_var_prefix.clone(),
+        )
+        .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))
+        .map_err(|e| Error::new(Status::Unknown, format!("{}", e)))
     }
 }
