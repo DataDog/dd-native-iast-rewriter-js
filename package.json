@@ -1,7 +1,7 @@
 {
   "name": "@datadog/native-iast-rewriter",
   "homepage": "https://github.com/DataDog/dd-native-iast-rewriter-js/blob/main/README.md",
-  "version": "0.1.0-beta.3",
+  "version": "0.1.0-beta.4",
   "description": "Datadog IAST instrumentation addon for NodeJS",
   "main": "main.js",
   "types": "index.d.ts",
@@ -82,7 +82,6 @@
     "build:darwin": "napi build --target x86_64-apple-darwin --platform --release",
     "build:darwinArm": "napi build --target aarch64-apple-darwin --platform --release",
     "build:wasm": "wasm-pack build --scope datadog --out-dir wasm --target nodejs --features \"wasm\"",
-    "pack:wasm": "npm run build:wasm && wasm-pack pack",
     "buildAndTest:debug": "npm run build && npm run test:junit",
     "buildAndTest:linux": "npm run build:linux && npm run test:junit",
     "buildAndTest:alpine": "npm run build:alpine && npm run test:junit",
@@ -100,7 +99,7 @@
     "test:junit": "mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml test/**/*.spec.js",
     "test:integration": "mocha --file 'integration-test/setup.js' integration-test/**/*.spec.js",
     "test:integration:ci": "mocha --file 'integration-test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit-integration.xml integration-test/**/*.spec.js",
-    "test:wasm": "cross-env WASM_REWRITER=true mocha --file 'test/setup.js' test/**/*.spec.js",
+    "test:native": "cross-env NATIVE_REWRITER=true mocha --file 'test/setup.js' test/**/*.spec.js",
     "prepare": "husky install",
     "clippy": "cargo clippy --workspace -- -D warnings"
   },
