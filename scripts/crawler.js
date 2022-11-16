@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const { exit } = require('process')
-const { Rewriter } = require('../main')
+const { Rewriter, RewriterConfig } = require('../main')
 
 const INCLUDED_FILES = /(.*)\.m?js$/
 const ENCODING = 'utf8'
@@ -39,7 +39,9 @@ const red = console.log.bind(this, '\x1b[31m%s\x1b[0m')
 const blue = console.log.bind(this, '\x1b[34m%s\x1b[0m')
 const cyan = console.log.bind(this, '\x1b[35m%s\x1b[0m')
 
-const rewriter = new Rewriter({ comments: true })
+const rewriterConfig = RewriterConfig()
+rewriterConfig.comments = true
+const rewriter = new Rewriter(rewriterConfig)
 
 const crawl = (dirPath, options, visitor) => {
   blue(dirPath)
