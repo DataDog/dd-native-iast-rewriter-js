@@ -45,6 +45,7 @@ jobs:
           node-version: '16'
       - run: |
           cargo install wasm-pack
+          npm ci --ignore-scripts
           npm run build:wasm
           npm pack
       - uses: codex-team/action-nodejs-package-info@v1
