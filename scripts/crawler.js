@@ -39,7 +39,7 @@ const red = console.log.bind(this, '\x1b[31m%s\x1b[0m')
 const blue = console.log.bind(this, '\x1b[34m%s\x1b[0m')
 const cyan = console.log.bind(this, '\x1b[35m%s\x1b[0m')
 
-const rewriterConfig = RewriterConfig()
+const rewriterConfig = new RewriterConfig()
 rewriterConfig.comments = true
 const rewriter = new Rewriter(rewriterConfig)
 
