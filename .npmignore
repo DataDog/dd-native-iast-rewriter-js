@@ -1,5 +1,4 @@
 *
-!wasm/**/*
 !CONTRIBUTING.md
 !LICENSE
 !LICENSE-3rdparty.csv
@@ -8,3 +7,4 @@
 !main.js
 !js/**/*
 !package.json
+!wasm/**/*
