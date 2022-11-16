@@ -81,7 +81,7 @@
     "build:windows": "napi build --target x86_64-pc-windows-msvc --platform --release",
     "build:darwin": "napi build --target x86_64-apple-darwin --platform --release",
     "build:darwinArm": "napi build --target aarch64-apple-darwin --platform --release",
-    "build:wasm": "wasm-pack build --scope datadog --out-dir wasm --target nodejs --features \"wasm\"",
+    "build:wasm": "wasm-pack build --scope datadog --out-dir wasm --out-name wasm_iast_rewriter --target nodejs --features \"wasm\"",
     "buildAndTest:debug": "npm run build && npm run test:junit",
     "buildAndTest:linux": "npm run build:linux && npm run test:junit",
     "buildAndTest:alpine": "npm run build:alpine && npm run test:junit",
