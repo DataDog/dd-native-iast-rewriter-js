@@ -203,7 +203,7 @@ fn replace_call_expr_if_csi_method_with_member(
         })));
         call_replacement.args.iter_mut().for_each(|expr_or_spread| {
             DefaultOperandHandler::replace_expressions_in_operand(
-                &mut *expr_or_spread.expr,
+                &mut expr_or_spread.expr,
                 IdentMode::Replace,
                 &mut assignations,
                 &mut arguments,
@@ -226,7 +226,7 @@ fn replace_call_expr_if_csi_method_with_member(
             &Expr::Call(call_replacement),
             &arguments,
             &mut assignations,
-            csi_method.get_dst().as_str(),
+            csi_method.dst.as_str(),
             &span,
         ));
     }

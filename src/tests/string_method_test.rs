@@ -7,7 +7,7 @@
 mod tests {
 
     use crate::{
-        tests::{from_str, rewrite_js, rewrite_js_with_csi_methods, set_local_var},
+        tests::{csi_from_str, rewrite_js, rewrite_js_with_csi_methods, set_local_var},
         visitor::csi_methods::CsiMethods,
     };
     use spectral::{assert_that, string::StrAssertions};
@@ -145,7 +145,7 @@ mod tests {
     fn test_chained_calls_with_exclusions() -> Result<(), String> {
         let original_code = "{const a = b.concat('a').substring(2).trim();}".to_string();
         let js_file = "test.js".to_string();
-        let mut methods = vec![from_str("concat", Some("stringConcat"))];
+        let mut methods = vec![csi_from_str("concat", Some("stringConcat"))];
         let rewritten =
             rewrite_js_with_csi_methods(original_code, js_file, &CsiMethods::new(&mut methods))
                 .map_err(|e| e.to_string())?;
@@ -161,6 +161,28 @@ mod tests {
         let rewritten = rewrite_js_with_csi_methods(original_code, js_file, &CsiMethods::empty())
             .map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains("const a = b.concat('hello')");
+        Ok(())
+    }
+
+    #[test]
+    fn test_plus_operator_exclusion_by_default() -> Result<(), String> {
+        let original_code = "{const a = b.plusOperator('hello')}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const a = b.plusOperator('hello')");
+        Ok(())
+    }
+
+    #[test]
+    fn test_plus_operator_csi_method_but_plus_exclusion() -> Result<(), String> {
+        let original_code = "{const a = b.plusOperator(c + d)}".to_string();
+        let js_file = "test.js".to_string();
+        let mut methods = vec![csi_from_str("plusOperator", Some("plusOperator"))];
+        let rewritten =
+            rewrite_js_with_csi_methods(original_code, js_file, &CsiMethods::new(&mut methods))
+                .map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
+    const a = (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.plusOperator, _ddiast.plusOperator(__datadog_test_1.call(__datadog_test_0, c + d), __datadog_test_1, __datadog_test_0));");
         Ok(())
     }
 }

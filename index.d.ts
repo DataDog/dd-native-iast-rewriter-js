@@ -6,6 +6,7 @@
 export interface CsiMethod {
   src: string
   dst?: string | undefined | null
+  operator?: boolean | undefined | null
 }
 export interface RewriterConfig {
   chainSourceMap?: boolean

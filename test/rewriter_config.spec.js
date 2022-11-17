@@ -16,7 +16,7 @@ describe('rewriter configuration', () => {
 
     const onlySubstringCsiMethod = [{ src: 'substring', dst: 'string_substring' }]
     const plusOperatorAndOthersCsiMethods = [
-      { src: 'plusOperator', dst: 'plus' },
+      { src: 'plusOperator', dst: 'plus', operator: true },
       { src: 'substring', dst: 'string_substring' },
       { src: 'custom_method' }
     ]

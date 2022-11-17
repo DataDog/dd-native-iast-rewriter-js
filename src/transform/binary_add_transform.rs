@@ -60,9 +60,9 @@ fn prepare_replace_expressions_in_binary(
     arguments: &mut Vec<Expr>,
     ident_provider: &mut dyn IdentProvider,
 ) -> bool {
-    let left_ident_mode = DefaultOperandHandler::get_ident_mode(&mut *binary.right);
+    let left_ident_mode = DefaultOperandHandler::get_ident_mode(&mut binary.right);
     DefaultOperandHandler::replace_expressions_in_operand(
-        &mut *binary.left,
+        &mut binary.left,
         left_ident_mode,
         assignations,
         arguments,
@@ -70,9 +70,9 @@ fn prepare_replace_expressions_in_binary(
         ident_provider,
     );
 
-    let right_ident_mode = DefaultOperandHandler::get_ident_mode(&mut *binary.left);
+    let right_ident_mode = DefaultOperandHandler::get_ident_mode(&mut binary.left);
     DefaultOperandHandler::replace_expressions_in_operand(
-        &mut *binary.right,
+        &mut binary.right,
         right_ident_mode,
         assignations,
         arguments,

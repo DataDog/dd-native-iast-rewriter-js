@@ -31,6 +31,7 @@ use visitor::csi_methods::CsiMethods;
 pub struct CsiMethod {
     pub src: String,
     pub dst: Option<String>,
+    pub operator: Option<bool>,
 }
 
 #[napi(object)]
@@ -45,9 +46,15 @@ impl RewriterConfig {
     fn get_csi_methods(&self) -> CsiMethods {
         match &self.csi_methods {
             Some(methods_napi) => CsiMethods::new(
-                &mut methods_napi
+                &methods_napi
                     .iter()
-                    .map(|m| visitor::csi_methods::CsiMethod::new(m.src.clone(), m.dst.clone()))
+                    .map(|m| {
+                        visitor::csi_methods::CsiMethod::new(
+                            m.src.clone(),
+                            m.dst.clone(),
+                            m.operator.unwrap_or(false),
+                        )
+                    })
                     .collect::<Vec<visitor::csi_methods::CsiMethod>>(),
             ),
             None => CsiMethods::empty(),
@@ -93,7 +100,7 @@ impl Rewriter {
         Ok(csi_methods
             .methods
             .iter()
-            .map(|csi_method| csi_method.get_dst())
+            .map(|csi_method| csi_method.dst.clone())
             .collect())
     }
 }

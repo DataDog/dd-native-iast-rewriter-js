@@ -51,21 +51,29 @@ fn rewrite_js_with_csi_methods(
 
 fn get_default_csi_methods() -> CsiMethods {
     let mut methods = vec![
-        from_str("plusOperator", None),
-        from_str("substring", Some("stringSubstring")),
-        from_str("trim", Some("stringTrim")),
-        from_str("trimStart", Some("stringTrim")),
-        from_str("trimEnd", Some("stringTrim")),
-        from_str("concat", Some("stringConcat")),
-        from_str("slice", None),
+        csi_op_from_str("plusOperator", None),
+        csi_from_str("substring", Some("stringSubstring")),
+        csi_from_str("trim", Some("stringTrim")),
+        csi_from_str("trimStart", Some("stringTrim")),
+        csi_from_str("trimEnd", Some("stringTrim")),
+        csi_from_str("concat", Some("stringConcat")),
+        csi_from_str("slice", None),
     ];
     CsiMethods::new(&mut methods)
 }
 
-fn from_str(src: &str, dst: Option<&str>) -> CsiMethod {
+fn csi_from_str(src: &str, dst: Option<&str>) -> CsiMethod {
     let dst_string = match dst {
         Some(str) => Some(String::from(str)),
         None => None,
     };
-    CsiMethod::new(String::from(src), dst_string)
+    CsiMethod::new(String::from(src), dst_string, false)
+}
+
+fn csi_op_from_str(src: &str, dst: Option<&str>) -> CsiMethod {
+    let dst_string = match dst {
+        Some(str) => Some(String::from(str)),
+        None => None,
+    };
+    CsiMethod::new(String::from(src), dst_string, true)
 }
