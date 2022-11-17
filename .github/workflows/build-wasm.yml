@@ -32,7 +32,7 @@ jobs:
           cargo check
           cargo test
 
-  build-wasm-and-pack:
+  wasm-pack:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -46,7 +46,7 @@ jobs:
       - run: |
           cargo install wasm-pack
           npm ci --ignore-scripts
-          npm run build:wasm
+          npm run build
           rm wasm/README.md wasm/package.json wasm/.gitignore
           npm pack
       - uses: codex-team/action-nodejs-package-info@v1
@@ -71,7 +71,7 @@ jobs:
       - run: npm run ${{ matrix.run }}
 
   test-native-js:
-    needs: ['build-wasm-and-pack']
+    needs: ['wasm-pack']
     strategy:
       matrix:
         target:
@@ -110,7 +110,7 @@ jobs:
           check_name: junit test report ${{ matrix.target.name }}
 
   test-docker:
-    needs: ['build-wasm-and-pack']
+    needs: ['wasm-pack']
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -138,7 +138,7 @@ jobs:
           check_name: junit test report ${{ matrix.target.name }}
 
   compile-v8-and-run-tests:
-    needs: ['build-wasm-and-pack']
+    needs: ['wasm-pack']
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
