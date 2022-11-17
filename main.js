@@ -6,8 +6,6 @@
 const { getPrepareStackTrace } = require('./js/stack-trace/')
 const { cacheRewrittenSourceMap } = require('./js/source-map')
 
-const nativeRewriter = process.env.DD_IAST_NATIVE_REWRITER === 'true'
-
 class DummyRewriterConfig {}
 
 class DummyRewriter {
@@ -36,11 +34,9 @@ class CacheRewriter {
 
 function getRewriter () {
   try {
-    const iastRewriter = nativeRewriter ? require('node-gyp-build')(__dirname) : require('./wasm/wasm_iast_rewriter')
+    const iastRewriter = require('./wasm/wasm_iast_rewriter')
     NativeRewriter = iastRewriter.Rewriter
-    if (!nativeRewriter) {
-      RewriterConfig = iastRewriter.RewriterConfig
-    }
+    RewriterConfig = iastRewriter.RewriterConfig
 
     return CacheRewriter
   } catch (e) {

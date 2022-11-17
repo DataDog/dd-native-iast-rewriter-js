@@ -27,7 +27,7 @@ $ npm install
 Build the project with
 
 ```
-$ npm run build:wasm
+$ npm run build
 
 ```
 
