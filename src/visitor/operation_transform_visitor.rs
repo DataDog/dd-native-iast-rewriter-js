@@ -20,16 +20,18 @@ pub struct OperationTransformVisitor {
     pub idents: Vec<Ident>,
     pub variable_decl: HashSet<Ident>,
     pub transform_status: TransformStatus,
+    pub local_var_prefix: String,
     ctx: Ctx,
 }
 
 impl OperationTransformVisitor {
-    pub fn new() -> Self {
+    pub fn new(local_var_prefix: String) -> Self {
         OperationTransformVisitor {
             ident_counter: 0,
             idents: Vec::new(),
             variable_decl: HashSet::new(),
             transform_status: TransformStatus::not_modified(),
+            local_var_prefix,
             ctx: Ctx::root(),
         }
     }
@@ -79,6 +81,10 @@ impl IdentProvider for OperationTransformVisitor {
 
     fn set_status(&mut self, status: TransformStatus) {
         self.transform_status = status;
+    }
+
+    fn get_local_var_prefix(&mut self) -> String {
+        self.local_var_prefix.clone()
     }
 }
 

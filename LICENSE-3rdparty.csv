@@ -5,17 +5,20 @@ require,swc,Apache-2.0,Copyright 강동윤
 require,swc_ecma_visit,Apache-2.0,Copyright 강동윤
 require,swc_ecma_parser,Apache-2.0,Copyright 강동윤
 require,swc_visit_macros,Apache-2.0,Copyright 강동윤
+require,base64,MIT and Apache-2.0,Copyright (c) 2015 Alice Maz
 require,anyhow,MIT OR Apache-2.0,Copyright (c) 2018 David Tolnay
 require,fastrand,Apache-2.0 OR MIT, Copyright 2020 Stjepan Glavina
-require,base64,MIT and Apache-2.0,Copyright (c) 2015 Alice Maz
 require,node-gyp-build,MIT,Copyright 2017 Mathias Buus
+require,wasm-bindgen,Apache-2.0 OR MIT,Copyright (c) 2014 Alex Crichton
 dev,tempfile,MIT OR Apache-2.0,Copyright (c) 2015 Steven Allen
 dev,spectral,Apache-2.0,Copyright (c) cfrancia
 dev,ctor,Apache-2.0 OR MIT,Copyright (c) 2018 Matt Mastracci
 dev,@babel/core,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
+dev,@babel/parser,MIT,Copyright (c) Copyright (C) 2012-2014 by various contributors
 dev,@babel/types,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 dev,@napi-rs/cli,MIT,Copyright (c) 2020 LongYinan
 dev,@swc-node/register,MIT,Copyright (c) 2020-present LongYinan
+dev,ast-types,MIT,Copyright (c) 2013 Ben Newman <bn@cs.stanford.edu>
 dev,chai,MIT,Copyright (c) 2017 Chai.js Assertion Library
 dev,cross-env,MIT,Copyright (c) 2017 Kent C. Dodds
 dev,dotenv-cli,MIT,Copyright Jens Claes
@@ -31,6 +34,7 @@ dev,mocha,MIT,Copyright (c) 2011-2021 OpenJS Foundation and contributors
 dev,mocha-it-each,MIT,Copyright (c) 2013 Mikejsdev
 dev,mocha-junit-reporter,MIT,Copyright (c) 2015 Michael Allen
 dev,npm-run-all,MIT,Copyright (c) 2015 Toru Nagashima
+dev,recast,MIT,Copyright (c) 2012 Ben Newman <bn@cs.stanford.edu
 dev,prettier,MIT,Copyright © James Long and contributors
 dev,sorcery,MIT,Copyright 2014 Rich-Harris
 dev,source-map,BSD-3-Clause,Copyright (c) 2009-2011 Mozilla Foundation and contributors

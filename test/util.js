@@ -7,7 +7,7 @@ const os = require('os')
 const path = require('path')
 
 const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/native-iast-rewriter' : '../main'
-const { Rewriter } = require(rewriterPackage)
+const { Rewriter, RewriterConfig } = require(rewriterPackage)
 
 const removeSourceMap = (code) => {
   return code
@@ -18,7 +18,9 @@ const removeSourceMap = (code) => {
 
 const rewriteAst = (code, opts) => {
   opts = opts || {}
-  const rewriter = opts.rewriter ?? new Rewriter({ chainSourceMap: opts.chainSourceMap ?? false })
+  const config = new RewriterConfig()
+  config.localVarPrefix = 'test'
+  const rewriter = opts.rewriter ?? new Rewriter(config)
   const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
   const rewrited = rewriter.rewrite(code, file)
   return opts.keepSourceMap ? rewrited : removeSourceMap(rewrited)

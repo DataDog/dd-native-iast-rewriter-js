@@ -8,10 +8,12 @@ base. If you would like support for a module that is not listed, [contact suppor
 
 ## Local setup
 
-To set up the project locally, you should install `cargo`:
+To set up the project locally, you should install `cargo` and `wasm-pack`:
 
 ```
-curl https://sh.rustup.rs -sSf | sh
+$ curl https://sh.rustup.rs -sSf | sh
+
+$ cargo install wasm-pack
 ```
 
 and project dependencies:
@@ -26,8 +28,7 @@ Build the project with
 
 ```
 $ npm run build
-#or
-$ npm run build:debug
+
 ```
 
 and then it will be possible to run the tests with

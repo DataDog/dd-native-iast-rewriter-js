@@ -125,3 +125,5 @@ build
 *.bat
 .idea
 .vscode
+
+wasm

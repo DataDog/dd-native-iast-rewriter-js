@@ -6,14 +6,8 @@
 #[cfg(test)]
 mod tests {
 
-    use crate::tests::{rewrite_js, set_local_var};
+    use crate::tests::rewrite_js;
     use spectral::{assert_that, string::StrAssertions};
-
-    #[cfg(test)]
-    #[ctor::ctor]
-    fn init() {
-        set_local_var();
-    }
 
     #[test]
     fn test_template_literal() -> Result<(), String> {
