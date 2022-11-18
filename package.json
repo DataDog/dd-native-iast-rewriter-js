@@ -1,7 +1,7 @@
 {
   "name": "@datadog/native-iast-rewriter",
   "homepage": "https://github.com/DataDog/dd-native-iast-rewriter-js/blob/main/README.md",
-  "version": "0.1.0-beta.4",
+  "version": "1.0.0",
   "description": "Datadog IAST instrumentation addon for NodeJS",
   "main": "main.js",
   "types": "index.d.ts",
@@ -93,7 +93,6 @@
     "test:junit": "mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml test/**/*.spec.js",
     "test:integration": "mocha --file 'integration-test/setup.js' integration-test/**/*.spec.js",
     "test:integration:ci": "mocha --file 'integration-test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit-integration.xml integration-test/**/*.spec.js",
-    "test:native": "cross-env NATIVE_REWRITER=true mocha --file 'test/setup.js' test/**/*.spec.js",
     "prepare": "husky install",
     "clippy": "cargo clippy --workspace -- -D warnings"
   },
