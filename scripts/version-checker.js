@@ -10,19 +10,26 @@ const definedVersion = packageJson.version
 const packageLockVersion = packageLockJson.version
 let isOk = true
 if (definedVersion !== packageLockVersion) {
-  console.error('Different versions in package and package-lock')
   isOk = false
 }
 const cargoTomlVersion = readVersionFromCargoToml(cargoToml)
 if (definedVersion !== cargoTomlVersion) {
-  console.error('Different versions in package and Cargo.toml')
   isOk = false
 }
 
 const cargoLockVersion = readVersionFromCargoLock(cargoLock)
 if (definedVersion !== cargoLockVersion) {
-  console.error('Different versions in package and Cargo.lock')
   isOk = false
+}
+
+if (!isOk) {
+  console.error(`Version are not synchronized:
+  package.json: ${definedVersion}
+  package-lock.json: ${packageLockVersion}
+  Cargo.toml: ${cargoTomlVersion}
+  Cargo.lock: ${cargoLockVersion}
+  `)
+  process.exit(1)
 }
 
 function readVersionFromCargoToml (cargoTomlContent) {
@@ -54,8 +61,4 @@ function readVersionFromCargoLock (cargoLockContent) {
       inPackage = true
     }
   }
-}
-
-if (!isOk) {
-  process.exit(1)
 }
