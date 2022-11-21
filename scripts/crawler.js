@@ -60,8 +60,8 @@ const cyan = console.log.bind(this, '\x1b[35m%s\x1b[0m')
 
 const rewriterConfig = new RewriterConfig()
 rewriterConfig.comments = true
+rewriterConfig.csiMethods = CSI_METHODS
 const rewriter = new Rewriter(rewriterConfig)
-const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS })
 
 const getGlobalMethods = function (methods) {
   const fnSignAndBody = '(res) {return res;}'

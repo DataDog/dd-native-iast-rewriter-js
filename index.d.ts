@@ -12,8 +12,6 @@ export interface RewriterConfig {
   chainSourceMap?: boolean
   comments?: boolean
   localVarPrefix?: string
-  chainSourceMap?: boolean | undefined | null
-  comments?: boolean | undefined | null
   csiMethods?: Array<CsiMethod> | undefined | null
 }
 export class Rewriter {

@@ -21,27 +21,18 @@ use super::{
 pub struct BlockTransformVisitor<'a> {
     pub transform_status: &'a mut TransformStatus,
     pub local_var_prefix: String,
-}
-
-impl BlockTransformVisitor<'_> {
-    pub fn default(
-        transform_status: &mut TransformStatus,
-        local_var_prefix: String,
-    ) -> BlockTransformVisitor<'_> {
-        BlockTransformVisitor {
-            transform_status,
-            local_var_prefix,
-    csi_methods: CsiMethods,
     csi_methods: &'a CsiMethods,
 }
 
 impl BlockTransformVisitor<'_> {
     pub fn default<'a>(
         transform_status: &'a mut TransformStatus,
+        local_var_prefix: String,
         csi_methods: &'a CsiMethods,
     ) -> BlockTransformVisitor<'a> {
         BlockTransformVisitor {
             transform_status,
+            local_var_prefix,
             csi_methods,
         }
     }
@@ -75,34 +66,17 @@ impl VisitMut for BlockTransformVisitor<'_> {
             return;
         }
 
-        let operation_visitor = &mut OperationTransformVisitor::new(self.local_var_prefix.clone());
-        expr.visit_mut_children_with(operation_visitor);
-
-        if operation_visitor.transform_status.status == Status::Modified {
-            self.mark_modified();
-        }
-        let mut operation_visitor = OperationTransformVisitor {
-            ident_counter: 0,
-            idents: Vec::new(),
-            variable_decl: HashSet::new(),
-            transform_status: TransformStatus::not_modified(),
-            csi_methods: self.csi_methods,
-            ctx: Ctx::root(),
-        };
-        expr.visit_mut_children_with(&mut operation_visitor);
-
-        if variables_contains_possible_duplicate(
-            &operation_visitor.variable_decl,
-            &self.local_var_prefix,
-        ) {
-        let mut ident_provider = DefaultIdentProvider::new();
+        let mut ident_provider = DefaultIdentProvider::new(&self.local_var_prefix);
         expr.visit_mut_children_with(&mut get_visitor(
             &mut ident_provider,
             self.csi_methods,
             self.csi_methods.plus_operator_is_enabled(),
         ));
 
-        if variables_contains_possible_duplicate(&ident_provider.variable_decl) {
+        if variables_contains_possible_duplicate(
+            &ident_provider.variable_decl,
+            &self.local_var_prefix,
+        ) {
             return self.cancel_visit("Variable name duplicated");
         }
 
@@ -116,8 +90,6 @@ impl VisitMut for BlockTransformVisitor<'_> {
     }
 }
 
-fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>, prefix: &String) -> bool {
-    let prefix = get_dd_local_variable_prefix(prefix);
 fn get_visitor<'a>(
     ident_provider: &'a mut dyn IdentProvider,
     csi_methods: &'a CsiMethods,
@@ -138,8 +110,8 @@ fn get_visitor<'a>(
     }
 }
 
-fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>) -> bool {
-    let prefix = get_dd_local_variable_prefix();
+fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>, prefix: &String) -> bool {
+    let prefix = get_dd_local_variable_prefix(prefix);
     variable_decl.iter().any(|var| var.sym.starts_with(&prefix))
 }
 

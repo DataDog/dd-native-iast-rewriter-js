@@ -12,8 +12,7 @@ mod tests {
 
     use crate::{
         rewriter::{print_js, rewrite_js, RewrittenOutput},
-        tests::get_test_resources_folder,
-        tests::{get_default_csi_methods, get_test_resources_folder, set_local_var},
+        tests::{get_default_csi_methods, get_test_resources_folder},
     };
 
     #[derive(Clone)]

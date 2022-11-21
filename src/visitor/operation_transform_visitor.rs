@@ -18,27 +18,6 @@ use super::{
 };
 
 pub struct OperationTransformVisitor<'a> {
-    pub ident_counter: usize,
-    pub idents: Vec<Ident>,
-    pub variable_decl: HashSet<Ident>,
-    pub transform_status: TransformStatus,
-    pub local_var_prefix: String,
-    ctx: Ctx,
-}
-
-impl OperationTransformVisitor {
-    pub fn new(local_var_prefix: String) -> Self {
-        OperationTransformVisitor {
-            ident_counter: 0,
-            idents: Vec::new(),
-            variable_decl: HashSet::new(),
-            transform_status: TransformStatus::not_modified(),
-            local_var_prefix,
-            ctx: Ctx::root(),
-        }
-    }
-
-    fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, OperationTransformVisitor> {
     pub ident_provider: &'a mut dyn IdentProvider,
     pub csi_methods: &'a CsiMethods,
     pub ctx: Ctx,
@@ -57,28 +36,6 @@ impl VisitorWithContext for OperationTransformVisitor<'_> {
         if self.ctx.root {
             self.ident_provider.reset_counter();
         }
-    }
-}
-
-impl IdentProvider for OperationTransformVisitor<'_> {
-    fn register_ident(&mut self, ident: Ident) {
-        if !self.idents.contains(&ident) {
-            self.idents.push(ident);
-        }
-    }
-
-    fn next_ident(&mut self) -> usize {
-        let counter = self.ident_counter;
-        self.ident_counter += 1;
-        counter
-    }
-
-    fn set_status(&mut self, status: TransformStatus) {
-        self.transform_status = status;
-    }
-
-    fn get_local_var_prefix(&mut self) -> String {
-        self.local_var_prefix.clone()
     }
 }
 

@@ -36,13 +36,9 @@ const rewriteAst = (code, opts) => {
   opts = opts || {}
   const config = new RewriterConfig()
   config.localVarPrefix = 'test'
+  config.chainSourceMap = opts.chainSourceMap ?? false
+  config.csiMethods = csiMethods
   const rewriter = opts.rewriter ?? new Rewriter(config)
-  const rewriter =
-    opts.rewriter ??
-    new Rewriter({
-      chainSourceMap: opts.chainSourceMap ?? false,
-      csiMethods
-    })
   const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
   const rewrited = rewriter.rewrite(code, file)
   return opts.keepSourceMap ? rewrited : removeSourceMap(rewrited)
@@ -89,7 +85,10 @@ const expectAst = (received, expected) => {
 }
 
 const rewriteAndExpectAndExpectEval = (js, expected) => {
-  const rewriter = new Rewriter({ csiMethods })
+  const config = new RewriterConfig()
+  config.localVarPrefix = 'test'
+  config.csiMethods = csiMethods
+  const rewriter = new Rewriter(config)
   rewriteAndExpect(js, expected, true, { rewriter })
 
   const globalMethods = getGlobalMethods(rewriter.csiMethods())
@@ -154,6 +153,7 @@ module.exports = {
   rewriteAndExpectError,
   wrapBlock,
   Rewriter,
+  RewriterConfig,
   csiMethods,
   rewriteAndExpectAndExpectEval,
   fn

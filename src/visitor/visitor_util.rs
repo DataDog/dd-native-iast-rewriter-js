@@ -6,22 +6,14 @@ use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
 
 const DATADOG_VAR_PREFIX: &str = "__datadog";
 const DD_GLOBAL_NAMESPACE: &str = "_ddiast";
-const DD_PLUS_OPERATOR: &str = "plusOperator";
 pub const DD_PLUS_OPERATOR: &str = "plusOperator";
-pub const DD_LOCAL_VAR_NAME_HASH_ENV_NAME: &str = "DD_LOCAL_VAR_NAME_HASH";
 
 pub fn get_dd_local_variable_name(n: usize, prefix: &String) -> String {
     format!("{}{}", get_dd_local_variable_prefix(prefix), n)
 }
 
 pub fn get_dd_local_variable_prefix(prefix: &String) -> String {
-    format!("__datadog_{}_", prefix)
-pub fn get_dd_local_variable_name(n: usize) -> String {
-    format!("{}{}", get_dd_local_variable_prefix(), n)
-}
-
-pub fn get_dd_local_variable_prefix() -> String {
-    format!("{}_{}_", DATADOG_VAR_PREFIX, get_dd_local_var_name_hash())
+    format!("{}_{}_", DATADOG_VAR_PREFIX, prefix)
 }
 
 pub fn dd_global_method_invocation(method_name: &str, span: &Span) -> Callee {

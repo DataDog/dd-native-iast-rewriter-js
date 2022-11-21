@@ -82,6 +82,7 @@ pub trait IdentProvider {
     fn set_status(&mut self, status: TransformStatus);
 
     fn get_local_var_prefix(&mut self) -> String;
+
     fn reset_counter(&mut self);
 
     fn register_variable(&mut self, variable: &Ident);
@@ -92,15 +93,17 @@ pub struct DefaultIdentProvider {
     pub idents: Vec<Ident>,
     pub variable_decl: HashSet<Ident>,
     pub transform_status: TransformStatus,
+    pub local_var_prefix: String,
 }
 
 impl DefaultIdentProvider {
-    pub fn new() -> Self {
+    pub fn new(local_var_prefix: &str) -> Self {
         DefaultIdentProvider {
             ident_counter: 0,
             idents: Vec::new(),
             variable_decl: HashSet::new(),
             transform_status: TransformStatus::not_modified(),
+            local_var_prefix: local_var_prefix.to_string(),
         }
     }
 }
@@ -128,5 +131,9 @@ impl IdentProvider for DefaultIdentProvider {
 
     fn register_variable(&mut self, variable: &Ident) {
         self.variable_decl.insert(variable.clone());
+    }
+
+    fn get_local_var_prefix(&mut self) -> String {
+        self.local_var_prefix.clone()
     }
 }

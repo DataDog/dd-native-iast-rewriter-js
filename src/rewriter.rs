@@ -144,19 +144,15 @@ fn transform_js(
     file: &str,
     comments: bool,
     local_var_prefix: Option<String>,
+    csi_methods: &CsiMethods,
     compiler: &Compiler,
 ) -> Result<TransformOutput, Error> {
     let mut transform_status = TransformStatus::not_modified();
     let mut block_transform_visitor = BlockTransformVisitor::default(
         &mut transform_status,
         local_var_prefix.unwrap_or_else(|| rnd_string(6)),
+        csi_methods,
     );
-    csi_methods: &CsiMethods,
-    compiler: &Compiler,
-) -> Result<TransformOutput, Error> {
-    let mut transform_status = TransformStatus::not_modified();
-    let mut block_transform_visitor =
-        BlockTransformVisitor::default(&mut transform_status, csi_methods);
     program.visit_mut_with(&mut block_transform_visitor);
 
     match transform_status.status {

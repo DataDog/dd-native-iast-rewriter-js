@@ -7,16 +7,10 @@
 mod tests {
 
     use crate::{
-        tests::{csi_from_str, rewrite_js, rewrite_js_with_csi_methods, set_local_var},
+        tests::{csi_from_str, rewrite_js, rewrite_js_with_csi_methods},
         visitor::csi_methods::CsiMethods,
     };
     use spectral::{assert_that, string::StrAssertions};
-
-    #[cfg(test)]
-    #[ctor::ctor]
-    fn init() {
-        set_local_var();
-    }
 
     #[test]
     fn test_ident_substring() -> Result<(), String> {
