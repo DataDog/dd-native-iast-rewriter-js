@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
 const fs = require('fs')
 const path = require('path')
-const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json')).toString())
-const packageLockJson = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package-lock.json')).toString())
+const packageJson = require('../package.json')
+const packageLockJson = require('../package-lock.json')
 const cargoToml = fs.readFileSync(path.join(__dirname, '..', 'Cargo.toml')).toString()
 const cargoLock = fs.readFileSync(path.join(__dirname, '..', 'Cargo.lock')).toString()
 
