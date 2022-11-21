@@ -16,6 +16,14 @@ on:
       - v1.x
 
 jobs:
+  check-versions:
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - run: node scripts/version-checker.js
+
   test-native:
     strategy:
       matrix:
