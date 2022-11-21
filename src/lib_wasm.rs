@@ -11,111 +11,38 @@ use crate::{
 use serde::Deserialize;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 
-#[wasm_bindgen]
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CsiMethod {
-    #[wasm_bindgen(skip)]
     pub src: String,
-
-    #[wasm_bindgen(skip)]
     pub dst: Option<String>,
-
     pub operator: Option<bool>,
 }
 
-#[wasm_bindgen]
-impl CsiMethod {
-    #[wasm_bindgen(constructor)]
-    pub fn new(src: String, dst: Option<String>, operator: Option<bool>) -> Self {
-        CsiMethod { src, dst, operator }
-    }
-
-    #[wasm_bindgen(getter, js_name = src)]
-    pub fn src(&self) -> String {
-        self.src.clone()
-    }
-
-    #[wasm_bindgen(setter, js_name = src)]
-    pub fn set_src(&mut self, src: String) {
-        self.src = src
-    }
-
-    #[wasm_bindgen(getter, js_name = dst)]
-    pub fn dst(&self) -> Option<String> {
-        self.dst.clone()
-    }
-
-    #[wasm_bindgen(setter, js_name = dst)]
-    pub fn set_dst(&mut self, dst: Option<String>) {
-        self.dst = dst
-    }
-}
-
-#[wasm_bindgen]
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RewriterConfig {
-    #[wasm_bindgen(js_name = chainSourceMap)]
     pub chain_source_map: Option<bool>,
     pub comments: Option<bool>,
-
-    #[wasm_bindgen(skip)]
     pub local_var_prefix: Option<String>,
-
-    #[wasm_bindgen(skip)]
-    pub csi_methods: Option<JsValue>,
+    pub csi_methods: Option<Vec<CsiMethod>>,
 }
 
-impl Default for RewriterConfig {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[wasm_bindgen]
 impl RewriterConfig {
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> Self {
-        RewriterConfig {
-            chain_source_map: None,
-            comments: None,
-            local_var_prefix: None,
-            csi_methods: None,
-        }
-    }
-
-    #[wasm_bindgen(getter, js_name = localVarPrefix)]
-    pub fn local_var_prefix(&self) -> Option<String> {
-        self.local_var_prefix.clone()
-    }
-
-    #[wasm_bindgen(setter, js_name = localVarPrefix)]
-    pub fn set_local_var_prefix(&mut self, local_var_prefix: Option<String>) {
-        self.local_var_prefix = local_var_prefix;
-    }
-
-    #[wasm_bindgen(setter, js_name = csiMethods)]
-    pub fn set_csi_methods(&mut self, csi_methods: JsValue) {
-        self.csi_methods = Some(csi_methods)
-    }
-
     fn get_csi_methods(&self) -> CsiMethods {
         match &self.csi_methods {
-            Some(methods_jsvalue) => {
-                match serde_wasm_bindgen::from_value::<Vec<CsiMethod>>(methods_jsvalue.clone()) {
-                    Ok(csi_methods) => CsiMethods::new(
-                        &csi_methods
-                            .iter()
-                            .map(|m| {
-                                visitor::csi_methods::CsiMethod::new(
-                                    m.src.clone(),
-                                    m.dst.clone(),
-                                    m.operator.unwrap_or(false),
-                                )
-                            })
-                            .collect::<Vec<visitor::csi_methods::CsiMethod>>(),
-                    ),
-                    _ => CsiMethods::empty(),
-                }
-            }
+            Some(methods) => CsiMethods::new(
+                &methods
+                    .iter()
+                    .map(|m| {
+                        visitor::csi_methods::CsiMethod::new(
+                            m.src.clone(),
+                            m.dst.clone(),
+                            m.operator.unwrap_or(false),
+                        )
+                    })
+                    .collect::<Vec<visitor::csi_methods::CsiMethod>>(),
+            ),
 
             None => CsiMethods::empty(),
         }
@@ -130,7 +57,8 @@ pub struct Rewriter {
 #[wasm_bindgen]
 impl Rewriter {
     #[wasm_bindgen(constructor)]
-    pub fn new(config: Option<RewriterConfig>) -> Self {
+    pub fn new(config_js: JsValue) -> Self {
+        let config = serde_wasm_bindgen::from_value::<RewriterConfig>(config_js);
         let rewriter_config: RewriterConfig = config.unwrap_or(RewriterConfig {
             chain_source_map: Some(false),
             comments: Some(false),

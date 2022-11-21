@@ -5,15 +5,12 @@
 /* eslint-disable no-multi-str */
 'use strict'
 
-const { Rewriter, RewriterConfig, rewriteAndExpect, rewriteAndExpectNoTransformation, csiMethods } = require('./util')
+const { Rewriter, rewriteAndExpect, rewriteAndExpectNoTransformation, csiMethods } = require('./util')
 
 describe('rewriter configuration', () => {
   describe('csi exclusions', () => {
     const rewriteAndExpectWithCsiMethods = function (js, expect, csiMethods) {
-      const config = new RewriterConfig()
-      config.localVarPrefix = 'test'
-      config.csiMethods = csiMethods
-      const rewriter = new Rewriter(config)
+      const rewriter = new Rewriter({ csiMethods, localVarPrefix: 'test' })
       return rewriteAndExpect(js, expect, false, { rewriter })
     }
 
@@ -113,16 +110,27 @@ _ddiast.plus("b" + c, "b", c));
 
   describe('csi methods list', () => {
     it('should list all rewritten methods', () => {
-      const config = new RewriterConfig()
-      config.localVarPrefix = 'test'
-      config.csiMethods = csiMethods
-      const rewriter = new Rewriter(config)
+      const rewriter = new Rewriter({ csiMethods, localVarPrefix: 'test' })
 
       // eslint-disable-next-line no-unused-expressions
       expect(rewriter.csiMethods()).to.not.be.empty
       expect(rewriter.csiMethods()).to.include('plusOperator')
       expect(rewriter.csiMethods()).to.include('stringSubstring')
       expect(rewriter.csiMethods()).to.include('concat')
+    })
+
+    it('should not throw Error with no RewriterConfig', () => {
+      const rewriter = new Rewriter()
+
+      // eslint-disable-next-line no-unused-expressions
+      expect(rewriter.csiMethods()).to.be.empty
+    })
+
+    it('should not throw Error', () => {
+      const rewriter = new Rewriter([1, 2])
+
+      // eslint-disable-next-line no-unused-expressions
+      expect(rewriter.csiMethods()).to.be.empty
     })
   })
 })

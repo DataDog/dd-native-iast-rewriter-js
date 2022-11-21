@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 const { exit } = require('process')
-const { Rewriter, RewriterConfig } = require('../main')
+const { Rewriter } = require('../main')
 
 const INCLUDED_FILES = /(.*)\.m?js$/
 const ENCODING = 'utf8'
@@ -58,10 +58,7 @@ const red = console.log.bind(this, '\x1b[31m%s\x1b[0m')
 const blue = console.log.bind(this, '\x1b[34m%s\x1b[0m')
 const cyan = console.log.bind(this, '\x1b[35m%s\x1b[0m')
 
-const rewriterConfig = new RewriterConfig()
-rewriterConfig.comments = true
-rewriterConfig.csiMethods = CSI_METHODS
-const rewriter = new Rewriter(rewriterConfig)
+const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS })
 
 const getGlobalMethods = function (methods) {
   const fnSignAndBody = '(res) {return res;}'

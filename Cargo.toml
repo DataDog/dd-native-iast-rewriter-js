@@ -34,5 +34,5 @@ napi-build = "2.0.1"
 lto = false
 
 [features]
-default = []
-wasm = ["instant/wasm-bindgen", "instant/inaccurate"]
+default = ["instant/wasm-bindgen", "instant/inaccurate"]
+napi = []
