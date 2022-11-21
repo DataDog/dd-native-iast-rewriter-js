@@ -9,9 +9,11 @@ on:
   push:
     branches:
       - main
+      - v1.x
   pull_request:
     branches:
       - main
+      - v1.x
 
 jobs:
   test-native:
