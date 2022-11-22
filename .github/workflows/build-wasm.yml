@@ -16,6 +16,16 @@ on:
       - v1.x
 
 jobs:
+  check-versions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - run: node scripts/version-checker.js
+      - run: node scripts/check_licenses.js
+
   test-native:
     strategy:
       matrix:
