@@ -36,3 +36,4 @@ lto = false
 [features]
 default = ["instant/wasm-bindgen", "instant/inaccurate"]
 napi = []
+
