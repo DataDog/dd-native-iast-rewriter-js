@@ -24,6 +24,7 @@ jobs:
         with:
           node-version: '16'
       - run: node scripts/version-checker.js
+      - run: node scripts/check_licenses.js
 
   test-native:
     strategy:
