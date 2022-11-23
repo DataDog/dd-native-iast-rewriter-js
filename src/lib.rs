@@ -4,18 +4,19 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 mod rewriter;
+mod transform;
 mod util;
 mod visitor;
 
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "wasm")]
+#[cfg(not(feature = "napi"))]
 mod lib_wasm;
 
 #[macro_use]
-#[cfg(not(feature = "wasm"))]
+#[cfg(feature = "napi")]
 extern crate napi_derive;
 
-#[cfg(not(feature = "wasm"))]
+#[cfg(feature = "napi")]
 mod lib_napi;

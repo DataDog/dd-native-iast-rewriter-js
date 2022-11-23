@@ -6,15 +6,16 @@
 const { getPrepareStackTrace } = require('./js/stack-trace/')
 const { cacheRewrittenSourceMap } = require('./js/source-map')
 
-class DummyRewriterConfig {}
-
 class DummyRewriter {
   rewrite (code, file) {
     return code
   }
+
+  csiMethods () {
+    return []
+  }
 }
 
-let RewriterConfig = DummyRewriterConfig
 let NativeRewriter
 class CacheRewriter {
   constructor (config) {
@@ -30,14 +31,16 @@ class CacheRewriter {
     cacheRewrittenSourceMap(file, content)
     return content
   }
+
+  csiMethods () {
+    return this.nativeRewriter.csiMethods()
+  }
 }
 
 function getRewriter () {
   try {
     const iastRewriter = require('./wasm/wasm_iast_rewriter')
     NativeRewriter = iastRewriter.Rewriter
-    RewriterConfig = iastRewriter.RewriterConfig
-
     return CacheRewriter
   } catch (e) {
     return DummyRewriter
@@ -46,6 +49,5 @@ function getRewriter () {
 
 module.exports = {
   Rewriter: getRewriter(),
-  RewriterConfig,
   getPrepareStackTrace: getPrepareStackTrace
 }

@@ -10,21 +10,30 @@ use std::collections::HashSet;
 use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use super::transform_status::{Status, TransformStatus};
+use super::{
+    csi_methods::CsiMethods,
+    ident_provider::{DefaultIdentProvider, IdentProvider},
+    no_plus_operator_visitor::NoPlusOperatorVisitor,
+    transform_status::{Status, TransformStatus},
+    visitor_with_context::Ctx,
+};
 
 pub struct BlockTransformVisitor<'a> {
     pub transform_status: &'a mut TransformStatus,
     pub local_var_prefix: String,
+    csi_methods: &'a CsiMethods,
 }
 
 impl BlockTransformVisitor<'_> {
-    pub fn default(
-        transform_status: &mut TransformStatus,
+    pub fn default<'a>(
+        transform_status: &'a mut TransformStatus,
         local_var_prefix: String,
-    ) -> BlockTransformVisitor<'_> {
+        csi_methods: &'a CsiMethods,
+    ) -> BlockTransformVisitor<'a> {
         BlockTransformVisitor {
             transform_status,
             local_var_prefix,
+            csi_methods,
         }
     }
 
@@ -44,11 +53,10 @@ impl BlockTransformVisitor<'_> {
     }
 }
 
-//  new algorithm
 //  Block:
 //  - Find items to instrument (+ or template literals in statements or in while, if... test part)
 //  - Replace found items by (__dd_XXX_1=....)
-//  - Create necessary temporal vars in top of block (improve it in the future forcing deletion)
+//  - Create necessary temporal vars in top of block
 
 impl Visit for BlockTransformVisitor<'_> {}
 
@@ -58,23 +66,47 @@ impl VisitMut for BlockTransformVisitor<'_> {
             return;
         }
 
-        let operation_visitor = &mut OperationTransformVisitor::new(self.local_var_prefix.clone());
-        expr.visit_mut_children_with(operation_visitor);
-
-        if operation_visitor.transform_status.status == Status::Modified {
-            self.mark_modified();
-        }
+        let mut ident_provider = DefaultIdentProvider::new(&self.local_var_prefix);
+        expr.visit_mut_children_with(&mut get_visitor(
+            &mut ident_provider,
+            self.csi_methods,
+            self.csi_methods.plus_operator_is_enabled(),
+        ));
 
         if variables_contains_possible_duplicate(
-            &operation_visitor.variable_decl,
+            &ident_provider.variable_decl,
             &self.local_var_prefix,
         ) {
             return self.cancel_visit("Variable name duplicated");
         }
 
-        insert_var_declaration(&operation_visitor.idents, expr);
+        insert_var_declaration(&ident_provider.idents, expr);
+
+        if ident_provider.transform_status.status == Status::Modified {
+            self.mark_modified();
+        }
 
         expr.visit_mut_children_with(self);
+    }
+}
+
+fn get_visitor<'a>(
+    ident_provider: &'a mut dyn IdentProvider,
+    csi_methods: &'a CsiMethods,
+    plus_operator_is_enabled: bool,
+) -> Box<dyn VisitMut + 'a> {
+    if plus_operator_is_enabled {
+        Box::new(OperationTransformVisitor {
+            ident_provider,
+            csi_methods,
+            ctx: Ctx::root(),
+        })
+    } else {
+        Box::new(NoPlusOperatorVisitor {
+            ident_provider,
+            csi_methods,
+            ctx: Ctx::root(),
+        })
     }
 }
 
@@ -117,8 +149,6 @@ fn get_variable_insertion_index(stmts: &Vec<Stmt>) -> usize {
                 Expr::Lit(Lit::Str(lit)) => {
                     if lit.value.eq("use strict") {
                         return 1;
-                    } else {
-                        return 0;
                     }
                 }
                 _ => return 0,

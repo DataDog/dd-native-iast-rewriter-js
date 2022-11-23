@@ -1,5 +1,5 @@
 Component,Origin,License,Copyright
-require,instant,BSD-3-Clause,Copyright (c) 2019, Sébastien Crozet
+require,instant,BSD-3-Clause,Copyright (c) 2019 Sébastien Crozet
 require,napi,MIT,Copyright (c) 2020-present LongYinan
 require,napi-derive,MIT,Copyright (c) 2020-present LongYinan
 require,swc,Apache-2.0,Copyright 강동윤
@@ -12,6 +12,8 @@ require,fastrand,Apache-2.0 OR MIT, Copyright 2020 Stjepan Glavina
 require,node-gyp-build,MIT,Copyright 2017 Mathias Buus
 require,wasm-bindgen,Apache-2.0 OR MIT,Copyright (c) 2014 Alex Crichton
 dev,napi-build,MIT,Copyright (c) 2020-present LongYinan
+require,serde,MIT OR Apache-2.0,Copyright (c) Erick Tryzelaar and David Tolnay
+require,serde-wasm-bindgen,MIT,Copyright (c) 2019 Cloudflare Inc.
 dev,tempfile,MIT OR Apache-2.0,Copyright (c) 2015 Steven Allen
 dev,spectral,Apache-2.0,Copyright (c) cfrancia
 dev,ctor,Apache-2.0 OR MIT,Copyright (c) 2018 Matt Mastracci

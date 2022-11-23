@@ -12,7 +12,7 @@ mod tests {
 
     use crate::{
         rewriter::{print_js, rewrite_js, RewrittenOutput},
-        tests::get_test_resources_folder,
+        tests::{get_default_csi_methods, get_test_resources_folder},
     };
 
     #[derive(Clone)]
@@ -92,6 +92,7 @@ mod tests {
             String::from(js_file_to_rewrite.to_str().unwrap()),
             true,
             None,
+            &get_default_csi_methods(),
         )
         .map_err(|e| e.to_string())
     }

@@ -30,6 +30,25 @@ pub trait VisitorWithContext {
     fn get_ctx(&self) -> Ctx;
     fn set_ctx(&mut self, ctx: Ctx);
     fn reset_ctx(&mut self);
+
+    fn with_ctx(&mut self, ctx: Ctx) -> WithCtx<'_, Self>
+    where
+        Self: Sized,
+    {
+        let orig_ctx = self.get_ctx();
+        self.set_ctx(ctx);
+        WithCtx {
+            reducer: self,
+            orig_ctx,
+        }
+    }
+
+    fn with_child_ctx(&mut self) -> WithCtx<'_, Self>
+    where
+        Self: Sized,
+    {
+        self.with_ctx(self.get_ctx().child(true))
+    }
 }
 
 pub struct WithCtx<'a, V>
