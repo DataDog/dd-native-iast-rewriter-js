@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 /**
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
@@ -20,36 +22,27 @@ pub trait IdentProvider {
         arguments: &mut Vec<Expr>,
         span: &Span,
     ) -> Ident {
-        self.get_ident_used_in_assignation_with_definitive(
-            operand,
-            assignations,
-            arguments,
-            span,
-            true,
-        )
+        let id = self.get_temporal_ident_used_in_assignation(operand, assignations, span);
+
+        // store ident as argument
+        arguments.push(Expr::Ident(id.clone()));
+
+        id
     }
 
-    fn get_ident_used_in_assignation_with_definitive(
+    fn get_temporal_ident_used_in_assignation(
         &mut self,
         operand: &Expr,
         assignations: &mut Vec<Expr>,
-        arguments: &mut Vec<Expr>,
         span: &Span,
-        definitive: bool,
     ) -> Ident {
         let next_ident = self.next_ident();
         let (assign, id) = self.create_assign_expression(next_ident, operand, span);
 
         // store ident and assignation expression
-        let id_clone = id.clone();
-        if definitive {
-            self.register_ident(id_clone);
-        }
+        self.register_ident(id.clone());
 
         assignations.push(Expr::Assign(assign));
-
-        // store ident as argument
-        arguments.push(Expr::Ident(id.clone()));
 
         id
     }
@@ -89,4 +82,58 @@ pub trait IdentProvider {
     fn set_status(&mut self, status: TransformStatus);
 
     fn get_local_var_prefix(&mut self) -> String;
+
+    fn reset_counter(&mut self);
+
+    fn register_variable(&mut self, variable: &Ident);
+}
+
+pub struct DefaultIdentProvider {
+    pub ident_counter: usize,
+    pub idents: Vec<Ident>,
+    pub variable_decl: HashSet<Ident>,
+    pub transform_status: TransformStatus,
+    pub local_var_prefix: String,
+}
+
+impl DefaultIdentProvider {
+    pub fn new(local_var_prefix: &str) -> Self {
+        DefaultIdentProvider {
+            ident_counter: 0,
+            idents: Vec::new(),
+            variable_decl: HashSet::new(),
+            transform_status: TransformStatus::not_modified(),
+            local_var_prefix: local_var_prefix.to_string(),
+        }
+    }
+}
+
+impl IdentProvider for DefaultIdentProvider {
+    fn register_ident(&mut self, ident: Ident) {
+        if !self.idents.contains(&ident) {
+            self.idents.push(ident);
+        }
+    }
+
+    fn next_ident(&mut self) -> usize {
+        let counter = self.ident_counter;
+        self.ident_counter += 1;
+        counter
+    }
+
+    fn set_status(&mut self, status: TransformStatus) {
+        self.transform_status = status;
+    }
+
+    fn reset_counter(&mut self) {
+        self.ident_counter = 0;
+    }
+
+    fn register_variable(&mut self, variable: &Ident) {
+        self.variable_decl.insert(variable.clone());
+    }
+
+    fn get_local_var_prefix(&mut self) -> String {
+        self.local_var_prefix.clone()
+    }
 }
