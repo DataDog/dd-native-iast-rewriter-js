@@ -258,7 +258,7 @@ mod tests {
 
     #[test]
     fn test_insertion_after_use_strict_with_semicolon() -> Result<(), String> {
-        let original_code = "{\n\n'use strict';
+        let original_code = "{\n\n/*This is a comment*/'use strict';
         const a = 1 + b}"
             .to_string();
         let js_file = "test.js".to_string();

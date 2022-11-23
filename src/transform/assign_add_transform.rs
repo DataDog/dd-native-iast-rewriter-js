@@ -5,12 +5,12 @@
 use swc::ecmascript::ast::*;
 use swc_ecma_visit::VisitMutWith;
 
-use crate::visitor::assign_add_transform::AssignOp::Assign;
-
-use super::{
-    binary_add_transform::BinaryAddTransform,
-    operation_transform_visitor::OperationTransformVisitor,
+use crate::{
+    transform::assign_add_transform::AssignOp::Assign,
+    visitor::operation_transform_visitor::OperationTransformVisitor,
 };
+
+use super::binary_add_transform::BinaryAddTransform;
 
 pub struct AssignAddTransform {}
 
@@ -44,7 +44,11 @@ impl AssignAddTransform {
                     span,
                     op: Assign,
                     left: assign.left.clone(),
-                    right: Box::new(BinaryAddTransform::to_dd_binary_expr(&binary, opv)),
+                    right: Box::new(BinaryAddTransform::to_dd_binary_expr(
+                        &binary,
+                        opv.csi_methods,
+                        opv.ident_provider,
+                    )),
                 }
             }
         }
