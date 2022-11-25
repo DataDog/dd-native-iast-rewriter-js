@@ -200,6 +200,8 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
     })
   })
 
+  const methodAllowingLiterals = ['concat', 'replace']
+
   itEach(
     '${value}', // eslint-disable-line no-template-curly-in-string
     [
@@ -231,10 +233,23 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
       const argsWithComma = args ? `, ${args}` : ''
 
       describe(value, () => {
-        it(`does not modify "literal".${value}`, () => {
-          const js = `'a'.${method}(${args});`
-          rewriteAndExpectNoTransformation(js)
-        })
+        if (methodAllowingLiterals.indexOf(method) !== -1) {
+          it(`does modify "literal".${value}`, () => {
+            const builder = fn()
+            const js = builder.build(`return 'a'.${method}(${args});`)
+            rewriteAndExpectAndExpectEval(
+              js,
+              builder.build(`let __datadog_test_0, __datadog_test_1;
+        return (__datadog_test_0 = 'a', __datadog_test_1 = __datadog_test_0.${method}, _ddiast.${method}(\
+__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
+            )
+          })
+        } else {
+          it(`does not modify "literal".${value}`, () => {
+            const js = `'a'.${method}(${args});`
+            rewriteAndExpectNoTransformation(js)
+          })
+        }
 
         it(`does modify ident.${value}`, () => {
           const builder = fn().args('heLLo')

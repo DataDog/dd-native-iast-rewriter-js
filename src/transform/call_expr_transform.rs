@@ -33,7 +33,20 @@ impl CallExprTransform {
         match callee {
             Callee::Expr(expr) => match *expr {
                 Expr::Member(member) => match (*member.obj, &member.prop) {
-                    // replace ident and call members but exclude literal "".substring() calls
+                    // replace ident and call members, exclude literal "".substring() calls but do not exclude "literal".concat(a, b, c)
+                    (Expr::Lit(literal), MemberProp::Ident(ident)) => {
+                        if csi_methods.method_allows_literal_callers(&ident.sym) {
+                            replace_call_expr_if_csi_method(
+                                &Expr::Lit(literal),
+                                ident,
+                                call,
+                                csi_methods,
+                                ident_provider,
+                            )
+                        } else {
+                            None
+                        }
+                    }
                     (Expr::Ident(obj), MemberProp::Ident(ident)) => {
                         replace_call_expr_if_csi_method(
                             &Expr::Ident(obj),
