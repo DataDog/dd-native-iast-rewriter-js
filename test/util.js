@@ -119,6 +119,9 @@ class FnBuilder {
     if (body) {
       this.body(body)
     }
+    if (!this.argsValue) {
+      this.argsValue = []
+    }
 
     return this.tmpl
       .replace('__ARGS_SIGN__', alphabet.slice(0, this.argsValue.length).join(', '))

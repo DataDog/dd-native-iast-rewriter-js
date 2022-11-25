@@ -22,6 +22,7 @@ impl CsiMethod {
 pub struct CsiMethods {
     pub methods: Vec<CsiMethod>,
     pub plus_operator: Option<CsiMethod>,
+    pub method_with_literal_callers: Vec<&'static str>,
 }
 
 impl CsiMethods {
@@ -33,6 +34,14 @@ impl CsiMethods {
         CsiMethods {
             methods: csi_methods.to_vec(),
             plus_operator: plus_operator.cloned(),
+            method_with_literal_callers: vec![
+                "concat",
+                "replace",
+                "replaceAll",
+                "padEnd",
+                "padStart",
+                "repeat",
+            ],
         }
     }
 
@@ -40,6 +49,7 @@ impl CsiMethods {
         CsiMethods {
             methods: vec![],
             plus_operator: None,
+            method_with_literal_callers: vec![],
         }
     }
 
@@ -58,5 +68,9 @@ impl CsiMethods {
             Some(csi_method) => csi_method.dst.clone(),
             _ => DD_PLUS_OPERATOR.to_string(),
         }
+    }
+
+    pub fn method_allows_literal_callers(&self, method_name: &str) -> bool {
+        self.method_with_literal_callers.contains(&method_name)
     }
 }
