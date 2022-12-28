@@ -7,10 +7,12 @@
 
 const fs = require('fs')
 const path = require('path')
+const os = require('os')
 const proxyquire = require('proxyquire')
 
 const { getPrepareStackTrace } = require('../js/stack-trace')
 const { getSourcePathAndLineFromSourceMaps } = require('../js/source-map')
+const { expect } = require('chai')
 
 class CallSiteMock {
   constructor (fileName, lineNumber, columnNumber) {
@@ -147,5 +149,57 @@ describe('getFilenameFromSourceMap cache', () => {
     expect(sourceMapSpy).to.have.been.callCount(101)
     getSourcePathAndLineFromSourceMaps('/source/file-0.js', 5)
     expect(sourceMapSpy).to.have.been.callCount(102)
+  })
+})
+
+describe('V8 filtered prepareStackTrace', () => {
+  it('should not call getSourcePathAndLineFromSourceMaps if filter function is provided', () => {
+    function isValidFilename (filename) {
+      return filename && filename.endsWith('stack_trace.spec.js')
+    }
+
+    const getSourcePathAndLineFromSourceMapsSpy = sinon.spy((path, line, column) => {
+      return { path, line, column }
+    })
+    const { getPrepareStackTrace } = proxyquire('../js/stack-trace', {
+      '../source-map': {
+        getSourcePathAndLineFromSourceMaps: getSourcePathAndLineFromSourceMapsSpy
+      }
+    })
+
+    const original = Error.prepareStackTrace
+    Error.prepareStackTrace = getPrepareStackTrace(original, isValidFilename)
+
+    // eslint-disable-next-line no-unused-expressions
+    new Error().stack
+
+    Error.prepareStackTrace = original
+
+    // eslint-disable-next-line no-unused-expressions
+    expect(getSourcePathAndLineFromSourceMapsSpy).to.have.been.calledOnce
+  })
+
+  it('should call getSourcePathAndLineFromSourceMaps if filter function is provided', () => {
+    function isValidFilename (filename) {
+      return true
+    }
+
+    const getSourcePathAndLineFromSourceMapsSpy = sinon.spy((path, line, column) => {
+      return { path, line, column }
+    })
+    const { getPrepareStackTrace } = proxyquire('../js/stack-trace', {
+      '../source-map': {
+        getSourcePathAndLineFromSourceMaps: getSourcePathAndLineFromSourceMapsSpy
+      }
+    })
+
+    const original = Error.prepareStackTrace
+    Error.prepareStackTrace = getPrepareStackTrace(original, isValidFilename)
+
+    const stackLines = new Error().stack.split(os.EOL).length - 1
+
+    Error.prepareStackTrace = original
+
+    expect(getSourcePathAndLineFromSourceMapsSpy).to.have.been.called.callCount(stackLines)
   })
 })

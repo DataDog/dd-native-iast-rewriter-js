@@ -3,12 +3,13 @@ const { getSourcePathAndLineFromSourceMaps } = require('../source-map')
 const kSymbolPrepareStackTrace = Symbol('_ddiastPrepareStackTrace')
 
 class WrappedCallSite {
-  constructor (callSite) {
-    const { path, line, column } = getSourcePathAndLineFromSourceMaps(
-      callSite.getFileName(),
-      callSite.getLineNumber(),
-      callSite.getColumnNumber()
-    )
+  constructor (callSite, isValidFilename) {
+    let path = callSite.getFileName()
+    let line = callSite.getLineNumber()
+    let column = callSite.getColumnNumber()
+    if (isValidFilename(path)) {
+      ({ path, line, column } = getSourcePathAndLineFromSourceMaps(path, line, column))
+    }
     this.source = path
     this.lineNumber = line
     this.columnNumber = column
@@ -72,14 +73,20 @@ class WrappedCallSite {
   }
 }
 
-function getPrepareStackTrace (originalPrepareStackTrace) {
+function isValidFilenameDefault (fileName) {
+  return true
+}
+
+function getPrepareStackTrace (originalPrepareStackTrace, isValidFilename) {
   if (originalPrepareStackTrace && originalPrepareStackTrace[kSymbolPrepareStackTrace]) {
     return originalPrepareStackTrace
   }
 
+  isValidFilename = isValidFilename ?? isValidFilenameDefault
+
   const wrappedPrepareStackTrace = (error, structuredStackTrace) => {
     if (originalPrepareStackTrace) {
-      const parsedCallSites = structuredStackTrace.map((callSite) => new WrappedCallSite(callSite))
+      const parsedCallSites = structuredStackTrace.map((callSite) => new WrappedCallSite(callSite, isValidFilename))
       return originalPrepareStackTrace(error, parsedCallSites)
     }
     const stackLines = error.stack.split('\n')
@@ -115,7 +122,12 @@ function getPrepareStackTrace (originalPrepareStackTrace) {
             return stackFrame
           }
         }
-        const { path, line, column } = getSourcePathAndLineFromSourceMaps(filename, originalLine, originalColumn)
+        let path = filename
+        let line = originalLine
+        let column = originalColumn
+        if (isValidFilename(filename)) {
+          ({ path, line, column } = getSourcePathAndLineFromSourceMaps(filename, originalLine, originalColumn))
+        }
         if (path !== filename || line !== originalLine || column !== originalColumn) {
           return stackFrame.replace(`${filename}:${originalLine}:${originalColumn}`, `${path}:${line}:${column}`)
         }
