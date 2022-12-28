@@ -10,10 +10,12 @@ on:
     branches:
       - main
       - v1.x
+      - v1.0.x
   pull_request:
     branches:
       - main
       - v1.x
+      - v1.0.x
 
 jobs:
   test-native:
