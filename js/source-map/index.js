@@ -4,8 +4,6 @@ const fs = require('fs')
 const { SourceMap } = require('./node_source_map')
 const SOURCE_MAP_LINE_START = '//# sourceMappingURL='
 const SOURCE_MAP_INLINE_LINE_START = '//# sourceMappingURL=data:application/json;base64,'
-const CACHE_MAX_SIZE = 100
-const pathSourceMapsCache = new Map()
 const rewrittenSourceMapsCache = new Map()
 
 function generateSourceMapFromFileContent (fileContent, filePath) {
@@ -32,19 +30,6 @@ function cacheRewrittenSourceMap (filename, fileContent) {
   rewrittenSourceMapsCache.set(filename, sm)
 }
 
-function readAndCacheSourceMap (filename, filePath) {
-  const fileContent = fs.readFileSync(filename).toString()
-  const sm = generateSourceMapFromFileContent(fileContent, filePath)
-  if (sm) {
-    if (pathSourceMapsCache.size >= CACHE_MAX_SIZE) {
-      pathSourceMapsCache.clear()
-    }
-    pathSourceMapsCache.set(filename, sm)
-    return sm
-  }
-  return null
-}
-
 function getFilePathFromName (filename) {
   const filenameParts = filename.split(path.sep)
   filenameParts.pop()
@@ -53,12 +38,9 @@ function getFilePathFromName (filename) {
 
 function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
   try {
-    let sourceMap = rewrittenSourceMapsCache.get(filename) || pathSourceMapsCache.get(filename)
-    const filePath = getFilePathFromName(filename)
-    if (!sourceMap) {
-      sourceMap = readAndCacheSourceMap(filename, filePath)
-    }
+    const sourceMap = rewrittenSourceMapsCache.get(filename)
     if (sourceMap) {
+      const filePath = getFilePathFromName(filename)
       const { originalSource, originalLine, originalColumn } = sourceMap.findEntry(line - 1, column - 1)
       return {
         path: path.join(filePath, originalSource),
