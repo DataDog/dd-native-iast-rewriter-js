@@ -7,12 +7,10 @@
 
 const fs = require('fs')
 const path = require('path')
-const os = require('os')
 const proxyquire = require('proxyquire')
 
 const { getPrepareStackTrace } = require('../js/stack-trace')
 const { getSourcePathAndLineFromSourceMaps } = require('../js/source-map')
-const { expect } = require('chai')
 
 class CallSiteMock {
   constructor (fileName, lineNumber, columnNumber) {
@@ -196,7 +194,7 @@ describe('V8 filtered prepareStackTrace', () => {
     const original = Error.prepareStackTrace
     Error.prepareStackTrace = getPrepareStackTrace(original, isValidFilename)
 
-    const stackLines = new Error().stack.split(os.EOL).length - 1
+    const stackLines = new Error().stack.split('\n').length - 1
 
     Error.prepareStackTrace = original
 
