@@ -1,9 +1,8 @@
-use std::collections::HashSet;
-
 /**
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
+use std::collections::HashSet;
 use swc::{
     atoms::JsWord,
     common::{Span, DUMMY_SP},
@@ -12,7 +11,12 @@ use swc_ecma_visit::swc_ecma_ast::{
     AssignExpr, AssignOp, BindingIdent, Expr, Ident, Pat, PatOrExpr,
 };
 
-use super::{transform_status::TransformStatus, visitor_util::get_dd_local_variable_name};
+use crate::{
+    telemetry::Telemetry,
+    transform::transform_status::{Status, TransformStatus},
+};
+
+use super::visitor_util::get_dd_local_variable_name;
 
 pub trait IdentProvider {
     fn get_ident_used_in_assignation(
@@ -79,7 +83,7 @@ pub trait IdentProvider {
 
     fn next_ident(&mut self) -> usize;
 
-    fn set_status(&mut self, status: TransformStatus);
+    fn update_status(&mut self, status: Status, expr: &Expr);
 
     fn get_local_var_prefix(&mut self) -> String;
 
@@ -88,27 +92,30 @@ pub trait IdentProvider {
     fn register_variable(&mut self, variable: &Ident);
 }
 
-pub struct DefaultIdentProvider {
+pub struct DefaultIdentProvider<'a> {
     pub ident_counter: usize,
     pub idents: Vec<Ident>,
     pub variable_decl: HashSet<Ident>,
-    pub transform_status: TransformStatus,
+    pub transform_status: &'a mut TransformStatus,
     pub local_var_prefix: String,
 }
 
-impl DefaultIdentProvider {
-    pub fn new(local_var_prefix: &str) -> Self {
+impl<'a> DefaultIdentProvider<'_> {
+    pub fn new(
+        local_var_prefix: &str,
+        transform_status: &'a mut TransformStatus,
+    ) -> DefaultIdentProvider<'a> {
         DefaultIdentProvider {
             ident_counter: 0,
             idents: Vec::new(),
             variable_decl: HashSet::new(),
-            transform_status: TransformStatus::not_modified(),
+            transform_status,
             local_var_prefix: local_var_prefix.to_string(),
         }
     }
 }
 
-impl IdentProvider for DefaultIdentProvider {
+impl IdentProvider for DefaultIdentProvider<'_> {
     fn register_ident(&mut self, ident: Ident) {
         if !self.idents.contains(&ident) {
             self.idents.push(ident);
@@ -121,8 +128,11 @@ impl IdentProvider for DefaultIdentProvider {
         counter
     }
 
-    fn set_status(&mut self, status: TransformStatus) {
-        self.transform_status = status;
+    fn update_status(&mut self, status: Status, expr: &Expr) {
+        self.transform_status.status = status;
+        if self.transform_status.status == Status::Modified {
+            self.transform_status.telemetry.inc(expr);
+        }
     }
 
     fn reset_counter(&mut self) {

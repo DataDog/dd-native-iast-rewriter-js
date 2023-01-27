@@ -7,7 +7,7 @@ use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use crate::transform::{
     assign_add_transform::AssignAddTransform, binary_add_transform::BinaryAddTransform,
-    template_transform::TemplateTransform,
+    template_transform::TemplateTransform, transform_status::Status,
 };
 
 use super::{
@@ -39,6 +39,12 @@ impl VisitorWithContext for OperationTransformVisitor<'_> {
     }
 }
 
+impl OperationTransformVisitor<'_> {
+    fn update_status(&mut self, status: Status, expr: &Expr) {
+        self.ident_provider.update_status(status, expr)
+    }
+}
+
 impl Visit for OperationTransformVisitor<'_> {}
 
 impl VisitMut for OperationTransformVisitor<'_> {
@@ -50,11 +56,13 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 binary.visit_mut_children_with(opv_with_child_ctx);
                 if binary.op == BinaryOp::Add {
                     expr.map_with_mut(|bin| {
-                        BinaryAddTransform::to_dd_binary_expr(
+                        let result = BinaryAddTransform::to_dd_binary_expr(
                             &bin,
                             opv_with_child_ctx.csi_methods,
                             opv_with_child_ctx.ident_provider,
-                        )
+                        );
+                        opv_with_child_ctx.update_status(result.status, &bin);
+                        result.expr
                     });
                 }
             }
@@ -63,7 +71,10 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 assign.visit_mut_children_with(opv_with_child_ctx);
                 if assign.op == AssignOp::AddAssign {
                     assign.map_with_mut(|mut assign| {
-                        AssignAddTransform::to_dd_assign_expr(&mut assign, opv_with_child_ctx)
+                        let result =
+                            AssignAddTransform::to_dd_assign_expr(&mut assign, opv_with_child_ctx);
+                        opv_with_child_ctx.update_status(result.status, &Expr::Assign(assign));
+                        result.expr
                     });
                 }
             }
@@ -73,24 +84,28 @@ impl VisitMut for OperationTransformVisitor<'_> {
                     let mut binary = TemplateTransform::get_binary_from_tpl(tpl);
                     let opv_with_child_ctx = &mut *self.with_child_ctx();
                     binary.visit_mut_children_with(opv_with_child_ctx);
-                    expr.map_with_mut(|_| {
-                        BinaryAddTransform::to_dd_binary_expr(
+                    expr.map_with_mut(|tpl| {
+                        let result = BinaryAddTransform::to_dd_binary_expr(
                             &binary,
                             opv_with_child_ctx.csi_methods,
                             opv_with_child_ctx.ident_provider,
-                        )
+                        );
+                        opv_with_child_ctx.update_status(result.status, &tpl);
+                        result.expr
                     });
                 }
             }
             Expr::Call(call) => {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 call.visit_mut_children_with(opv_with_child_ctx);
-                if let Some(method) = NoPlusOperatorVisitor::get_dd_call_expr(
+                let result = NoPlusOperatorVisitor::get_dd_call_expr(
                     call,
                     opv_with_child_ctx.csi_methods,
                     opv_with_child_ctx.ident_provider,
-                ) {
-                    expr.map_with_mut(|_| method);
+                );
+                if result.is_modified() {
+                    expr.map_with_mut(|_| result.expr);
+                    opv_with_child_ctx.update_status(result.status, expr);
                 }
             }
             _ => {

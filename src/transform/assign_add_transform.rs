@@ -10,7 +10,7 @@ use crate::{
     visitor::operation_transform_visitor::OperationTransformVisitor,
 };
 
-use super::binary_add_transform::BinaryAddTransform;
+use super::{binary_add_transform::BinaryAddTransform, transform_status::TransformResult};
 
 pub struct AssignAddTransform {}
 
@@ -18,19 +18,19 @@ impl AssignAddTransform {
     pub fn to_dd_assign_expr(
         assign: &mut AssignExpr,
         opv: &mut OperationTransformVisitor,
-    ) -> AssignExpr {
+    ) -> TransformResult<AssignExpr> {
         let span = assign.span;
         let op = assign.op;
 
         match &assign.left {
             PatOrExpr::Pat(_) => {
                 assign.visit_mut_children_with(opv);
-                AssignExpr {
+                TransformResult::not_modified(AssignExpr {
                     span,
                     op,
                     left: assign.left.clone(),
                     right: assign.right.clone(),
-                }
+                })
             }
             PatOrExpr::Expr(left_expr) => {
                 let binary = Expr::Bin(BinExpr {
@@ -40,16 +40,19 @@ impl AssignAddTransform {
                     right: assign.right.clone(),
                 });
 
-                AssignExpr {
+                let result = BinaryAddTransform::to_dd_binary_expr(
+                    &binary,
+                    opv.csi_methods,
+                    opv.ident_provider,
+                );
+
+                let new_assign = AssignExpr {
                     span,
                     op: Assign,
                     left: assign.left.clone(),
-                    right: Box::new(BinaryAddTransform::to_dd_binary_expr(
-                        &binary,
-                        opv.csi_methods,
-                        opv.ident_provider,
-                    )),
-                }
+                    right: Box::new(result.expr),
+                };
+                TransformResult::modified(new_assign)
             }
         }
     }

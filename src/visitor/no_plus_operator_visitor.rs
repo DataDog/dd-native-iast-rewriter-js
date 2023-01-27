@@ -5,7 +5,7 @@
 use swc::{common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use crate::transform::call_expr_transform::CallExprTransform;
+use crate::transform::{call_expr_transform::CallExprTransform, transform_status::TransformResult};
 
 use super::{
     csi_methods::CsiMethods,
@@ -24,11 +24,15 @@ impl<'a> NoPlusOperatorVisitor<'a> {
         call: &mut CallExpr,
         csi_methods: &CsiMethods,
         ident_provider: &mut dyn IdentProvider,
-    ) -> Option<Expr> {
+    ) -> TransformResult<Expr> {
         if call.callee.is_expr() {
-            return CallExprTransform::to_dd_call_expr(call, csi_methods, ident_provider);
+            if let Some(expr) =
+                CallExprTransform::to_dd_call_expr(call, csi_methods, ident_provider)
+            {
+                return TransformResult::modified(expr);
+            }
         }
-        None
+        TransformResult::not_modified(Expr::Call(call.clone()))
     }
 }
 
@@ -56,12 +60,16 @@ impl VisitMut for NoPlusOperatorVisitor<'_> {
             Expr::Call(call) => {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 call.visit_mut_children_with(opv_with_child_ctx);
-                if let Some(method) = NoPlusOperatorVisitor::get_dd_call_expr(
+                let result = NoPlusOperatorVisitor::get_dd_call_expr(
                     call,
                     opv_with_child_ctx.csi_methods,
                     opv_with_child_ctx.ident_provider,
-                ) {
-                    expr.map_with_mut(|_| method);
+                );
+                if result.is_modified() {
+                    expr.map_with_mut(|_| result.expr);
+                    opv_with_child_ctx
+                        .ident_provider
+                        .update_status(result.status, expr);
                 }
             }
             _ => expr.visit_mut_children_with(self),

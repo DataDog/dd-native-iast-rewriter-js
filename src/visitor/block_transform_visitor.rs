@@ -2,9 +2,12 @@
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
-use crate::visitor::{
-    operation_transform_visitor::OperationTransformVisitor,
-    visitor_util::get_dd_local_variable_prefix,
+use crate::{
+    transform::transform_status::{Status, TransformStatus},
+    visitor::{
+        operation_transform_visitor::OperationTransformVisitor,
+        visitor_util::get_dd_local_variable_prefix,
+    },
 };
 use std::collections::HashSet;
 use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
@@ -14,7 +17,6 @@ use super::{
     csi_methods::CsiMethods,
     ident_provider::{DefaultIdentProvider, IdentProvider},
     no_plus_operator_visitor::NoPlusOperatorVisitor,
-    transform_status::{Status, TransformStatus},
     visitor_with_context::Ctx,
 };
 
@@ -45,12 +47,6 @@ impl BlockTransformVisitor<'_> {
         self.transform_status.status = Status::Cancelled;
         self.transform_status.msg = reason.to_string();
     }
-
-    fn mark_modified(&mut self) {
-        if !self.visit_is_cancelled() {
-            self.transform_status.status = Status::Modified;
-        }
-    }
 }
 
 //  Block:
@@ -66,24 +62,17 @@ impl VisitMut for BlockTransformVisitor<'_> {
             return;
         }
 
-        let mut ident_provider = DefaultIdentProvider::new(&self.local_var_prefix);
-        expr.visit_mut_children_with(&mut get_visitor(
-            &mut ident_provider,
-            self.csi_methods,
-            self.csi_methods.plus_operator_is_enabled(),
-        ));
+        let mut ident_provider =
+            DefaultIdentProvider::new(&self.local_var_prefix, self.transform_status);
+        expr.visit_mut_children_with(&mut get_visitor(&mut ident_provider, self.csi_methods));
 
         if variables_contains_possible_duplicate(
             &ident_provider.variable_decl,
             &self.local_var_prefix,
         ) {
             return self.cancel_visit("Variable name duplicated");
-        }
-
-        insert_var_declaration(&ident_provider.idents, expr);
-
-        if ident_provider.transform_status.status == Status::Modified {
-            self.mark_modified();
+        } else {
+            insert_variable_declaration(&ident_provider.idents, expr);
         }
 
         expr.visit_mut_children_with(self);
@@ -93,9 +82,8 @@ impl VisitMut for BlockTransformVisitor<'_> {
 fn get_visitor<'a>(
     ident_provider: &'a mut dyn IdentProvider,
     csi_methods: &'a CsiMethods,
-    plus_operator_is_enabled: bool,
 ) -> Box<dyn VisitMut + 'a> {
-    if plus_operator_is_enabled {
+    if csi_methods.plus_operator_is_enabled() {
         Box::new(OperationTransformVisitor {
             ident_provider,
             csi_methods,
@@ -115,7 +103,7 @@ fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>, prefix:
     variable_decl.iter().any(|var| var.sym.starts_with(&prefix))
 }
 
-fn insert_var_declaration(ident_expressions: &Vec<Ident>, expr: &mut BlockStmt) {
+fn insert_variable_declaration(ident_expressions: &Vec<Ident>, expr: &mut BlockStmt) {
     if !ident_expressions.is_empty() {
         let span = expr.span;
         let mut vec = Vec::new();

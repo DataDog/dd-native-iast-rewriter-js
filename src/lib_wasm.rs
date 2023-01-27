@@ -5,7 +5,8 @@
 extern crate base64;
 
 use crate::{
-    rewriter::{print_js, rewrite_js},
+    rewriter::{print_js, rewrite_js, Config},
+    telemetry::TelemetryVerbosity,
     visitor::{self, csi_methods::CsiMethods},
 };
 use serde::Deserialize;
@@ -26,6 +27,7 @@ pub struct RewriterConfig {
     pub comments: Option<bool>,
     pub local_var_prefix: Option<String>,
     pub csi_methods: Option<Vec<CsiMethod>>,
+    pub verbosity: Option<TelemetryVerbosity>,
 }
 
 impl RewriterConfig {
@@ -47,6 +49,15 @@ impl RewriterConfig {
             None => CsiMethods::empty(),
         }
     }
+
+    fn to_config(&self) -> Config {
+        Config {
+            print_comments: self.comments.unwrap_or(false),
+            local_var_prefix: self.local_var_prefix.clone(),
+            csi_methods: self.get_csi_methods(),
+            verbosity: self.verbosity.clone(),
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -64,6 +75,7 @@ impl Rewriter {
             comments: Some(false),
             local_var_prefix: None,
             csi_methods: None,
+            verbosity: Some(TelemetryVerbosity::Information),
         });
         Self {
             config: rewriter_config,
@@ -71,16 +83,10 @@ impl Rewriter {
     }
 
     #[wasm_bindgen]
-    pub fn rewrite(&self, code: String, file: String) -> anyhow::Result<String, JsError> {
-        rewrite_js(
-            code,
-            file,
-            self.config.comments.unwrap_or(false),
-            self.config.local_var_prefix.clone(),
-            &self.config.get_csi_methods(),
-        )
-        .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))
-        .map_err(|e| JsError::new(&format!("{}", e)))
+    pub fn rewrite(&mut self, code: String, file: String) -> anyhow::Result<String, JsError> {
+        rewrite_js(code, file, self.config.to_config())
+            .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))
+            .map_err(|e| JsError::new(&format!("{}", e)))
     }
 
     #[wasm_bindgen(js_name = csiMethods)]

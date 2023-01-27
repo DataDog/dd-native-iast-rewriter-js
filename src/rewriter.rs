@@ -3,12 +3,10 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use crate::{
+    telemetry::TelemetryVerbosity,
+    transform::transform_status::{Status, TransformStatus},
     util::{file_name, parse_source_map, rnd_string},
-    visitor::{
-        block_transform_visitor::BlockTransformVisitor,
-        csi_methods::CsiMethods,
-        transform_status::{Status, TransformStatus},
-    },
+    visitor::{block_transform_visitor::BlockTransformVisitor, csi_methods::CsiMethods},
 };
 use anyhow::{Error, Result};
 use std::{
@@ -43,33 +41,27 @@ pub struct RewrittenOutput {
     pub original_map: Option<SourceMap>,
 }
 
-pub fn rewrite_js(
-    code: String,
-    file: String,
-    print_comments: bool,
-    local_var_prefix: Option<String>,
-    csi_methods: &CsiMethods,
-) -> Result<RewrittenOutput> {
+pub struct Config {
+    pub print_comments: bool,
+    pub local_var_prefix: Option<String>,
+    pub csi_methods: CsiMethods,
+    pub verbosity: Option<TelemetryVerbosity>,
+}
+
+pub fn rewrite_js(code: String, file: String, config: Config) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
-        let program = parse_js(&code, file.as_str(), handler, compiler.borrow())?;
+        let file_str = file.as_str();
+        let program = parse_js(&code, file_str, handler, compiler.borrow())?;
 
         // extract sourcemap before printing otherwise comments are consumed
         // and looks like it is not possible to read them after compiler.print() invocation
         let original_map = extract_source_map(
-            Path::new(file.as_str()).parent().unwrap(),
+            Path::new(file_str).parent().unwrap(),
             &compiler.comments().clone(),
         );
 
-        let result = transform_js(
-            program,
-            &code,
-            file.as_str(),
-            print_comments,
-            local_var_prefix,
-            csi_methods,
-            compiler.borrow(),
-        );
+        let result = transform_js(program, &code, file_str, config, compiler.borrow());
 
         result.map(|transformed| RewrittenOutput {
             code: transformed.code,
@@ -142,16 +134,14 @@ fn transform_js(
     mut program: Program,
     code: &str,
     file: &str,
-    comments: bool,
-    local_var_prefix: Option<String>,
-    csi_methods: &CsiMethods,
+    config: Config,
     compiler: &Compiler,
 ) -> Result<TransformOutput, Error> {
-    let mut transform_status = TransformStatus::not_modified();
+    let mut transform_status = TransformStatus::not_modified(config.verbosity);
     let mut block_transform_visitor = BlockTransformVisitor::default(
         &mut transform_status,
-        local_var_prefix.unwrap_or_else(|| rnd_string(6)),
-        csi_methods,
+        config.local_var_prefix.unwrap_or_else(|| rnd_string(6)),
+        &config.csi_methods,
     );
     program.visit_mut_with(&mut block_transform_visitor);
 
@@ -166,7 +156,9 @@ fn transform_js(
             &Default::default(),
             None,
             false,
-            comments.then_some(&compiler.comments().clone() as &dyn Comments),
+            config
+                .print_comments
+                .then_some(&compiler.comments().clone() as &dyn Comments),
             true,
             false,
         ),

@@ -12,9 +12,7 @@ use crate::{
         function_prototype_transform::FunctionPrototypeTransform,
         operand_handler::{DefaultOperandHandler, OperandHandler},
     },
-    visitor::{
-        csi_methods::CsiMethods, ident_provider::IdentProvider, transform_status::TransformStatus,
-    },
+    visitor::{csi_methods::CsiMethods, ident_provider::IdentProvider},
 };
 
 use crate::visitor::visitor_util::get_dd_paren_expr;
@@ -165,7 +163,7 @@ fn replace_call_expr_if_csi_method_with_member(
         let mut arguments = Vec::new();
         let span = call.span;
 
-        // replace original call expression with an parent expression splitting every component and finally invoking .call
+        // replace original call expression with a parent expression splitting every component and finally invoking .call
         //  a) a.substring() -> __datadog_token_$i = a, __datadog_token_$i2 = __datadog_token_$i.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
         //  b) String.prototype.substring.[call|apply](a) -> __datadog_token_$i = a, __datadog_token_$i2 = String.prototype.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
         let mut call_replacement = call.clone();
@@ -232,8 +230,6 @@ fn replace_call_expr_if_csi_method_with_member(
                 expr: Box::new(Expr::Ident(ident_replacement)),
             },
         );
-
-        ident_provider.set_status(TransformStatus::modified());
 
         return Some(get_dd_paren_expr(
             &Expr::Call(call_replacement),
