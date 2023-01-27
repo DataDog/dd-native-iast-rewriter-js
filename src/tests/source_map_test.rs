@@ -90,7 +90,7 @@ mod tests {
         rewrite_js(
             original_code,
             String::from(js_file_to_rewrite.to_str().unwrap()),
-            get_default_config(true),
+            &get_default_config(true),
         )
         .map_err(|e| e.to_string())
     }

@@ -3,6 +3,7 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use crate::{
+    rewriter::Config,
     transform::transform_status::{Status, TransformStatus},
     visitor::{
         operation_transform_visitor::OperationTransformVisitor,
@@ -22,20 +23,17 @@ use super::{
 
 pub struct BlockTransformVisitor<'a> {
     pub transform_status: &'a mut TransformStatus,
-    pub local_var_prefix: String,
-    csi_methods: &'a CsiMethods,
+    pub config: &'a Config,
 }
 
 impl BlockTransformVisitor<'_> {
     pub fn default<'a>(
         transform_status: &'a mut TransformStatus,
-        local_var_prefix: String,
-        csi_methods: &'a CsiMethods,
+        config: &'a Config,
     ) -> BlockTransformVisitor<'a> {
         BlockTransformVisitor {
             transform_status,
-            local_var_prefix,
-            csi_methods,
+            config,
         }
     }
 
@@ -45,7 +43,7 @@ impl BlockTransformVisitor<'_> {
 
     fn cancel_visit(&mut self, reason: &str) {
         self.transform_status.status = Status::Cancelled;
-        self.transform_status.msg = reason.to_string();
+        self.transform_status.msg = Some(reason.to_string());
     }
 }
 
@@ -63,12 +61,15 @@ impl VisitMut for BlockTransformVisitor<'_> {
         }
 
         let mut ident_provider =
-            DefaultIdentProvider::new(&self.local_var_prefix, self.transform_status);
-        expr.visit_mut_children_with(&mut get_visitor(&mut ident_provider, self.csi_methods));
+            DefaultIdentProvider::new(&self.config.local_var_prefix, self.transform_status);
+        expr.visit_mut_children_with(&mut get_visitor(
+            &mut ident_provider,
+            &self.config.csi_methods,
+        ));
 
         if variables_contains_possible_duplicate(
             &ident_provider.variable_decl,
-            &self.local_var_prefix,
+            &self.config.local_var_prefix,
         ) {
             return self.cancel_visit("Variable name duplicated");
         } else {

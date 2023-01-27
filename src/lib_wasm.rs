@@ -7,6 +7,7 @@ extern crate base64;
 use crate::{
     rewriter::{print_js, rewrite_js, Config},
     telemetry::TelemetryVerbosity,
+    util::rnd_string,
     visitor::{self, csi_methods::CsiMethods},
 };
 use serde::Deserialize;
@@ -52,17 +53,24 @@ impl RewriterConfig {
 
     fn to_config(&self) -> Config {
         Config {
+            chain_source_map: self.chain_source_map.unwrap_or(false),
             print_comments: self.comments.unwrap_or(false),
-            local_var_prefix: self.local_var_prefix.clone(),
+            local_var_prefix: self
+                .local_var_prefix
+                .clone()
+                .unwrap_or_else(|| rnd_string(6)),
             csi_methods: self.get_csi_methods(),
-            verbosity: self.verbosity.clone(),
+            verbosity: self
+                .verbosity
+                .clone()
+                .unwrap_or(TelemetryVerbosity::Information),
         }
     }
 }
 
 #[wasm_bindgen]
 pub struct Rewriter {
-    config: RewriterConfig,
+    config: Config,
 }
 
 #[wasm_bindgen]
@@ -78,20 +86,20 @@ impl Rewriter {
             verbosity: Some(TelemetryVerbosity::Information),
         });
         Self {
-            config: rewriter_config,
+            config: rewriter_config.to_config(),
         }
     }
 
     #[wasm_bindgen]
     pub fn rewrite(&mut self, code: String, file: String) -> anyhow::Result<String, JsError> {
-        rewrite_js(code, file, self.config.to_config())
-            .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))
+        rewrite_js(code, file, &self.config)
+            .map(|result| print_js(result, self.config.chain_source_map))
             .map_err(|e| JsError::new(&format!("{}", e)))
     }
 
     #[wasm_bindgen(js_name = csiMethods)]
     pub fn csi_methods(&self) -> anyhow::Result<JsValue, JsError> {
-        let csi_methods = &self.config.get_csi_methods();
+        let csi_methods = &self.config.csi_methods;
         let dst_methods = csi_methods
             .methods
             .iter()

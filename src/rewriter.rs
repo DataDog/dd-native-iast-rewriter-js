@@ -5,7 +5,7 @@
 use crate::{
     telemetry::TelemetryVerbosity,
     transform::transform_status::{Status, TransformStatus},
-    util::{file_name, parse_source_map, rnd_string},
+    util::{file_name, parse_source_map},
     visitor::{block_transform_visitor::BlockTransformVisitor, csi_methods::CsiMethods},
 };
 use anyhow::{Error, Result};
@@ -42,13 +42,14 @@ pub struct RewrittenOutput {
 }
 
 pub struct Config {
+    pub chain_source_map: bool,
     pub print_comments: bool,
-    pub local_var_prefix: Option<String>,
+    pub local_var_prefix: String,
     pub csi_methods: CsiMethods,
-    pub verbosity: Option<TelemetryVerbosity>,
+    pub verbosity: TelemetryVerbosity,
 }
 
-pub fn rewrite_js(code: String, file: String, config: Config) -> Result<RewrittenOutput> {
+pub fn rewrite_js(code: String, file: String, config: &Config) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let file_str = file.as_str();
@@ -134,15 +135,11 @@ fn transform_js(
     mut program: Program,
     code: &str,
     file: &str,
-    config: Config,
+    config: &Config,
     compiler: &Compiler,
 ) -> Result<TransformOutput, Error> {
-    let mut transform_status = TransformStatus::not_modified(config.verbosity);
-    let mut block_transform_visitor = BlockTransformVisitor::default(
-        &mut transform_status,
-        config.local_var_prefix.unwrap_or_else(|| rnd_string(6)),
-        &config.csi_methods,
-    );
+    let mut transform_status = TransformStatus::not_modified(config);
+    let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status, config);
     program.visit_mut_with(&mut block_transform_visitor);
 
     match transform_status.status {
@@ -168,7 +165,10 @@ fn transform_js(
         }),
         Status::Cancelled => Err(Error::msg(format!(
             "Cancelling {} file rewrite. Reason: {}",
-            file, transform_status.msg
+            file,
+            transform_status
+                .msg
+                .unwrap_or_else(|| "unknown".to_string())
         ))),
     }
 }

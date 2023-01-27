@@ -5,7 +5,9 @@
 extern crate base64;
 
 use crate::{
-    rewriter::{print_js, rewrite_js},
+    rewriter::{print_js, rewrite_js, Config},
+    telemetry::TelemetryVerbosity,
+    util::rnd_string,
     visitor::{self, csi_methods::CsiMethods},
 };
 
@@ -46,11 +48,24 @@ impl RewriterConfig {
             None => CsiMethods::empty(),
         }
     }
+
+    fn to_config(&self) -> Config {
+        Config {
+            chain_source_map: self.chain_source_map.unwrap_or(false),
+            print_comments: self.comments.unwrap_or(false),
+            local_var_prefix: self
+                .local_var_prefix
+                .clone()
+                .unwrap_or_else(|| rnd_string(6)),
+            csi_methods: self.get_csi_methods(),
+            verbosity: TelemetryVerbosity::Information,
+        }
+    }
 }
 
 #[napi]
 pub struct Rewriter {
-    config: RewriterConfig,
+    config: Config,
 }
 
 #[napi]
@@ -64,26 +79,20 @@ impl Rewriter {
             csi_methods: None,
         });
         Self {
-            config: rewriter_config,
+            config: rewriter_config.to_config(),
         }
     }
 
     #[napi]
     pub fn rewrite(&self, code: String, file: String) -> napi::Result<String> {
-        rewrite_js(
-            code,
-            file,
-            self.config.comments.unwrap_or(false),
-            self.config.local_var_prefix.clone(),
-            &self.config.get_csi_methods(),
-        )
-        .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))
-        .map_err(|e| Error::new(Status::Unknown, format!("{}", e)))
+        rewrite_js(code, file, &self.config)
+            .map(|result| print_js(result, self.config.chain_source_map))
+            .map_err(|e| Error::new(Status::Unknown, format!("{}", e)))
     }
 
     #[napi]
     pub fn csi_methods(&self) -> napi::Result<Vec<String>> {
-        let csi_methods = &self.config.get_csi_methods();
+        let csi_methods = &self.config.csi_methods;
 
         Ok(csi_methods
             .methods

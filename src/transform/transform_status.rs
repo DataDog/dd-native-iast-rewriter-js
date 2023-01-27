@@ -1,4 +1,4 @@
-use crate::telemetry::{IastTelemetry, TelemetryVerbosity};
+use crate::{rewriter::Config, telemetry::IastTelemetry};
 
 /**
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
@@ -14,16 +14,16 @@ pub enum Status {
 
 pub struct TransformStatus {
     pub status: Status,
-    pub msg: String,
+    pub msg: Option<String>,
     pub telemetry: IastTelemetry,
 }
 
 impl TransformStatus {
-    pub fn not_modified(verbosity: Option<TelemetryVerbosity>) -> TransformStatus {
+    pub fn not_modified(config: &Config) -> TransformStatus {
         TransformStatus {
             status: Status::NotModified,
-            msg: String::from(""),
-            telemetry: IastTelemetry::new(verbosity),
+            msg: None,
+            telemetry: IastTelemetry::new(config),
         }
     }
 }

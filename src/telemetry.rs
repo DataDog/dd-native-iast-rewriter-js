@@ -4,13 +4,15 @@
  **/
 use swc_ecma_visit::swc_ecma_ast::Expr;
 
+use crate::rewriter::Config;
+
 pub struct PropagationDetail {
     _file_name: String,
     _csi: String,
     _line: u32,
 }
 
-#[derive(PartialEq, Eq, serde::Deserialize, Clone)]
+#[derive(PartialEq, Eq, serde::Deserialize, Clone, Debug)]
 pub enum TelemetryVerbosity {
     Off,
     Mandatory,
@@ -28,13 +30,11 @@ pub enum IastTelemetry {
 }
 
 impl IastTelemetry {
-    pub fn new(optional_verbosity: Option<TelemetryVerbosity>) -> IastTelemetry {
-        if let Some(verbosity) = optional_verbosity.as_ref() {
-            if verbosity == &TelemetryVerbosity::Off {
-                return IastTelemetry::NoOp(NoOpTelemetry {});
-            }
+    pub fn new(config: &Config) -> IastTelemetry {
+        if config.verbosity == TelemetryVerbosity::Off {
+            return IastTelemetry::NoOp(NoOpTelemetry {});
         }
-        IastTelemetry::Default(DefaultTelemetry::with(optional_verbosity))
+        IastTelemetry::Default(DefaultTelemetry::with(&config.verbosity))
     }
 }
 
@@ -54,9 +54,9 @@ pub struct DefaultTelemetry {
 }
 
 impl DefaultTelemetry {
-    pub fn with(verbosity: Option<TelemetryVerbosity>) -> Self {
+    pub fn with(verbosity: &TelemetryVerbosity) -> Self {
         DefaultTelemetry {
-            verbosity: verbosity.unwrap_or(TelemetryVerbosity::Information),
+            verbosity: verbosity.clone(),
             instrumented_propagation: 0,
             propagation_debug: Vec::new(),
         }

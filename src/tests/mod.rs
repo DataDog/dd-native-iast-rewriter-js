@@ -4,6 +4,7 @@
  **/
 use crate::{
     rewriter::{Config, RewrittenOutput},
+    telemetry::TelemetryVerbosity,
     visitor::csi_methods::{CsiMethod, CsiMethods},
 };
 use anyhow::Error;
@@ -22,7 +23,7 @@ fn get_test_resources_folder() -> Result<PathBuf, String> {
 }
 
 fn rewrite_js(code: String, file: String) -> Result<RewrittenOutput, Error> {
-    crate::rewriter::rewrite_js(code, file, get_default_config(false))
+    crate::rewriter::rewrite_js(code, file, &get_default_config(false))
 }
 
 fn rewrite_js_with_csi_methods(
@@ -33,11 +34,12 @@ fn rewrite_js_with_csi_methods(
     crate::rewriter::rewrite_js(
         code,
         file,
-        Config {
+        &Config {
+            chain_source_map: false,
             print_comments: false,
-            local_var_prefix: Some("test".to_string()),
+            local_var_prefix: "test".to_string(),
             csi_methods: csi_methods.clone(),
-            verbosity: None,
+            verbosity: TelemetryVerbosity::Information,
         },
     )
 }
@@ -57,10 +59,11 @@ fn get_default_csi_methods() -> CsiMethods {
 
 fn get_default_config(print_comments: bool) -> Config {
     Config {
+        chain_source_map: false,
         print_comments,
-        local_var_prefix: Some("test".to_string()),
+        local_var_prefix: "test".to_string(),
         csi_methods: get_default_csi_methods(),
-        verbosity: None,
+        verbosity: TelemetryVerbosity::Information,
     }
 }
 
