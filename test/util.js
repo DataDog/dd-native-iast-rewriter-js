@@ -9,6 +9,8 @@ const path = require('path')
 const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/native-iast-rewriter' : '../main'
 const { Rewriter } = require(rewriterPackage)
 
+const TELEMETRY_VERBOSITY = 'Debug'
+
 const removeSourceMap = (code) => {
   return code
     .split('\n')
@@ -39,11 +41,12 @@ const rewriteAst = (code, opts) => {
     new Rewriter({
       localVarPrefix: 'test',
       csiMethods,
-      chainSourceMap: opts.chainSourceMap ?? false
+      chainSourceMap: opts.chainSourceMap ?? false,
+      telemetryVerbosity: TELEMETRY_VERBOSITY
     })
   const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
-  const rewrited = rewriter.rewrite(code, file)
-  return opts.keepSourceMap ? rewrited : removeSourceMap(rewrited)
+  const rewritten = rewriter.rewrite(code, file)
+  return opts.keepSourceMap ? rewritten.content : removeSourceMap(rewritten.content)
 }
 
 const wrapBlock = (code) => `{${os.EOL}${code}${os.EOL}}`
@@ -87,7 +90,7 @@ const expectAst = (received, expected) => {
 }
 
 const rewriteAndExpectAndExpectEval = (js, expected) => {
-  const rewriter = new Rewriter({ localVarPrefix: 'test', csiMethods })
+  const rewriter = new Rewriter({ localVarPrefix: 'test', csiMethods, telemetryVerbosity: TELEMETRY_VERBOSITY })
   rewriteAndExpect(js, expected, true, { rewriter })
 
   const globalMethods = getGlobalMethods(rewriter.csiMethods())

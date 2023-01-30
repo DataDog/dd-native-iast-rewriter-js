@@ -20,17 +20,11 @@ impl AssignAddTransform {
         opv: &mut OperationTransformVisitor,
     ) -> TransformResult<AssignExpr> {
         let span = assign.span;
-        let op = assign.op;
 
         match &assign.left {
             PatOrExpr::Pat(_) => {
                 assign.visit_mut_children_with(opv);
-                TransformResult::not_modified(AssignExpr {
-                    span,
-                    op,
-                    left: assign.left.clone(),
-                    right: assign.right.clone(),
-                })
+                TransformResult::not_modified()
             }
             PatOrExpr::Expr(left_expr) => {
                 let binary = Expr::Bin(BinExpr {
@@ -45,14 +39,17 @@ impl AssignAddTransform {
                     opv.csi_methods,
                     opv.ident_provider,
                 );
-
-                let new_assign = AssignExpr {
-                    span,
-                    op: Assign,
-                    left: assign.left.clone(),
-                    right: Box::new(result.expr),
-                };
-                TransformResult::modified(new_assign)
+                if result.is_modified() {
+                    let new_assign = AssignExpr {
+                        span,
+                        op: Assign,
+                        left: assign.left.clone(),
+                        right: Box::new(result.expr.unwrap()),
+                    };
+                    TransformResult::modified(new_assign)
+                } else {
+                    TransformResult::not_modified()
+                }
             }
         }
     }

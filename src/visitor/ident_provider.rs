@@ -83,7 +83,7 @@ pub trait IdentProvider {
 
     fn next_ident(&mut self) -> usize;
 
-    fn update_status(&mut self, status: Status, expr: &Expr);
+    fn update_status(&mut self, status: Status, tag: Option<String>);
 
     fn get_local_var_prefix(&mut self) -> String;
 
@@ -128,10 +128,10 @@ impl IdentProvider for DefaultIdentProvider<'_> {
         counter
     }
 
-    fn update_status(&mut self, status: Status, expr: &Expr) {
+    fn update_status(&mut self, status: Status, tag: Option<String>) {
         self.transform_status.status = status;
         if self.transform_status.status == Status::Modified {
-            self.transform_status.telemetry.inc(expr);
+            self.transform_status.telemetry.inc(tag);
         }
     }
 

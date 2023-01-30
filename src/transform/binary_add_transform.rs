@@ -26,11 +26,9 @@ impl BinaryAddTransform {
             if let Some(result) = to_dd_binary_expr_binary(&mut binary, csi_methods, ident_provider)
             {
                 return result;
-            } else {
-                return TransformResult::not_modified(Expr::Bin(binary));
             }
         }
-        TransformResult::not_modified(expr_clone)
+        TransformResult::not_modified()
     }
 }
 

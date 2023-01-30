@@ -4,13 +4,16 @@
 **/
 extern crate base64;
 
+use std::collections::HashMap;
+
 use crate::{
     rewriter::{print_js, rewrite_js, Config},
-    telemetry::TelemetryVerbosity,
+    telemetry::{Telemetry, TelemetryVerbosity},
+    transform::transform_status::TransformStatus,
     util::rnd_string,
     visitor::{self, csi_methods::CsiMethods},
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 
 #[derive(Deserialize)]
@@ -28,7 +31,23 @@ pub struct RewriterConfig {
     pub comments: Option<bool>,
     pub local_var_prefix: Option<String>,
     pub csi_methods: Option<Vec<CsiMethod>>,
-    pub verbosity: Option<TelemetryVerbosity>,
+    pub telemetry_verbosity: Option<TelemetryVerbosity>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Result {
+    pub content: String,
+    pub metrics: Option<Metrics>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Metrics {
+    pub status: String,
+    pub instrumented_propagation: u32,
+    pub file: String,
+    pub propagation_debug: Option<HashMap<String, u32>>,
 }
 
 impl RewriterConfig {
@@ -61,7 +80,7 @@ impl RewriterConfig {
                 .unwrap_or_else(|| rnd_string(6)),
             csi_methods: self.get_csi_methods(),
             verbosity: self
-                .verbosity
+                .telemetry_verbosity
                 .clone()
                 .unwrap_or(TelemetryVerbosity::Information),
         }
@@ -83,7 +102,7 @@ impl Rewriter {
             comments: Some(false),
             local_var_prefix: None,
             csi_methods: None,
-            verbosity: Some(TelemetryVerbosity::Information),
+            telemetry_verbosity: Some(TelemetryVerbosity::Information),
         });
         Self {
             config: rewriter_config.to_config(),
@@ -91,9 +110,14 @@ impl Rewriter {
     }
 
     #[wasm_bindgen]
-    pub fn rewrite(&mut self, code: String, file: String) -> anyhow::Result<String, JsError> {
-        rewrite_js(code, file, &self.config)
-            .map(|result| print_js(result, self.config.chain_source_map))
+    pub fn rewrite(&mut self, code: String, file: String) -> anyhow::Result<JsValue, JsError> {
+        rewrite_js(code, &file, &self.config)
+            .map(|result| Result {
+                content: print_js(&result, self.config.chain_source_map),
+                metrics: get_metrics(result.transform_status, file),
+            })
+            .as_ref()
+            .map(|result| serde_wasm_bindgen::to_value(result).unwrap())
             .map_err(|e| JsError::new(&format!("{}", e)))
     }
 
@@ -108,4 +132,16 @@ impl Rewriter {
 
         serde_wasm_bindgen::to_value(&dst_methods).map_err(|e| JsError::new(&format!("{}", e)))
     }
+}
+
+fn get_metrics(status: Option<TransformStatus>, file: String) -> Option<Metrics> {
+    if let Some(transform_status) = status {
+        return Some(Metrics {
+            status: transform_status.status.to_string(),
+            instrumented_propagation: transform_status.telemetry.get_instrumented_propagation(),
+            propagation_debug: transform_status.telemetry.get_propagation_debug(),
+            file,
+        });
+    }
+    None
 }

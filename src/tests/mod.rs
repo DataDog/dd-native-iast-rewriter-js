@@ -23,7 +23,7 @@ fn get_test_resources_folder() -> Result<PathBuf, String> {
 }
 
 fn rewrite_js(code: String, file: String) -> Result<RewrittenOutput, Error> {
-    crate::rewriter::rewrite_js(code, file, &get_default_config(false))
+    crate::rewriter::rewrite_js(code, &file, &get_default_config(false))
 }
 
 fn rewrite_js_with_csi_methods(
@@ -33,7 +33,7 @@ fn rewrite_js_with_csi_methods(
 ) -> Result<RewrittenOutput, Error> {
     crate::rewriter::rewrite_js(
         code,
-        file,
+        &file,
         &Config {
             chain_source_map: false,
             print_comments: false,
@@ -63,7 +63,7 @@ fn get_default_config(print_comments: bool) -> Config {
         print_comments,
         local_var_prefix: "test".to_string(),
         csi_methods: get_default_csi_methods(),
-        verbosity: TelemetryVerbosity::Information,
+        verbosity: TelemetryVerbosity::Debug,
     }
 }
 

@@ -85,8 +85,8 @@ impl Rewriter {
 
     #[napi]
     pub fn rewrite(&self, code: String, file: String) -> napi::Result<String> {
-        rewrite_js(code, file, &self.config)
-            .map(|result| print_js(result, self.config.chain_source_map))
+        rewrite_js(code, &file, &self.config)
+            .map(|result| print_js(&result, self.config.chain_source_map))
             .map_err(|e| Error::new(Status::Unknown, format!("{}", e)))
     }
 

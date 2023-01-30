@@ -26,13 +26,9 @@ impl<'a> NoPlusOperatorVisitor<'a> {
         ident_provider: &mut dyn IdentProvider,
     ) -> TransformResult<Expr> {
         if call.callee.is_expr() {
-            if let Some(expr) =
-                CallExprTransform::to_dd_call_expr(call, csi_methods, ident_provider)
-            {
-                return TransformResult::modified(expr);
-            }
+            return CallExprTransform::to_dd_call_expr(call, csi_methods, ident_provider);
         }
-        TransformResult::not_modified(Expr::Call(call.clone()))
+        TransformResult::not_modified()
     }
 }
 
@@ -66,10 +62,10 @@ impl VisitMut for NoPlusOperatorVisitor<'_> {
                     opv_with_child_ctx.ident_provider,
                 );
                 if result.is_modified() {
-                    expr.map_with_mut(|_| result.expr);
+                    expr.map_with_mut(|e| result.expr.unwrap_or(e));
                     opv_with_child_ctx
                         .ident_provider
-                        .update_status(result.status, expr);
+                        .update_status(result.status, result.tag);
                 }
             }
             _ => expr.visit_mut_children_with(self),

@@ -27,9 +27,9 @@ class CacheRewriter {
   }
 
   rewrite (code, file) {
-    const content = this.nativeRewriter.rewrite(code, file)
-    cacheRewrittenSourceMap(file, content)
-    return content
+    const response = this.nativeRewriter.rewrite(code, file)
+    cacheRewrittenSourceMap(file, response.content)
+    return response
   }
 
   csiMethods () {

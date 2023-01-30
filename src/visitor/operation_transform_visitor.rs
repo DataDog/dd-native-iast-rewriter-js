@@ -17,6 +17,10 @@ use super::{
     visitor_with_context::{Ctx, VisitorWithContext},
 };
 
+pub const ADD_TAG: &str = "+";
+pub const ADD_ASSING_TAG: &str = "+=";
+pub const TPL_TAG: &str = "Tpl";
+
 pub struct OperationTransformVisitor<'a> {
     pub ident_provider: &'a mut dyn IdentProvider,
     pub csi_methods: &'a CsiMethods,
@@ -40,8 +44,8 @@ impl VisitorWithContext for OperationTransformVisitor<'_> {
 }
 
 impl OperationTransformVisitor<'_> {
-    fn update_status(&mut self, status: Status, expr: &Expr) {
-        self.ident_provider.update_status(status, expr)
+    fn update_status(&mut self, status: Status, tag: Option<String>) {
+        self.ident_provider.update_status(status, tag)
     }
 }
 
@@ -61,8 +65,8 @@ impl VisitMut for OperationTransformVisitor<'_> {
                             opv_with_child_ctx.csi_methods,
                             opv_with_child_ctx.ident_provider,
                         );
-                        opv_with_child_ctx.update_status(result.status, &bin);
-                        result.expr
+                        opv_with_child_ctx.update_status(result.status, Some(ADD_TAG.to_string()));
+                        result.expr.unwrap_or(bin)
                     });
                 }
             }
@@ -73,8 +77,9 @@ impl VisitMut for OperationTransformVisitor<'_> {
                     assign.map_with_mut(|mut assign| {
                         let result =
                             AssignAddTransform::to_dd_assign_expr(&mut assign, opv_with_child_ctx);
-                        opv_with_child_ctx.update_status(result.status, &Expr::Assign(assign));
-                        result.expr
+                        opv_with_child_ctx
+                            .update_status(result.status, Some(ADD_ASSING_TAG.to_string()));
+                        result.expr.unwrap_or(assign)
                     });
                 }
             }
@@ -90,8 +95,8 @@ impl VisitMut for OperationTransformVisitor<'_> {
                             opv_with_child_ctx.csi_methods,
                             opv_with_child_ctx.ident_provider,
                         );
-                        opv_with_child_ctx.update_status(result.status, &tpl);
-                        result.expr
+                        opv_with_child_ctx.update_status(result.status, Some(TPL_TAG.to_string()));
+                        result.expr.unwrap_or(tpl)
                     });
                 }
             }
@@ -104,8 +109,8 @@ impl VisitMut for OperationTransformVisitor<'_> {
                     opv_with_child_ctx.ident_provider,
                 );
                 if result.is_modified() {
-                    expr.map_with_mut(|_| result.expr);
-                    opv_with_child_ctx.update_status(result.status, expr);
+                    expr.map_with_mut(|e| result.expr.unwrap_or(e));
+                    opv_with_child_ctx.update_status(result.status, result.tag);
                 }
             }
             _ => {
