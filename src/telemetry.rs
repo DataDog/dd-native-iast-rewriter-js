@@ -22,6 +22,7 @@ pub trait Telemetry {
     fn get_propagation_debug(&self) -> Option<HashMap<String, u32>>;
 }
 
+#[derive(Debug)]
 pub enum IastTelemetry {
     Default(DefaultTelemetry),
     Debug(DebugTelemetry),
@@ -64,6 +65,7 @@ impl Telemetry for IastTelemetry {
     }
 }
 
+#[derive(Debug)]
 pub struct DefaultTelemetry {
     pub instrumented_propagation: u32,
 }
@@ -90,6 +92,7 @@ impl Telemetry for DefaultTelemetry {
     }
 }
 
+#[derive(Debug)]
 pub struct DebugTelemetry {
     pub instrumented_propagation: u32,
     pub propagation_debug: HashMap<String, u32>,
@@ -127,6 +130,7 @@ impl Telemetry for DebugTelemetry {
     }
 }
 
+#[derive(Debug)]
 pub struct NoOpTelemetry {}
 
 impl Telemetry for NoOpTelemetry {

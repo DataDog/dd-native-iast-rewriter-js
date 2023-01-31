@@ -19,6 +19,7 @@ impl Display for Status {
     }
 }
 
+#[derive(Debug)]
 pub struct TransformStatus {
     pub status: Status,
     pub msg: Option<String>,

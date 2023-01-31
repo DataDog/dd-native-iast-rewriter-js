@@ -209,7 +209,8 @@ crawl(options.rootPath, options, {
         if (options.natives) {
           code = this.replaceNativeV8Calls(code, fileName)
         }
-        let rewritten = rewriter.rewrite(code, path)
+        const response = rewriter.rewrite(code, path)
+        let rewritten = response.content
 
         green(`     -> ${fileName}`)
 
