@@ -14,8 +14,11 @@ export interface RewriterConfig {
   localVarPrefix?: string
   csiMethods?: Array<CsiMethod>
 }
+export interface ResultWithoutMetrics {
+  content: string
+}
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)
-  rewrite(code: string, file: string): string
+  rewrite(code: string, file: string): ResultWithoutMetrics
   csiMethods(): Array<string>
 }
