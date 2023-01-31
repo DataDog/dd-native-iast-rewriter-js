@@ -47,6 +47,8 @@ function getCompileMethodFn (compileMethod) {
     try {
       if (filename.indexOf(path.join('integration-test', 'requires')) > -1) {
         const response = rewriter.rewrite(content, filename)
+        // eslint-disable-next-line no-console
+        console.log(response)
         content = response.content
         addEditedFile(filename)
       }

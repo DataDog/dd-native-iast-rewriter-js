@@ -58,7 +58,7 @@ const red = console.log.bind(this, '\x1b[31m%s\x1b[0m')
 const blue = console.log.bind(this, '\x1b[34m%s\x1b[0m')
 const cyan = console.log.bind(this, '\x1b[35m%s\x1b[0m')
 
-const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS })
+const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS, telemetryVerbosity: 'Debug' })
 
 const getGlobalMethods = function (methods) {
   const fnSignAndBody = '(res) {return res;}'
@@ -213,6 +213,18 @@ crawl(options.rootPath, options, {
         let rewritten = response.content
 
         green(`     -> ${fileName}`)
+
+        const metrics = response.metrics
+        if (metrics) {
+          cyan(`status: ${metrics.status}`)
+          if (metrics.status !== 'NotModified') {
+            cyan(`count: ${metrics.instrumentedPropagation}`)
+            if (metrics.propagationDebug && metrics.propagationDebug.size > 0) {
+              cyan(metrics.propagationDebug)
+            }
+          }
+          console.log('\n')
+        }
 
         if (options.natives) {
           rewritten = this.replaceNativeV8Calls(rewritten, fileName, true)
