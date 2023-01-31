@@ -8,7 +8,7 @@ mod tests {
     use spectral::{assert_that, option::OptionAssertions, prelude::HashMapAssertions};
 
     use crate::{
-        telemetry::{IastTelemetry, Telemetry, TelemetryVerbosity},
+        telemetry::{Telemetry, TelemetryVerbosity},
         tests::{rewrite_js, rewrite_js_with_telemetry_verbosity},
         transform::transform_status::Status,
     };

@@ -64,6 +64,11 @@ impl RewriterConfig {
 }
 
 #[napi]
+pub struct Result {
+    pub content: String,
+}
+
+#[napi]
 pub struct Rewriter {
     config: Config,
 }
@@ -84,9 +89,11 @@ impl Rewriter {
     }
 
     #[napi]
-    pub fn rewrite(&self, code: String, file: String) -> napi::Result<String> {
+    pub fn rewrite(&self, code: String, file: String) -> napi::Result<Result> {
         rewrite_js(code, &file, &self.config)
-            .map(|result| print_js(&result, self.config.chain_source_map))
+            .map(|result| Result {
+                content: print_js(&result, self.config.chain_source_map),
+            })
             .map_err(|e| Error::new(Status::Unknown, format!("{}", e)))
     }
 
