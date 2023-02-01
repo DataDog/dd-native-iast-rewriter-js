@@ -8,7 +8,8 @@
 const chai = require('chai')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
-const { Rewriter, getPrepareStackTrace } = require('../')
+const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/native-iast-rewriter' : '../'
+const { Rewriter, getPrepareStackTrace } = require(rewriterPackage)
 const path = require('path')
 const Module = require('module')
 const { addEditedFile } = require('./edited-files-cache')

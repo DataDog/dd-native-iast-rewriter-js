@@ -8,7 +8,9 @@ const { cacheRewrittenSourceMap } = require('./js/source-map')
 
 class DummyRewriter {
   rewrite (code, file) {
-    return code
+    return {
+      content: code
+    }
   }
 
   csiMethods () {
