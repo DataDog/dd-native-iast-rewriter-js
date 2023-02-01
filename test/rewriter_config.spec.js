@@ -133,8 +133,8 @@ _ddiast.plus("b" + c, "b", c));
   })
 
   describe('telemetry verbosity', () => {
-    it('should accept Off verbosity', () => {
-      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'Off' })
+    it('should accept OFF verbosity', () => {
+      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'OFF' })
       const response = rewriter.rewrite('{const a = b + c}', 'index.js')
       expect(response).to.have.property('content')
       expect(response).to.have.property('metrics')
@@ -146,8 +146,8 @@ _ddiast.plus("b" + c, "b", c));
       expect(metrics.propagationDebug).to.be.undefined
     })
 
-    it('should accept Mandatory verbosity', () => {
-      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'Mandatory' })
+    it('should accept MANDATORY verbosity', () => {
+      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'MANDATORY' })
       const response = rewriter.rewrite('{const a = b + c}', 'index.js')
       expect(response).to.have.property('content')
       expect(response).to.have.property('metrics')
@@ -159,8 +159,8 @@ _ddiast.plus("b" + c, "b", c));
       expect(metrics.propagationDebug).to.be.undefined
     })
 
-    it('should accept Information verbosity', () => {
-      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'Information' })
+    it('should accept INFORMATION verbosity', () => {
+      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'INFORMATION' })
       const response = rewriter.rewrite('{const a = b + c}', 'index.js')
       expect(response).to.have.property('content')
       expect(response).to.have.property('metrics')
@@ -172,8 +172,8 @@ _ddiast.plus("b" + c, "b", c));
       expect(metrics.propagationDebug).to.be.undefined
     })
 
-    it('should accept Debug verbosity', () => {
-      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'Debug' })
+    it('should accept DEBUG verbosity', () => {
+      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'DEBUG' })
       const response = rewriter.rewrite('{const a = b + c}', 'index.js')
       expect(response).to.have.property('content')
       expect(response).to.have.property('metrics')
@@ -186,7 +186,7 @@ _ddiast.plus("b" + c, "b", c));
       expect(metrics.propagationDebug.get('+')).eq(1)
     })
 
-    it('should not accept unknown verbosity', () => {
+    it('should accept unknown verbosity and set it as INFORMATION', () => {
       const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'unknown' })
       const response = rewriter.rewrite('{const a = b + c}', 'index.js')
       expect(response).to.have.property('content')
@@ -194,7 +194,8 @@ _ddiast.plus("b" + c, "b", c));
 
       const metrics = response.metrics
       expect(metrics).to.not.be.undefined
-      expect(metrics.status).eq('NotModified')
+      expect(metrics.status).eq('Modified')
+      expect(metrics.instrumentedPropagation).eq(1)
     })
 
     it('should apply Information verbosity as default', () => {

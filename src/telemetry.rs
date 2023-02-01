@@ -6,12 +6,27 @@ use std::{collections::HashMap, fmt::Debug};
 
 use crate::rewriter::Config;
 
-#[derive(PartialEq, Eq, serde::Deserialize, serde::Serialize, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum TelemetryVerbosity {
     Off,
     Mandatory,
     Information,
     Debug,
+}
+
+impl TelemetryVerbosity {
+    pub fn parse(optional_value: Option<String>) -> Self {
+        if let Some(value) = optional_value {
+            return match value.to_uppercase().as_str() {
+                "OFF" => TelemetryVerbosity::Off,
+                "MANDATORY" => TelemetryVerbosity::Mandatory,
+                "INFORMATION" => TelemetryVerbosity::Information,
+                "DEBUG" => TelemetryVerbosity::Debug,
+                _ => TelemetryVerbosity::Information,
+            };
+        }
+        TelemetryVerbosity::Information
+    }
 }
 
 pub trait Telemetry {

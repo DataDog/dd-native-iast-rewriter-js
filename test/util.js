@@ -9,7 +9,7 @@ const path = require('path')
 const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/native-iast-rewriter' : '../main'
 const { Rewriter, DummyRewriter } = require(rewriterPackage)
 
-const TELEMETRY_VERBOSITY = 'Debug'
+const TELEMETRY_VERBOSITY = 'DEBUG'
 
 const removeSourceMap = (code) => {
   return code

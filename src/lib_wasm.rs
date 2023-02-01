@@ -31,7 +31,7 @@ pub struct RewriterConfig {
     pub comments: Option<bool>,
     pub local_var_prefix: Option<String>,
     pub csi_methods: Option<Vec<CsiMethod>>,
-    pub telemetry_verbosity: Option<TelemetryVerbosity>,
+    pub telemetry_verbosity: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -79,10 +79,7 @@ impl RewriterConfig {
                 .clone()
                 .unwrap_or_else(|| rnd_string(6)),
             csi_methods: self.get_csi_methods(),
-            verbosity: self
-                .telemetry_verbosity
-                .clone()
-                .unwrap_or(TelemetryVerbosity::Information),
+            verbosity: TelemetryVerbosity::parse(self.telemetry_verbosity.clone()),
         }
     }
 }
@@ -102,7 +99,7 @@ impl Rewriter {
             comments: Some(false),
             local_var_prefix: None,
             csi_methods: None,
-            telemetry_verbosity: Some(TelemetryVerbosity::Information),
+            telemetry_verbosity: Some("INFORMATION".to_string()),
         });
         Self {
             config: rewriter_config.to_config(),
