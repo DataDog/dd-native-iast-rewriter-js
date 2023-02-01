@@ -66,15 +66,10 @@ function getCompileMethodFn (compileMethod) {
     try {
       if (filename.indexOf(path.join('integration-test', 'requires')) > -1) {
         const response = rewriter.rewrite(content, filename)
-        // eslint-disable-next-line no-console
-        console.log(rewriter.rewrite.toString(), response)
         content = response.content
         addEditedFile(filename)
       }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e)
-    }
+    } catch (e) {}
     return compileMethod.apply(this, [content, filename])
   }
 }

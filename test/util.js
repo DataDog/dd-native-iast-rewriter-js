@@ -7,7 +7,7 @@ const os = require('os')
 const path = require('path')
 
 const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/native-iast-rewriter' : '../main'
-const { Rewriter } = require(rewriterPackage)
+const { Rewriter, DummyRewriter } = require(rewriterPackage)
 
 const TELEMETRY_VERBOSITY = 'Debug'
 
@@ -158,6 +158,7 @@ module.exports = {
   rewriteAndExpectError,
   wrapBlock,
   Rewriter,
+  DummyRewriter,
   csiMethods,
   rewriteAndExpectAndExpectEval,
   fn

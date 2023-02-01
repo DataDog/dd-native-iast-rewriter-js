@@ -1,3 +1,4 @@
 samples
 test/resources/**
 index.d.ts
+wasm
