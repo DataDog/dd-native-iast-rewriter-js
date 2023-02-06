@@ -13,7 +13,7 @@ pub fn get_dd_local_variable_name(n: usize, prefix: &String) -> String {
 }
 
 pub fn get_dd_local_variable_prefix(prefix: &String) -> String {
-    format!("{}_{}_", DATADOG_VAR_PREFIX, prefix)
+    format!("{DATADOG_VAR_PREFIX}_{prefix}_")
 }
 
 pub fn dd_global_method_invocation(method_name: &str, span: &Span) -> Callee {

@@ -115,7 +115,7 @@ impl Rewriter {
             })
             .as_ref()
             .map(|result| serde_wasm_bindgen::to_value(result).unwrap())
-            .map_err(|e| JsError::new(&format!("{}", e)))
+            .map_err(|e| JsError::new(&format!("{e}")))
     }
 
     #[wasm_bindgen(js_name = csiMethods)]
@@ -127,7 +127,7 @@ impl Rewriter {
             .map(|csi_method| csi_method.dst.clone())
             .collect::<Vec<String>>();
 
-        serde_wasm_bindgen::to_value(&dst_methods).map_err(|e| JsError::new(&format!("{}", e)))
+        serde_wasm_bindgen::to_value(&dst_methods).map_err(|e| JsError::new(&format!("{e}")))
     }
 }
 
