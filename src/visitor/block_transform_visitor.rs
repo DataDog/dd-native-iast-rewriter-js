@@ -60,11 +60,11 @@ impl VisitMut for BlockTransformVisitor<'_> {
             return;
         }
 
-        let mut ident_provider =
-            DefaultIdentProvider::new(&self.config.local_var_prefix, self.transform_status);
+        let mut ident_provider = DefaultIdentProvider::new(&self.config.local_var_prefix);
         expr.visit_mut_children_with(&mut get_visitor(
             &mut ident_provider,
             &self.config.csi_methods,
+            self.transform_status,
         ));
 
         if variables_contains_possible_duplicate(
@@ -83,17 +83,20 @@ impl VisitMut for BlockTransformVisitor<'_> {
 fn get_visitor<'a>(
     ident_provider: &'a mut dyn IdentProvider,
     csi_methods: &'a CsiMethods,
+    transform_status: &'a mut TransformStatus,
 ) -> Box<dyn VisitMut + 'a> {
     if csi_methods.plus_operator_is_enabled() {
         Box::new(OperationTransformVisitor {
             ident_provider,
             csi_methods,
+            transform_status,
             ctx: Ctx::root(),
         })
     } else {
         Box::new(NoPlusOperatorVisitor {
             ident_provider,
             csi_methods,
+            transform_status,
             ctx: Ctx::root(),
         })
     }

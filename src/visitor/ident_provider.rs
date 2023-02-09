@@ -11,11 +11,6 @@ use swc_ecma_visit::swc_ecma_ast::{
     AssignExpr, AssignOp, BindingIdent, Expr, Ident, Pat, PatOrExpr,
 };
 
-use crate::{
-    telemetry::Telemetry,
-    transform::transform_status::{Status, TransformStatus},
-};
-
 use super::visitor_util::get_dd_local_variable_name;
 
 pub trait IdentProvider {
@@ -83,8 +78,6 @@ pub trait IdentProvider {
 
     fn next_ident(&mut self) -> usize;
 
-    fn update_status(&mut self, status: Status, tag: Option<String>);
-
     fn get_local_var_prefix(&mut self) -> String;
 
     fn reset_counter(&mut self);
@@ -92,30 +85,25 @@ pub trait IdentProvider {
     fn register_variable(&mut self, variable: &Ident);
 }
 
-pub struct DefaultIdentProvider<'a> {
+pub struct DefaultIdentProvider {
     pub ident_counter: usize,
     pub idents: Vec<Ident>,
     pub variable_decl: HashSet<Ident>,
-    pub transform_status: &'a mut TransformStatus,
     pub local_var_prefix: String,
 }
 
-impl<'a> DefaultIdentProvider<'_> {
-    pub fn new(
-        local_var_prefix: &str,
-        transform_status: &'a mut TransformStatus,
-    ) -> DefaultIdentProvider<'a> {
+impl DefaultIdentProvider {
+    pub fn new(local_var_prefix: &str) -> DefaultIdentProvider {
         DefaultIdentProvider {
             ident_counter: 0,
             idents: Vec::new(),
             variable_decl: HashSet::new(),
-            transform_status,
             local_var_prefix: local_var_prefix.to_string(),
         }
     }
 }
 
-impl IdentProvider for DefaultIdentProvider<'_> {
+impl IdentProvider for DefaultIdentProvider {
     fn register_ident(&mut self, ident: Ident) {
         if !self.idents.contains(&ident) {
             self.idents.push(ident);
@@ -126,13 +114,6 @@ impl IdentProvider for DefaultIdentProvider<'_> {
         let counter = self.ident_counter;
         self.ident_counter += 1;
         counter
-    }
-
-    fn update_status(&mut self, status: Status, tag: Option<String>) {
-        self.transform_status.status = status;
-        if self.transform_status.status == Status::Modified {
-            self.transform_status.telemetry.inc(tag);
-        }
     }
 
     fn reset_counter(&mut self) {

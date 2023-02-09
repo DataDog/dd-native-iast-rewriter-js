@@ -69,7 +69,10 @@ function getCompileMethodFn (compileMethod) {
         content = response.content
         addEditedFile(filename)
       }
-    } catch (e) {}
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e)
+    }
     return compileMethod.apply(this, [content, filename])
   }
 }

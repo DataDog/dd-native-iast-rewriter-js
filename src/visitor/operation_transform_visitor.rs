@@ -5,9 +5,14 @@
 use swc::{common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use crate::transform::{
-    assign_add_transform::AssignAddTransform, binary_add_transform::BinaryAddTransform,
-    template_transform::TemplateTransform, transform_status::Status,
+use crate::{
+    telemetry::Telemetry,
+    transform::{
+        assign_add_transform::AssignAddTransform,
+        binary_add_transform::BinaryAddTransform,
+        template_transform::TemplateTransform,
+        transform_status::{Status, TransformStatus},
+    },
 };
 
 use super::{
@@ -24,6 +29,7 @@ pub const TPL_TAG: &str = "Tpl";
 pub struct OperationTransformVisitor<'a> {
     pub ident_provider: &'a mut dyn IdentProvider,
     pub csi_methods: &'a CsiMethods,
+    pub transform_status: &'a mut TransformStatus,
     pub ctx: Ctx,
 }
 
@@ -45,7 +51,10 @@ impl VisitorWithContext for OperationTransformVisitor<'_> {
 
 impl OperationTransformVisitor<'_> {
     fn update_status(&mut self, status: Status, tag: Option<String>) {
-        self.ident_provider.update_status(status, tag)
+        self.transform_status.status = status;
+        if self.transform_status.status == Status::Modified {
+            self.transform_status.telemetry.inc(tag);
+        }
     }
 }
 

@@ -5,7 +5,13 @@
 use swc::{common::util::take::Take, ecmascript::ast::*};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use crate::transform::{call_expr_transform::CallExprTransform, transform_status::TransformResult};
+use crate::{
+    telemetry::Telemetry,
+    transform::{
+        call_expr_transform::CallExprTransform,
+        transform_status::{Status, TransformResult, TransformStatus},
+    },
+};
 
 use super::{
     csi_methods::CsiMethods,
@@ -16,6 +22,7 @@ use super::{
 pub struct NoPlusOperatorVisitor<'a> {
     pub ident_provider: &'a mut dyn IdentProvider,
     pub csi_methods: &'a CsiMethods,
+    pub transform_status: &'a mut TransformStatus,
     pub ctx: Ctx,
 }
 
@@ -29,6 +36,13 @@ impl<'a> NoPlusOperatorVisitor<'a> {
             return CallExprTransform::to_dd_call_expr(call, csi_methods, ident_provider);
         }
         TransformResult::not_modified()
+    }
+
+    fn update_status(&mut self, status: Status, tag: Option<String>) {
+        self.transform_status.status = status;
+        if self.transform_status.status == Status::Modified {
+            self.transform_status.telemetry.inc(tag);
+        }
     }
 }
 
@@ -63,9 +77,7 @@ impl VisitMut for NoPlusOperatorVisitor<'_> {
                 );
                 if result.is_modified() {
                     expr.map_with_mut(|e| result.expr.unwrap_or(e));
-                    opv_with_child_ctx
-                        .ident_provider
-                        .update_status(result.status, result.tag);
+                    opv_with_child_ctx.update_status(result.status, result.tag);
                 }
             }
             _ => expr.visit_mut_children_with(self),
