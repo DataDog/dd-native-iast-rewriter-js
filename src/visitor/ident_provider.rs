@@ -1,9 +1,8 @@
-use std::collections::HashSet;
-
 /**
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
+use std::collections::HashSet;
 use swc::{
     atoms::JsWord,
     common::{Span, DUMMY_SP},
@@ -12,7 +11,7 @@ use swc_ecma_visit::swc_ecma_ast::{
     AssignExpr, AssignOp, BindingIdent, Expr, Ident, Pat, PatOrExpr,
 };
 
-use super::{transform_status::TransformStatus, visitor_util::get_dd_local_variable_name};
+use super::visitor_util::get_dd_local_variable_name;
 
 pub trait IdentProvider {
     fn get_ident_used_in_assignation(
@@ -79,8 +78,6 @@ pub trait IdentProvider {
 
     fn next_ident(&mut self) -> usize;
 
-    fn set_status(&mut self, status: TransformStatus);
-
     fn get_local_var_prefix(&mut self) -> String;
 
     fn reset_counter(&mut self);
@@ -92,17 +89,15 @@ pub struct DefaultIdentProvider {
     pub ident_counter: usize,
     pub idents: Vec<Ident>,
     pub variable_decl: HashSet<Ident>,
-    pub transform_status: TransformStatus,
     pub local_var_prefix: String,
 }
 
 impl DefaultIdentProvider {
-    pub fn new(local_var_prefix: &str) -> Self {
+    pub fn new(local_var_prefix: &str) -> DefaultIdentProvider {
         DefaultIdentProvider {
             ident_counter: 0,
             idents: Vec::new(),
             variable_decl: HashSet::new(),
-            transform_status: TransformStatus::not_modified(),
             local_var_prefix: local_var_prefix.to_string(),
         }
     }
@@ -119,10 +114,6 @@ impl IdentProvider for DefaultIdentProvider {
         let counter = self.ident_counter;
         self.ident_counter += 1;
         counter
-    }
-
-    fn set_status(&mut self, status: TransformStatus) {
-        self.transform_status = status;
     }
 
     fn reset_counter(&mut self) {

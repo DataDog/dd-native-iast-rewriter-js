@@ -12,14 +12,17 @@ use crate::{
         function_prototype_transform::FunctionPrototypeTransform,
         operand_handler::{DefaultOperandHandler, OperandHandler},
     },
-    visitor::{
-        csi_methods::CsiMethods, ident_provider::IdentProvider, transform_status::TransformStatus,
-    },
+    visitor::{csi_methods::CsiMethods, ident_provider::IdentProvider},
 };
 
 use crate::visitor::visitor_util::get_dd_paren_expr;
 
-use super::operand_handler::IdentMode;
+use super::{operand_handler::IdentMode, transform_status::TransformResult};
+
+pub struct ResultExpr {
+    pub expr: Expr,
+    pub tag: String,
+}
 
 pub struct CallExprTransform {}
 
@@ -28,9 +31,9 @@ impl CallExprTransform {
         call: &mut CallExpr,
         csi_methods: &CsiMethods,
         ident_provider: &mut dyn IdentProvider,
-    ) -> Option<Expr> {
+    ) -> TransformResult<Expr> {
         let callee = call.callee.clone();
-        match callee {
+        let optional_result_expr = match callee {
             Callee::Expr(expr) => match *expr {
                 Expr::Member(member) => match (*member.obj, &member.prop) {
                     // replace ident and call members, exclude literal "".substring() calls but do not exclude "literal".concat(a, b, c)
@@ -88,11 +91,8 @@ impl CallExprTransform {
                             )
 
                         // or a.b.substring() but not String.prototype.substring()
-                        } else {
-                            if FunctionPrototypeTransform::member_prop_is_prototype(&member_obj) {
-                                return None;
-                            }
-
+                        } else if !FunctionPrototypeTransform::member_prop_is_prototype(&member_obj)
+                        {
                             replace_call_expr_if_csi_method(
                                 &Expr::Member(member_obj),
                                 ident,
@@ -100,6 +100,8 @@ impl CallExprTransform {
                                 csi_methods,
                                 ident_provider,
                             )
+                        } else {
+                            None
                         }
                     }
                     _ => None,
@@ -107,6 +109,12 @@ impl CallExprTransform {
                 _ => None,
             },
             _ => None,
+        };
+
+        if let Some(result_expr) = optional_result_expr {
+            TransformResult::modified_with_tag(result_expr.expr, result_expr.tag)
+        } else {
+            TransformResult::not_modified()
         }
     }
 }
@@ -117,7 +125,7 @@ fn replace_prototype_call_or_apply(
     ident: &Ident,
     csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
-) -> Option<Expr> {
+) -> Option<ResultExpr> {
     let prototype_call_option =
         FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(call, member, ident);
 
@@ -140,7 +148,7 @@ fn replace_call_expr_if_csi_method(
     call: &mut CallExpr,
     csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
-) -> Option<Expr> {
+) -> Option<ResultExpr> {
     replace_call_expr_if_csi_method_with_member(
         expr,
         ident,
@@ -158,14 +166,14 @@ fn replace_call_expr_if_csi_method_with_member(
     csi_methods: &CsiMethods,
     member_expr_opt: Option<&MemberExpr>,
     ident_provider: &mut dyn IdentProvider,
-) -> Option<Expr> {
+) -> Option<ResultExpr> {
     let method_name = &ident.sym.to_string();
     if let Some(csi_method) = csi_methods.get(method_name) {
         let mut assignations = Vec::new();
         let mut arguments = Vec::new();
         let span = call.span;
 
-        // replace original call expression with an parent expression splitting every component and finally invoking .call
+        // replace original call expression with a parent expression splitting every component and finally invoking .call
         //  a) a.substring() -> __datadog_token_$i = a, __datadog_token_$i2 = __datadog_token_$i.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
         //  b) String.prototype.substring.[call|apply](a) -> __datadog_token_$i = a, __datadog_token_$i2 = String.prototype.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
         let mut call_replacement = call.clone();
@@ -233,15 +241,16 @@ fn replace_call_expr_if_csi_method_with_member(
             },
         );
 
-        ident_provider.set_status(TransformStatus::modified());
-
-        return Some(get_dd_paren_expr(
-            &Expr::Call(call_replacement),
-            &arguments,
-            &mut assignations,
-            csi_method.dst.as_str(),
-            &span,
-        ));
+        return Some(ResultExpr {
+            tag: method_name.clone(),
+            expr: get_dd_paren_expr(
+                &Expr::Call(call_replacement),
+                &arguments,
+                &mut assignations,
+                csi_method.dst.as_str(),
+                &span,
+            ),
+        });
     }
     None
 }

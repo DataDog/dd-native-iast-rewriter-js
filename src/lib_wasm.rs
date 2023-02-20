@@ -4,11 +4,16 @@
 **/
 extern crate base64;
 
+use std::collections::HashMap;
+
 use crate::{
-    rewriter::{print_js, rewrite_js},
+    rewriter::{print_js, rewrite_js, Config},
+    telemetry::{Telemetry, TelemetryVerbosity},
+    transform::transform_status::TransformStatus,
+    util::rnd_string,
     visitor::{self, csi_methods::CsiMethods},
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 
 #[derive(Deserialize)]
@@ -26,6 +31,23 @@ pub struct RewriterConfig {
     pub comments: Option<bool>,
     pub local_var_prefix: Option<String>,
     pub csi_methods: Option<Vec<CsiMethod>>,
+    pub telemetry_verbosity: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Result {
+    pub content: String,
+    pub metrics: Option<Metrics>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Metrics {
+    pub status: String,
+    pub instrumented_propagation: u32,
+    pub file: String,
+    pub propagation_debug: Option<HashMap<String, u32>>,
 }
 
 impl RewriterConfig {
@@ -47,11 +69,24 @@ impl RewriterConfig {
             None => CsiMethods::empty(),
         }
     }
+
+    fn to_config(&self) -> Config {
+        Config {
+            chain_source_map: self.chain_source_map.unwrap_or(false),
+            print_comments: self.comments.unwrap_or(false),
+            local_var_prefix: self
+                .local_var_prefix
+                .clone()
+                .unwrap_or_else(|| rnd_string(6)),
+            csi_methods: self.get_csi_methods(),
+            verbosity: TelemetryVerbosity::parse(self.telemetry_verbosity.clone()),
+        }
+    }
 }
 
 #[wasm_bindgen]
 pub struct Rewriter {
-    config: RewriterConfig,
+    config: Config,
 }
 
 #[wasm_bindgen]
@@ -64,34 +99,46 @@ impl Rewriter {
             comments: Some(false),
             local_var_prefix: None,
             csi_methods: None,
+            telemetry_verbosity: Some("INFORMATION".to_string()),
         });
         Self {
-            config: rewriter_config,
+            config: rewriter_config.to_config(),
         }
     }
 
     #[wasm_bindgen]
-    pub fn rewrite(&self, code: String, file: String) -> anyhow::Result<String, JsError> {
-        rewrite_js(
-            code,
-            file,
-            self.config.comments.unwrap_or(false),
-            self.config.local_var_prefix.clone(),
-            &self.config.get_csi_methods(),
-        )
-        .map(|result| print_js(result, self.config.chain_source_map.unwrap_or(false)))
-        .map_err(|e| JsError::new(&format!("{}", e)))
+    pub fn rewrite(&mut self, code: String, file: String) -> anyhow::Result<JsValue, JsError> {
+        rewrite_js(code, &file, &self.config)
+            .map(|result| Result {
+                content: print_js(&result, self.config.chain_source_map),
+                metrics: get_metrics(result.transform_status, file),
+            })
+            .as_ref()
+            .map(|result| serde_wasm_bindgen::to_value(result).unwrap())
+            .map_err(|e| JsError::new(&format!("{e}")))
     }
 
     #[wasm_bindgen(js_name = csiMethods)]
     pub fn csi_methods(&self) -> anyhow::Result<JsValue, JsError> {
-        let csi_methods = &self.config.get_csi_methods();
+        let csi_methods = &self.config.csi_methods;
         let dst_methods = csi_methods
             .methods
             .iter()
             .map(|csi_method| csi_method.dst.clone())
             .collect::<Vec<String>>();
 
-        serde_wasm_bindgen::to_value(&dst_methods).map_err(|e| JsError::new(&format!("{}", e)))
+        serde_wasm_bindgen::to_value(&dst_methods).map_err(|e| JsError::new(&format!("{e}")))
     }
+}
+
+fn get_metrics(status: Option<TransformStatus>, file: String) -> Option<Metrics> {
+    if let Some(transform_status) = status {
+        return Some(Metrics {
+            status: transform_status.status.to_string(),
+            instrumented_propagation: transform_status.telemetry.get_instrumented_propagation(),
+            propagation_debug: transform_status.telemetry.get_propagation_debug(),
+            file,
+        });
+    }
+    None
 }

@@ -3,9 +3,11 @@
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
 /* eslint-disable no-multi-str */
+/* eslint-disable no-unused-expressions */
 'use strict'
 
-const { Rewriter, rewriteAndExpect, rewriteAndExpectNoTransformation, csiMethods } = require('./util')
+const { expect } = require('chai')
+const { Rewriter, DummyRewriter, rewriteAndExpect, rewriteAndExpectNoTransformation, csiMethods } = require('./util')
 
 describe('rewriter configuration', () => {
   describe('csi exclusions', () => {
@@ -112,7 +114,6 @@ _ddiast.plus("b" + c, "b", c));
     it('should list all rewritten methods', () => {
       const rewriter = new Rewriter({ csiMethods, localVarPrefix: 'test' })
 
-      // eslint-disable-next-line no-unused-expressions
       expect(rewriter.csiMethods()).to.not.be.empty
       expect(rewriter.csiMethods()).to.include('plusOperator')
       expect(rewriter.csiMethods()).to.include('stringSubstring')
@@ -122,15 +123,102 @@ _ddiast.plus("b" + c, "b", c));
     it('should not throw Error with no RewriterConfig', () => {
       const rewriter = new Rewriter()
 
-      // eslint-disable-next-line no-unused-expressions
       expect(rewriter.csiMethods()).to.be.empty
     })
 
     it('should not throw Error', () => {
       const rewriter = new Rewriter([1, 2])
-
-      // eslint-disable-next-line no-unused-expressions
       expect(rewriter.csiMethods()).to.be.empty
+    })
+  })
+
+  describe('telemetry verbosity', () => {
+    it('should accept OFF verbosity', () => {
+      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'OFF' })
+      const response = rewriter.rewrite('{const a = b + c}', 'index.js')
+      expect(response).to.have.property('content')
+      expect(response).to.have.property('metrics')
+
+      const metrics = response.metrics
+      expect(metrics).to.not.be.undefined
+      expect(metrics.status).eq('Modified')
+      expect(metrics.instrumentedPropagation).eq(0)
+      expect(metrics.propagationDebug).to.be.undefined
+    })
+
+    it('should accept MANDATORY verbosity', () => {
+      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'MANDATORY' })
+      const response = rewriter.rewrite('{const a = b + c}', 'index.js')
+      expect(response).to.have.property('content')
+      expect(response).to.have.property('metrics')
+
+      const metrics = response.metrics
+      expect(metrics).to.not.be.undefined
+      expect(metrics.status).eq('Modified')
+      expect(metrics.instrumentedPropagation).eq(1)
+      expect(metrics.propagationDebug).to.be.undefined
+    })
+
+    it('should accept INFORMATION verbosity', () => {
+      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'INFORMATION' })
+      const response = rewriter.rewrite('{const a = b + c}', 'index.js')
+      expect(response).to.have.property('content')
+      expect(response).to.have.property('metrics')
+
+      const metrics = response.metrics
+      expect(metrics).to.not.be.undefined
+      expect(metrics.status).eq('Modified')
+      expect(metrics.instrumentedPropagation).eq(1)
+      expect(metrics.propagationDebug).to.be.undefined
+    })
+
+    it('should accept DEBUG verbosity', () => {
+      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'DEBUG' })
+      const response = rewriter.rewrite('{const a = b + c}', 'index.js')
+      expect(response).to.have.property('content')
+      expect(response).to.have.property('metrics')
+
+      const metrics = response.metrics
+      expect(metrics).to.not.be.undefined
+      expect(metrics.status).eq('Modified')
+      expect(metrics.instrumentedPropagation).eq(1)
+      expect(metrics.propagationDebug.size).eq(1)
+      expect(metrics.propagationDebug.get('+')).eq(1)
+    })
+
+    it('should accept unknown verbosity and set it as INFORMATION', () => {
+      const rewriter = new Rewriter({ csiMethods, telemetryVerbosity: 'unknown' })
+      const response = rewriter.rewrite('{const a = b + c}', 'index.js')
+      expect(response).to.have.property('content')
+      expect(response).to.have.property('metrics')
+
+      const metrics = response.metrics
+      expect(metrics).to.not.be.undefined
+      expect(metrics.status).eq('Modified')
+      expect(metrics.instrumentedPropagation).eq(1)
+    })
+
+    it('should apply Information verbosity as default', () => {
+      const rewriter = new Rewriter({ csiMethods })
+      const response = rewriter.rewrite('{const a = b + c}', 'index.js')
+      expect(response).to.have.property('content')
+      expect(response).to.have.property('metrics')
+
+      const metrics = response.metrics
+      expect(metrics).to.not.be.undefined
+      expect(metrics.status).eq('Modified')
+      expect(metrics.instrumentedPropagation).eq(1)
+      expect(metrics.propagationDebug).to.be.undefined
+    })
+  })
+
+  describe('dummy rewriter', () => {
+    describe('rewrite method', () => {
+      it('should have same return type as Rewriter.rewrite', () => {
+        const rewriter = new DummyRewriter()
+        const response = rewriter.rewrite('{const a = b + c}', 'index.js')
+        expect(response).to.have.property('content')
+      })
     })
   })
 })
