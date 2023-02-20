@@ -8,7 +8,8 @@
 const chai = require('chai')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
-const { Rewriter, getPrepareStackTrace } = require('../')
+const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/native-iast-rewriter' : '../'
+const { Rewriter, getPrepareStackTrace } = require(rewriterPackage)
 const path = require('path')
 const Module = require('module')
 const { addEditedFile } = require('./edited-files-cache')
@@ -20,10 +21,28 @@ chai.use(sinonChai)
 global.expect = chai.expect
 global.sinon = sinon
 
+const CSI_METHODS = [
+  { src: 'plusOperator', operator: true },
+  { src: 'substring' },
+  { src: 'trim' },
+  { src: 'trimStart' },
+  { src: 'trimEnd' },
+  { src: 'trimLeft' },
+  { src: 'trimRight' },
+  { src: 'toLowerCase' },
+  { src: 'toLocaleLowerCase' },
+  { src: 'toUpperCase' },
+  { src: 'toLocaleUpperCase' },
+  { src: 'replace' },
+  { src: 'replaceAll' },
+  { src: 'slice' },
+  { src: 'concat' }
+]
+
 initRewriter()
 
 function initRewriter () {
-  rewriter = new Rewriter()
+  rewriter = new Rewriter({ csiMethods: CSI_METHODS, telemetryVerbosity: 'Debug' })
   if (rewriter) {
     Object.defineProperty(global.Error, 'prepareStackTrace', getPrepareStackTraceAccessor())
     Module.prototype._compile = getCompileMethodFn(Module.prototype._compile)
@@ -46,7 +65,8 @@ function getCompileMethodFn (compileMethod) {
   return function (content, filename) {
     try {
       if (filename.indexOf(path.join('integration-test', 'requires')) > -1) {
-        content = rewriter.rewrite(content, filename)
+        const response = rewriter.rewrite(content, filename)
+        content = response.content
         addEditedFile(filename)
       }
     } catch (e) {

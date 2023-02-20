@@ -1,7 +1,7 @@
 name: Build WASM
 
 env:
-  V8_BRANCH: 10.7.190
+  V8_BRANCH: 11.2.60
 
 on:
   workflow_dispatch:

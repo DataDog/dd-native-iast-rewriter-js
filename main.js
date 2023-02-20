@@ -8,7 +8,9 @@ const { cacheRewrittenSourceMap } = require('./js/source-map')
 
 class DummyRewriter {
   rewrite (code, file) {
-    return code
+    return {
+      content: code
+    }
   }
 
   csiMethods () {
@@ -27,9 +29,9 @@ class CacheRewriter {
   }
 
   rewrite (code, file) {
-    const content = this.nativeRewriter.rewrite(code, file)
-    cacheRewrittenSourceMap(file, content)
-    return content
+    const response = this.nativeRewriter.rewrite(code, file)
+    cacheRewrittenSourceMap(file, response.content)
+    return response
   }
 
   csiMethods () {
@@ -49,5 +51,6 @@ function getRewriter () {
 
 module.exports = {
   Rewriter: getRewriter(),
+  DummyRewriter,
   getPrepareStackTrace: getPrepareStackTrace
 }

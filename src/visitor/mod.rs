@@ -7,6 +7,5 @@ pub(crate) mod csi_methods;
 pub(crate) mod ident_provider;
 pub(crate) mod no_plus_operator_visitor;
 pub(crate) mod operation_transform_visitor;
-pub(crate) mod transform_status;
 pub(crate) mod visitor_util;
 pub(crate) mod visitor_with_context;

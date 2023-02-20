@@ -5,17 +5,20 @@
 
 export interface CsiMethod {
   src: string
-  dst?: string | undefined | null
-  operator?: boolean | undefined | null
+  dst?: string
+  operator?: boolean
 }
 export interface RewriterConfig {
   chainSourceMap?: boolean
   comments?: boolean
   localVarPrefix?: string
-  csiMethods?: Array<CsiMethod> | undefined | null
+  csiMethods?: Array<CsiMethod>
+}
+export interface ResultWithoutMetrics {
+  content: string
 }
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)
-  rewrite(code: string, file: string): string
+  rewrite(code: string, file: string): ResultWithoutMetrics
   csiMethods(): Array<string>
 }
