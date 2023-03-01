@@ -38,7 +38,7 @@ const SOURCE_MAP_URL: &str = "# sourceMappingURL=";
 pub struct RewrittenOutput {
     pub code: String,
     pub source_map: String,
-    pub original_map: OriginalSourceMap,
+    pub original_source_map: OriginalSourceMap,
     pub transform_status: Option<TransformStatus>,
 }
 
@@ -75,7 +75,7 @@ pub fn rewrite_js(code: String, file: &str, config: &Config) -> Result<Rewritten
         result.map(|transformed| RewrittenOutput {
             code: transformed.output.code,
             source_map: transformed.output.map.unwrap_or_default(),
-            original_map,
+            original_source_map: original_map,
             transform_status: Some(transformed.status),
         })
     })
@@ -83,13 +83,13 @@ pub fn rewrite_js(code: String, file: &str, config: &Config) -> Result<Rewritten
 
 pub fn print_js(output: &RewrittenOutput, chain_source_map: bool) -> String {
     let mut final_source_map: String = String::from(&output.source_map);
-    let original_map = &output.original_map;
+    let original_source_map = &output.original_source_map;
     if chain_source_map {
-        final_source_map = chain_source_maps(&output.source_map, &original_map.source)
+        final_source_map = chain_source_maps(&output.source_map, &original_source_map.source)
             .unwrap_or_else(|_| String::from(&output.source_map));
     }
 
-    let final_code = match &original_map.source_map_comment {
+    let final_code = match &original_source_map.source_map_comment {
         Some(comment) => output.code.replace(comment.as_str(), ""),
         _ => output.code.clone(),
     };
@@ -316,7 +316,7 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
         print_result.map(|printed| RewrittenOutput {
             code: printed.code,
             source_map: printed.map.unwrap(),
-            original_map,
+            original_source_map: original_map,
             transform_status: None,
         })
     });
