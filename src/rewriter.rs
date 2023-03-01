@@ -81,17 +81,21 @@ pub fn rewrite_js(code: String, file: &str, config: &Config) -> Result<Rewritten
     })
 }
 
-pub fn print_js(output: &RewrittenOutput, chain_source_map: bool) -> String {
+pub fn print_js(output: &RewrittenOutput, config: &Config) -> String {
     let mut final_source_map: String = String::from(&output.source_map);
     let original_source_map = &output.original_source_map;
-    if chain_source_map {
+    if config.chain_source_map {
         final_source_map = chain_source_maps(&output.source_map, &original_source_map.source)
             .unwrap_or_else(|_| String::from(&output.source_map));
     }
 
-    let final_code = match &original_source_map.source_map_comment {
-        Some(comment) => output.code.replace(comment.as_str(), ""),
-        _ => output.code.clone(),
+    let final_code = if config.print_comments {
+        match &original_source_map.source_map_comment {
+            Some(comment) => output.code.replace(comment.as_str(), ""),
+            _ => output.code.clone(),
+        }
+    } else {
+        output.code.clone()
     };
 
     if final_source_map.is_empty() {

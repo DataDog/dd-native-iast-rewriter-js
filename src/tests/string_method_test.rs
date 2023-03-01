@@ -8,7 +8,10 @@ mod tests {
 
     use crate::{
         rewriter::print_js,
-        tests::{csi_from_str, rewrite_js, rewrite_js_with_csi_methods},
+        tests::{
+            csi_from_str, get_chained_and_print_comments_config, get_default_config, rewrite_js,
+            rewrite_js_with_csi_methods,
+        },
         visitor::csi_methods::CsiMethods,
     };
     use spectral::{assert_that, string::StrAssertions};
@@ -189,7 +192,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file)
             .map_err(|e| e.to_string())
-            .map(|rewrite_output| print_js(&rewrite_output, false))?;
+            .map(|rewrite_output| print_js(&rewrite_output, &get_default_config(false)))?;
 
         assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
     __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
@@ -208,7 +211,9 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file)
             .map_err(|e| e.to_string())
-            .map(|rewrite_output| print_js(&rewrite_output, true))?;
+            .map(|rewrite_output| {
+                print_js(&rewrite_output, &get_chained_and_print_comments_config())
+            })?;
 
         assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
     __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
@@ -225,7 +230,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file)
             .map_err(|e| e.to_string())
-            .map(|rewrite_output| print_js(&rewrite_output, false))?;
+            .map(|rewrite_output| print_js(&rewrite_output, &get_default_config(false)))?;
 
         assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
     __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \

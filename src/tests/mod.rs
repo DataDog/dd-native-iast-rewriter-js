@@ -88,6 +88,16 @@ fn get_default_config_with_verbosity(
     }
 }
 
+fn get_chained_and_print_comments_config() -> Config {
+    Config {
+        chain_source_map: true,
+        print_comments: true,
+        local_var_prefix: "test".to_string(),
+        csi_methods: get_default_csi_methods(),
+        verbosity: TelemetryVerbosity::Debug,
+    }
+}
+
 fn csi_from_str(src: &str, dst: Option<&str>) -> CsiMethod {
     let dst_string = match dst {
         Some(str) => Some(String::from(str)),
