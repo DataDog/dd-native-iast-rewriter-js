@@ -66,6 +66,7 @@ fn get_default_csi_methods() -> CsiMethods {
         csi_from_str("trimEnd", Some("stringTrim")),
         csi_from_str("concat", Some("stringConcat")),
         csi_from_str("slice", None),
+        csi_from_str("replace", None),
     ];
     CsiMethods::new(&mut methods)
 }
@@ -84,6 +85,16 @@ fn get_default_config_with_verbosity(
         local_var_prefix: "test".to_string(),
         csi_methods: get_default_csi_methods(),
         verbosity,
+    }
+}
+
+fn get_chained_and_print_comments_config() -> Config {
+    Config {
+        chain_source_map: true,
+        print_comments: true,
+        local_var_prefix: "test".to_string(),
+        csi_methods: get_default_csi_methods(),
+        verbosity: TelemetryVerbosity::Debug,
     }
 }
 

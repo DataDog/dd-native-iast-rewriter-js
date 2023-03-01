@@ -7,7 +7,11 @@
 mod tests {
 
     use crate::{
-        tests::{csi_from_str, rewrite_js, rewrite_js_with_csi_methods},
+        rewriter::print_js,
+        tests::{
+            csi_from_str, get_chained_and_print_comments_config, get_default_config, rewrite_js,
+            rewrite_js_with_csi_methods,
+        },
         visitor::csi_methods::CsiMethods,
     };
     use spectral::{assert_that, string::StrAssertions};
@@ -177,6 +181,61 @@ mod tests {
                 .map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
     const a = (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.plusOperator, _ddiast.plusOperator(__datadog_test_1.call(__datadog_test_0, c + d), __datadog_test_1, __datadog_test_0));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_replace_with_sourcemapping() -> Result<(), String> {
+        let original_code =
+            "{const a = { __html: b.replace(/\\/\\*# sourceMappingURL=.*\\*\\//g, '') + 'other' }}"
+                .to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file)
+            .map_err(|e| e.to_string())
+            .map(|rewrite_output| print_js(&rewrite_output, &get_default_config(false)))?;
+
+        assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
+    __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
+    __datadog_test_1, __datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, '')), _ddiast.plusOperator(__datadog_test_2 + 'other', __datadog_test_2, 'other'))
+    }");
+        Ok(())
+    }
+
+    #[test]
+    fn test_replace_with_sourcemapping_url() -> Result<(), String> {
+        let original_code =
+            "{const a = { __html: b.replace(/\\/\\*# sourceMappingURL=.*\\*\\//g, '') + 'other' }}
+//# sourceMappingURL=StrUtil.js.map
+        "
+            .to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file)
+            .map_err(|e| e.to_string())
+            .map(|rewrite_output| {
+                print_js(&rewrite_output, &get_chained_and_print_comments_config())
+            })?;
+
+        assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
+    __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
+    __datadog_test_1, __datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, '')), _ddiast.plusOperator(__datadog_test_2 + 'other', __datadog_test_2, 'other'))
+    }");
+        Ok(())
+    }
+
+    #[test]
+    fn test_replace_with_sourcemapping_url_embebbed() -> Result<(), String> {
+        let original_code = "{const a = { __html: b.replace(/\\/\\*# sourceMappingURL=.*\\*\\//g, '') + 'other' }}
+        //# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiU3RyVXRpbC5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIlN0clV0aWwudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7QUFBQTtJQUFBO0lBZ0JBLENBQUM7SUFmQyxxQkFBRyxHQUFILFVBQUksQ0FBUztRQUNYLE9BQU8sR0FBRyxHQUFHLENBQUMsQ0FBQTtJQUNoQixDQUFDO0lBRU0sd0JBQU0sR0FBYixVQUFjLENBQVMsRUFBRSxDQUFTO1FBQ2hDLE9BQU8sQ0FBQyxHQUFHLElBQUksQ0FBQyxHQUFHLENBQUMsSUFBSSxDQUFDLEtBQUssQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFBO0lBQ3BDLENBQUM7SUFFTSx1QkFBSyxHQUFaLFVBQWEsQ0FBUztRQUNwQixPQUFPLENBQUMsQ0FBQyxRQUFRLEVBQUUsQ0FBQTtJQUNyQixDQUFDO0lBRU0scUJBQUcsR0FBVixVQUFXLENBQVMsRUFBRSxDQUFTO1FBQzdCLE9BQU8sQ0FBQyxHQUFHLENBQUMsQ0FBQTtJQUNkLENBQUM7SUFDSCxjQUFDO0FBQUQsQ0FBQyxBQWhCRCxJQWdCQyJ9
+        ".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file)
+            .map_err(|e| e.to_string())
+            .map(|rewrite_output| print_js(&rewrite_output, &get_default_config(false)))?;
+
+        assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
+    __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
+    __datadog_test_1, __datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, '')), _ddiast.plusOperator(__datadog_test_2 + 'other', __datadog_test_2, 'other'))
+    }");
         Ok(())
     }
 }
