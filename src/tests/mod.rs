@@ -66,6 +66,7 @@ fn get_default_csi_methods() -> CsiMethods {
         csi_from_str("trimEnd", Some("stringTrim")),
         csi_from_str("concat", Some("stringConcat")),
         csi_from_str("slice", None),
+        csi_from_str("replace", None),
     ];
     CsiMethods::new(&mut methods)
 }

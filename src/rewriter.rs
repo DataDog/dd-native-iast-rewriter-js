@@ -38,8 +38,13 @@ const SOURCE_MAP_URL: &str = "# sourceMappingURL=";
 pub struct RewrittenOutput {
     pub code: String,
     pub source_map: String,
-    pub original_map: Option<SourceMap>,
+    pub original_map: OriginalSourceMap,
     pub transform_status: Option<TransformStatus>,
+}
+
+pub struct OriginalSourceMap {
+    pub source: Option<SourceMap>,
+    pub source_map_comment: Option<String>,
 }
 
 pub struct TransformOutputWithStatus {
@@ -62,10 +67,8 @@ pub fn rewrite_js(code: String, file: &str, config: &Config) -> Result<Rewritten
 
         // extract sourcemap before printing otherwise comments are consumed
         // and looks like it is not possible to read them after compiler.print() invocation
-        let original_map = extract_source_map(
-            Path::new(file).parent().unwrap(),
-            &compiler.comments().clone(),
-        );
+        let original_map =
+            extract_source_map(Path::new(file).parent().unwrap(), compiler.comments());
 
         let result = transform_js(program, &code, file, config, compiler.borrow());
 
@@ -80,14 +83,17 @@ pub fn rewrite_js(code: String, file: &str, config: &Config) -> Result<Rewritten
 
 pub fn print_js(output: &RewrittenOutput, chain_source_map: bool) -> String {
     let mut final_source_map: String = String::from(&output.source_map);
+    let original_map = &output.original_map;
     if chain_source_map {
-        final_source_map = chain_source_maps(&output.source_map, &output.original_map)
+        final_source_map = chain_source_maps(&output.source_map, &original_map.source)
             .unwrap_or_else(|_| String::from(&output.source_map));
     }
-    let final_code: String = match output.code.rfind(SOURCE_MAP_URL) {
-        Some(index) => output.code.split_at(index).0.to_string(),
-        None => output.code.clone(),
+
+    let final_code = match &original_map.source_map_comment {
+        Some(comment) => output.code.replace(comment.as_str(), ""),
+        _ => output.code.clone(),
     };
+
     if final_source_map.is_empty() {
         final_code
     } else {
@@ -133,7 +139,7 @@ fn parse_js(
         EsVersion::latest(),
         Syntax::Es(es_config),
         IsModule::Unknown,
-        Some(&compiler.comments().clone() as &dyn Comments),
+        Some(&compiler.comments() as &dyn Comments),
     )
 }
 
@@ -243,13 +249,16 @@ fn chain_source_maps(
     }
 }
 
-fn extract_source_map(folder: &Path, comments: &SwcComments) -> Option<SourceMap> {
+fn extract_source_map(folder: &Path, comments: &SwcComments) -> OriginalSourceMap {
+    let mut source_map_comment = None;
+    let mut source: Option<SourceMap> = None;
     for trailing in comments.trailing.iter() {
         for comment in trailing.iter() {
             let trim_comment = comment.text.trim();
             if trim_comment.starts_with(SOURCE_MAP_URL) {
+                source_map_comment = Some(comment.text.clone());
                 let url = trim_comment.get(SOURCE_MAP_URL.len()..).unwrap();
-                return decode_data_url(url)
+                source = decode_data_url(url)
                     .map_err(Error::new)
                     .or_else(|_| {
                         let source_path = PathBuf::from(url);
@@ -269,7 +278,10 @@ fn extract_source_map(folder: &Path, comments: &SwcComments) -> Option<SourceMap
             }
         }
     }
-    None
+    OriginalSourceMap {
+        source,
+        source_map_comment,
+    }
 }
 
 #[cfg(test)]
@@ -283,7 +295,7 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
 
         let original_map = extract_source_map(
             Path::new(js_file.as_str()).parent().unwrap(),
-            &compiler.comments().clone(),
+            &compiler.comments(),
         );
 
         let print_result = compiler.print(
