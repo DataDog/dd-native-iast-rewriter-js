@@ -93,7 +93,7 @@ impl Rewriter {
     pub fn rewrite(&self, code: String, file: String) -> napi::Result<ResultWithoutMetrics> {
         rewrite_js(code, &file, &self.config)
             .map(|result| ResultWithoutMetrics {
-                content: print_js(&result, self.config.chain_source_map),
+                content: print_js(&result, &self.config),
             })
             .map_err(|e| Error::new(Status::Unknown, format!("{}", e)))
     }

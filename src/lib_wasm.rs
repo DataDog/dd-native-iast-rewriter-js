@@ -110,7 +110,7 @@ impl Rewriter {
     pub fn rewrite(&mut self, code: String, file: String) -> anyhow::Result<JsValue, JsError> {
         rewrite_js(code, &file, &self.config)
             .map(|result| Result {
-                content: print_js(&result, self.config.chain_source_map),
+                content: print_js(&result, &self.config),
                 metrics: get_metrics(result.transform_status, file),
             })
             .as_ref()
