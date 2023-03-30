@@ -49,6 +49,7 @@ fn rewrite_js_with_csi_methods(
         &file,
         &Config {
             chain_source_map: false,
+            inline_source_map: true,
             print_comments: false,
             local_var_prefix: "test".to_string(),
             csi_methods: csi_methods.clone(),
@@ -81,6 +82,7 @@ fn get_default_config_with_verbosity(
 ) -> Config {
     Config {
         chain_source_map: false,
+        inline_source_map: true,
         print_comments,
         local_var_prefix: "test".to_string(),
         csi_methods: get_default_csi_methods(),
@@ -91,6 +93,7 @@ fn get_default_config_with_verbosity(
 fn get_chained_and_print_comments_config() -> Config {
     Config {
         chain_source_map: true,
+        inline_source_map: true,
         print_comments: true,
         local_var_prefix: "test".to_string(),
         csi_methods: get_default_csi_methods(),

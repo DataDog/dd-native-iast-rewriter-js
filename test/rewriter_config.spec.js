@@ -210,6 +210,20 @@ _ddiast.plus("b" + c, "b", c));
       expect(metrics.instrumentedPropagation).eq(1)
       expect(metrics.propagationDebug).to.be.undefined
     })
+
+    it('should not inline sourceMap if inline_source_map=false', () => {
+      let rewriter = new Rewriter({ csiMethods, inlineSourceMap: false })
+      let response = rewriter.rewrite('{const a = b + c}', 'index.js')
+
+      expect(response).to.have.property('content')
+      expect(response.content).to.not.include('//# sourceMappingURL=')
+
+      rewriter = new Rewriter({ csiMethods })
+      response = rewriter.rewrite('{const a = b + c}', 'index.js')
+
+      expect(response).to.have.property('content')
+      expect(response.content).to.include('//# sourceMappingURL=')
+    })
   })
 
   describe('dummy rewriter', () => {

@@ -54,6 +54,7 @@ pub struct TransformOutputWithStatus {
 
 pub struct Config {
     pub chain_source_map: bool,
+    pub inline_source_map: bool,
     pub print_comments: bool,
     pub local_var_prefix: String,
     pub csi_methods: CsiMethods,
@@ -82,32 +83,34 @@ pub fn rewrite_js(code: String, file: &str, config: &Config) -> Result<Rewritten
 }
 
 pub fn print_js(output: &RewrittenOutput, config: &Config) -> String {
-    let mut final_source_map: String = String::from(&output.source_map);
-    let original_source_map = &output.original_source_map;
-    if config.chain_source_map {
-        final_source_map = chain_source_maps(&output.source_map, &original_source_map.source)
-            .unwrap_or_else(|_| String::from(&output.source_map));
-    }
-
-    let final_code = if config.print_comments {
-        match &original_source_map.source_map_comment {
-            Some(comment) => output.code.replace(comment.as_str(), ""),
-            _ => output.code.clone(),
+    if config.inline_source_map {
+        let mut final_source_map: String = String::from(&output.source_map);
+        let original_source_map = &output.original_source_map;
+        if config.chain_source_map {
+            final_source_map = chain_source_maps(&output.source_map, &original_source_map.source)
+                .unwrap_or_else(|_| String::from(&output.source_map));
         }
-    } else {
-        output.code.clone()
-    };
 
-    if final_source_map.is_empty() {
-        final_code
-    } else {
-        format!(
-            "{}\n//{}data:application/json;base64,{}",
-            final_code,
-            SOURCE_MAP_URL,
-            base64::encode(final_source_map)
-        )
+        let final_code = if config.print_comments {
+            original_source_map
+                .source_map_comment
+                .as_ref()
+                .map(|comment| output.code.replace(comment.as_str(), ""))
+        } else {
+            None
+        };
+
+        if !final_source_map.is_empty() {
+            return format!(
+                "{}\n//{}data:application/json;base64,{}",
+                final_code.unwrap_or_else(|| output.code.clone()),
+                SOURCE_MAP_URL,
+                base64::encode(final_source_map),
+            );
+        }
     }
+
+    output.code.clone()
 }
 
 fn default_handler_opts() -> HandlerOpts {
