@@ -7,7 +7,15 @@
 'use strict'
 
 const { expect } = require('chai')
-const { Rewriter, DummyRewriter, rewriteAndExpect, rewriteAndExpectNoTransformation, csiMethods } = require('./util')
+const {
+  Rewriter,
+  DummyRewriter,
+  rewriteAndExpect,
+  rewriteAndExpectNoTransformation,
+  csiMethods,
+  resourceFile
+} = require('./util')
+const { generateSourceMapFromFileContent } = require('../js/source-map')
 
 describe('rewriter configuration', () => {
   describe('csi exclusions', () => {
@@ -219,6 +227,36 @@ _ddiast.plus("b" + c, "b", c));
         const response = rewriter.rewrite('{const a = b + c}', 'index.js')
         expect(response).to.have.property('content')
       })
+    })
+  })
+
+  describe('chainSourceMap', () => {
+    it('should not chain original source map', () => {
+      const rewriter = new Rewriter({ csiMethods })
+
+      const resource = resourceFile('sourcemap', 'StrUtil_external.js')
+      const result = rewriter.rewrite(resource.content, resource.filename)
+
+      const content = result.content
+      expect(content).to.not.undefined
+
+      const sourceMap = generateSourceMapFromFileContent(content, resource.filename)
+      expect(sourceMap).to.not.undefined
+      expect(sourceMap._sources['StrUtil_external.js']).to.be.true
+    })
+
+    it('should chain original source map with resulting after rewrite', () => {
+      const rewriter = new Rewriter({ csiMethods, chainSourceMap: true })
+
+      const resource = resourceFile('sourcemap', 'StrUtil_external.js')
+      const result = rewriter.rewrite(resource.content, resource.filename)
+
+      const content = result.content
+      expect(content).to.not.undefined
+
+      const sourceMap = generateSourceMapFromFileContent(content, resource.filename)
+      expect(sourceMap).to.not.undefined
+      expect(sourceMap._sources['StrUtil.ts']).to.be.true
     })
   })
 })

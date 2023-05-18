@@ -5,6 +5,7 @@
 
 const os = require('os')
 const path = require('path')
+const fs = require('fs')
 
 const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/native-iast-rewriter' : '../main'
 const { Rewriter, DummyRewriter } = require(rewriterPackage)
@@ -151,6 +152,15 @@ class FnBuilder {
 
 const fn = () => new FnBuilder()
 
+function resourceFile (...paths) {
+  const filename = path.join(__dirname, 'resources', ...paths)
+  const content = fs.readFileSync(filename, 'utf8')
+  return {
+    content,
+    filename
+  }
+}
+
 module.exports = {
   rewriteAst,
   rewriteAndExpectNoTransformation,
@@ -161,5 +171,6 @@ module.exports = {
   DummyRewriter,
   csiMethods,
   rewriteAndExpectAndExpectEval,
-  fn
+  fn,
+  resourceFile
 }

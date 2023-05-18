@@ -56,5 +56,6 @@ function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
 
 module.exports = {
   getSourcePathAndLineFromSourceMaps,
-  cacheRewrittenSourceMap
+  cacheRewrittenSourceMap,
+  generateSourceMapFromFileContent
 }
