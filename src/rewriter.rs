@@ -3,10 +3,9 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use crate::{
-    file_reader::FileReader,
     telemetry::TelemetryVerbosity,
     transform::transform_status::{Status, TransformStatus},
-    util::{file_name, parse_source_map},
+    util::{file_name, parse_source_map, FileReader},
     visitor::{block_transform_visitor::BlockTransformVisitor, csi_methods::CsiMethods},
 };
 use anyhow::{Error, Result};
@@ -73,11 +72,7 @@ pub fn rewrite_js<R: Read>(
 
         // extract sourcemap before printing otherwise comments are consumed
         // and looks like it is not possible to read them after compiler.print() invocation
-        let original_map = extract_source_map(
-            Path::new(file).parent().unwrap(),
-            compiler.comments(),
-            file_reader,
-        );
+        let original_map = extract_source_map(file, compiler.comments(), file_reader);
 
         let result = transform_js(program, &code, file, config, compiler.borrow());
 
@@ -263,9 +258,9 @@ fn chain_source_maps(
 }
 
 fn extract_source_map<R: Read>(
-    folder: &Path,
+    file_path: &str,
     comments: &SwcComments,
-    source_map_reader: &impl FileReader<R>,
+    file_reader: &impl FileReader<R>,
 ) -> OriginalSourceMap {
     let mut source_map_comment = None;
     let mut source: Option<SourceMap> = None;
@@ -282,10 +277,11 @@ fn extract_source_map<R: Read>(
                         let final_path = if source_path.is_absolute() {
                             source_path
                         } else {
+                            let folder = file_reader.parent(Path::new(file_path)).unwrap();
                             folder.join(source_path)
                         };
 
-                        decode(source_map_reader.read(&final_path)?)
+                        decode(file_reader.read(&final_path)?)
                     })
                     .ok()
                     .and_then(|it| match it {
@@ -304,7 +300,7 @@ fn extract_source_map<R: Read>(
 
 #[cfg(test)]
 pub fn debug_js(code: String) -> Result<RewrittenOutput> {
-    use crate::file_reader::DefaultFileReader;
+    use crate::util::DefaultFileReader;
 
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
@@ -314,11 +310,8 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
         print!("{:#?}", program);
 
         let source_map_reader = DefaultFileReader {};
-        let original_map = extract_source_map(
-            Path::new(js_file.as_str()).parent().unwrap(),
-            &compiler.comments(),
-            &source_map_reader,
-        );
+        let original_map =
+            extract_source_map(js_file.as_str(), &compiler.comments(), &source_map_reader);
 
         let print_result = compiler.print(
             &program,

@@ -2,7 +2,11 @@
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
-use std::path::Path;
+use std::{
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 use swc::sourcemap::SourceMap;
 
 pub fn file_name(file: &str) -> Option<&str> {
@@ -24,4 +28,30 @@ pub fn rnd_string(length: usize) -> String {
     }
 
     result
+}
+
+pub trait FileReader<R: Read> {
+    fn read(&self, path: &Path) -> std::io::Result<R>
+    where
+        R: Read,
+        Self: Sized;
+
+    fn parent(&self, path: &Path) -> Option<PathBuf> {
+        path.parent().map(PathBuf::from)
+    }
+
+    fn log(&self, msg: String) {
+        print!("{msg}")
+    }
+}
+
+pub struct DefaultFileReader {}
+impl FileReader<File> for DefaultFileReader {
+    fn read(&self, path: &Path) -> std::io::Result<File>
+    where
+        File: Read,
+        Self: Sized,
+    {
+        File::open(path)
+    }
 }

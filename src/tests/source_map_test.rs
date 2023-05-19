@@ -11,11 +11,11 @@ mod tests {
     use swc::sourcemap::{decode_data_url, DecodedMap};
 
     use crate::{
-        file_reader::DefaultFileReader,
         rewriter::{print_js, rewrite_js, RewrittenOutput},
         tests::{
             get_chained_and_print_comments_config, get_default_config, get_test_resources_folder,
         },
+        util::DefaultFileReader,
     };
 
     #[derive(Clone)]

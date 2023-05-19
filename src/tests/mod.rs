@@ -3,9 +3,9 @@
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
 use crate::{
-    file_reader::DefaultFileReader,
     rewriter::{Config, RewrittenOutput},
     telemetry::TelemetryVerbosity,
+    util::DefaultFileReader,
     visitor::csi_methods::{CsiMethod, CsiMethods},
 };
 use anyhow::Error;

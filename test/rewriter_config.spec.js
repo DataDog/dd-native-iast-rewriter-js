@@ -242,10 +242,13 @@ _ddiast.plus("b" + c, "b", c));
 
       const sourceMap = generateSourceMapFromFileContent(content, resource.filename)
       expect(sourceMap).to.not.undefined
-      expect(sourceMap._sources['StrUtil_external.js']).to.be.true
+
+      for (const source in sourceMap._sources) {
+        expect(source).to.contain('StrUtil_external.js')
+      }
     })
 
-    it('should chain original source map with resulting after rewrite', () => {
+    it('should chain original source map', () => {
       const rewriter = new Rewriter({ csiMethods, chainSourceMap: true })
 
       const resource = resourceFile('sourcemap', 'StrUtil_external.js')
@@ -256,7 +259,10 @@ _ddiast.plus("b" + c, "b", c));
 
       const sourceMap = generateSourceMapFromFileContent(content, resource.filename)
       expect(sourceMap).to.not.undefined
-      expect(sourceMap._sources['StrUtil.ts']).to.be.true
+
+      for (const source in sourceMap._sources) {
+        expect(source).to.contain('StrUtil.ts')
+      }
     })
   })
 })

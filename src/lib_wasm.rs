@@ -7,15 +7,14 @@ extern crate base64;
 use std::{
     collections::HashMap,
     io::{Cursor, Read},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use crate::{
-    file_reader::FileReader,
     rewriter::{print_js, rewrite_js, Config},
     telemetry::{Telemetry, TelemetryVerbosity},
     transform::transform_status::TransformStatus,
-    util::rnd_string,
+    util::{rnd_string, FileReader},
     visitor::{self, csi_methods::CsiMethods},
 };
 use serde::{Deserialize, Serialize};
@@ -100,6 +99,18 @@ extern "C" {
     fn read_file(path: &str) -> anyhow::Result<JsValue, JsValue>;
 }
 
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
+#[wasm_bindgen(module = "path")]
+extern "C" {
+    #[wasm_bindgen(js_name = dirname, catch)]
+    fn dirname(s: &str) -> anyhow::Result<JsValue, JsValue>;
+}
+
 struct WasmFileReader {}
 impl FileReader<Cursor<Vec<u8>>> for WasmFileReader {
     fn read(&self, path: &Path) -> std::io::Result<Cursor<Vec<u8>>>
@@ -118,6 +129,17 @@ impl FileReader<Cursor<Vec<u8>>> for WasmFileReader {
                     format!("Error reading source map from wasm {err:?}"),
                 )
             })
+    }
+
+    fn parent(&self, path: &Path) -> Option<PathBuf> {
+        match dirname(path.to_str().unwrap()) {
+            Ok(parent) => Some(PathBuf::from(parent.as_string().unwrap().as_str())),
+            Err(_) => None,
+        }
+    }
+
+    fn log(&self, msg: String) {
+        log(msg.as_str());
     }
 }
 
