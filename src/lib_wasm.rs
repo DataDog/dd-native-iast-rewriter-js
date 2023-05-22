@@ -137,10 +137,6 @@ impl FileReader<Cursor<Vec<u8>>> for WasmFileReader {
             Err(_) => None,
         }
     }
-
-    fn log(&self, msg: String) {
-        log(msg.as_str());
-    }
 }
 
 #[wasm_bindgen]

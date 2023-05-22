@@ -39,10 +39,6 @@ pub trait FileReader<R: Read> {
     fn parent(&self, path: &Path) -> Option<PathBuf> {
         path.parent().map(PathBuf::from)
     }
-
-    fn log(&self, msg: String) {
-        print!("{msg}")
-    }
 }
 
 pub struct DefaultFileReader {}
