@@ -99,12 +99,6 @@ extern "C" {
     fn read_file(path: &str) -> anyhow::Result<JsValue, JsValue>;
 }
 
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = console)]
-    fn log(s: &str);
-}
-
 #[wasm_bindgen(module = "path")]
 extern "C" {
     #[wasm_bindgen(js_name = dirname, catch)]
@@ -118,23 +112,34 @@ impl FileReader<Cursor<Vec<u8>>> for WasmFileReader {
         Cursor<Vec<u8>>: Read,
         Self: Sized,
     {
-        read_file(path.to_str().unwrap())
-            .map(|buffer| {
-                let arr = js_sys::Uint8Array::new(&buffer);
-                Cursor::new(arr.to_vec())
-            })
-            .map_err(|err| {
-                std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Error reading source map from wasm {err:?}"),
-                )
-            })
+        match path.to_str() {
+            Some(path) => read_file(path)
+                .map(|buffer| {
+                    let arr = js_sys::Uint8Array::new(&buffer);
+                    Cursor::new(arr.to_vec())
+                })
+                .map_err(|err| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Error reading source map from wasm {err:?}"),
+                    )
+                }),
+            None => Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Error reading source map. No path provided".to_string(),
+            )),
+        }
     }
 
     fn parent(&self, path: &Path) -> Option<PathBuf> {
-        match dirname(path.to_str().unwrap()) {
-            Ok(parent) => Some(PathBuf::from(parent.as_string().unwrap().as_str())),
-            Err(_) => None,
+        match path.to_str() {
+            Some(path) => match dirname(path) {
+                Ok(parent) => Some(PathBuf::from(
+                    parent.as_string().unwrap_or_default().as_str(),
+                )),
+                Err(_) => None,
+            },
+            None => None,
         }
     }
 }
