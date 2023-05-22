@@ -9,6 +9,7 @@ use crate::{
     visitor::{block_transform_visitor::BlockTransformVisitor, csi_methods::CsiMethods},
 };
 use anyhow::{Error, Result};
+use log::debug;
 use std::{
     borrow::Borrow,
     collections::HashMap,
@@ -52,6 +53,7 @@ pub struct TransformOutputWithStatus {
     pub status: TransformStatus,
 }
 
+#[derive(Debug)]
 pub struct Config {
     pub chain_source_map: bool,
     pub print_comments: bool,
@@ -66,6 +68,8 @@ pub fn rewrite_js<R: Read>(
     config: &Config,
     file_reader: &impl FileReader<R>,
 ) -> Result<RewrittenOutput> {
+    debug!("Rewriting js file: {file} with config: {config:?}");
+
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let program = parse_js(&code, file, handler, compiler.borrow())?;
@@ -95,7 +99,10 @@ pub fn print_js(output: &RewrittenOutput, config: &Config) -> String {
 
     let final_code = if config.print_comments {
         match &original_source_map.source_map_comment {
-            Some(comment) => output.code.replace(comment.as_str(), ""),
+            Some(comment) => {
+                debug!("Replacing original sourceMappingUrl comment: {comment}");
+                output.code.replace(comment.as_str(), "")
+            }
             _ => output.code.clone(),
         }
     } else {
@@ -103,8 +110,11 @@ pub fn print_js(output: &RewrittenOutput, config: &Config) -> String {
     };
 
     if final_source_map.is_empty() {
+        debug!("No sourcemap available");
         final_code
     } else {
+        debug!("Embedding new sourcemap: {final_source_map}");
+
         format!(
             "{}\n//{}data:application/json;base64,{}",
             final_code,
@@ -141,6 +151,7 @@ fn parse_js(
         allow_super_outside_method: false,
         allow_return_outside_function: true,
     };
+
     compiler.parse_js(
         fm,
         handler,
@@ -205,6 +216,8 @@ fn chain_source_maps(
     source_map: &String,
     original_map: &Option<SourceMap>,
 ) -> Result<String, Error> {
+    debug!("Chaining sourcemaps");
+
     if let Some(new_source) = parse_source_map(Some(source_map.as_str())) {
         match original_map {
             Some(original_source) => {
@@ -247,8 +260,14 @@ fn chain_source_maps(
                 builder
                     .into_sourcemap()
                     .to_writer(&mut source_map_output)
-                    .map(|_| String::from_utf8(source_map_output).unwrap())
-                    .map_err(Error::new)
+                    .map(|_| {
+                        debug!("Sourcemaps chained successfully");
+                        String::from_utf8(source_map_output).unwrap()
+                    })
+                    .map_err(|err| {
+                        debug!("Error chaining sourcemaps {err:?}");
+                        Error::new(err)
+                    })
             }
             None => Result::Ok(String::from(source_map)),
         }
