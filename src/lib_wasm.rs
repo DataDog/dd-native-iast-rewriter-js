@@ -110,7 +110,6 @@ impl FileReader<Cursor<Vec<u8>>> for WasmFileReader {
     fn read(&self, path: &Path) -> std::io::Result<Cursor<Vec<u8>>>
     where
         Cursor<Vec<u8>>: Read,
-        Self: Sized,
     {
         match path.to_str() {
             Some(path) => read_file(path)

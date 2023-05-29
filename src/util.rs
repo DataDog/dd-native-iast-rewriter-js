@@ -33,8 +33,7 @@ pub fn rnd_string(length: usize) -> String {
 pub trait FileReader<R: Read> {
     fn read(&self, path: &Path) -> std::io::Result<R>
     where
-        R: Read,
-        Self: Sized;
+        R: Read;
 
     fn parent(&self, path: &Path) -> Option<PathBuf> {
         path.parent().map(PathBuf::from)
@@ -46,7 +45,6 @@ impl FileReader<File> for DefaultFileReader {
     fn read(&self, path: &Path) -> std::io::Result<File>
     where
         File: Read,
-        Self: Sized,
     {
         File::open(path)
     }
