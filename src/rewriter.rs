@@ -5,14 +5,14 @@
 use crate::{
     telemetry::TelemetryVerbosity,
     transform::transform_status::{Status, TransformStatus},
-    util::{file_name, parse_source_map},
+    util::{file_name, parse_source_map, FileReader},
     visitor::{block_transform_visitor::BlockTransformVisitor, csi_methods::CsiMethods},
 };
 use anyhow::{Error, Result};
 use std::{
     borrow::Borrow,
     collections::HashMap,
-    fs::File,
+    io::Read,
     path::{Path, PathBuf},
     str,
     sync::Arc,
@@ -60,15 +60,19 @@ pub struct Config {
     pub verbosity: TelemetryVerbosity,
 }
 
-pub fn rewrite_js(code: String, file: &str, config: &Config) -> Result<RewrittenOutput> {
+pub fn rewrite_js<R: Read>(
+    code: String,
+    file: &str,
+    config: &Config,
+    file_reader: &impl FileReader<R>,
+) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let program = parse_js(&code, file, handler, compiler.borrow())?;
 
         // extract sourcemap before printing otherwise comments are consumed
         // and looks like it is not possible to read them after compiler.print() invocation
-        let original_map =
-            extract_source_map(Path::new(file).parent().unwrap(), compiler.comments());
+        let original_map = extract_source_map(file, compiler.comments(), file_reader);
 
         let result = transform_js(program, &code, file, config, compiler.borrow());
 
@@ -253,7 +257,11 @@ fn chain_source_maps(
     }
 }
 
-fn extract_source_map(folder: &Path, comments: &SwcComments) -> OriginalSourceMap {
+fn extract_source_map<R: Read>(
+    file_path: &str,
+    comments: &SwcComments,
+    file_reader: &impl FileReader<R>,
+) -> OriginalSourceMap {
     let mut source_map_comment = None;
     let mut source: Option<SourceMap> = None;
     for trailing in comments.trailing.iter() {
@@ -269,10 +277,11 @@ fn extract_source_map(folder: &Path, comments: &SwcComments) -> OriginalSourceMa
                         let final_path = if source_path.is_absolute() {
                             source_path
                         } else {
+                            let folder = file_reader.parent(Path::new(file_path)).unwrap();
                             folder.join(source_path)
                         };
-                        let file = File::open(final_path)?;
-                        decode(file)
+
+                        decode(file_reader.read(&final_path)?)
                     })
                     .ok()
                     .and_then(|it| match it {
@@ -282,6 +291,7 @@ fn extract_source_map(folder: &Path, comments: &SwcComments) -> OriginalSourceMa
             }
         }
     }
+
     OriginalSourceMap {
         source,
         source_map_comment,
@@ -290,6 +300,8 @@ fn extract_source_map(folder: &Path, comments: &SwcComments) -> OriginalSourceMa
 
 #[cfg(test)]
 pub fn debug_js(code: String) -> Result<RewrittenOutput> {
+    use crate::util::DefaultFileReader;
+
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let js_file = "debug.js".to_string();
@@ -297,10 +309,9 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
 
         print!("{:#?}", program);
 
-        let original_map = extract_source_map(
-            Path::new(js_file.as_str()).parent().unwrap(),
-            &compiler.comments(),
-        );
+        let source_map_reader = DefaultFileReader {};
+        let original_map =
+            extract_source_map(js_file.as_str(), &compiler.comments(), &source_map_reader);
 
         let print_result = compiler.print(
             &program,
