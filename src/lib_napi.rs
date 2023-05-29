@@ -7,7 +7,7 @@ extern crate base64;
 use crate::{
     rewriter::{print_js, rewrite_js, Config},
     telemetry::TelemetryVerbosity,
-    util::rnd_string,
+    util::{rnd_string, DefaultFileReader},
     visitor::{self, csi_methods::CsiMethods},
 };
 
@@ -91,11 +91,13 @@ impl Rewriter {
 
     #[napi]
     pub fn rewrite(&self, code: String, file: String) -> napi::Result<ResultWithoutMetrics> {
-        rewrite_js(code, &file, &self.config)
+        let default_file_reader = DefaultFileReader {};
+
+        rewrite_js(code, &file, &self.config, &default_file_reader)
             .map(|result| ResultWithoutMetrics {
                 content: print_js(&result, &self.config),
             })
-            .map_err(|e| Error::new(Status::Unknown, format!("{}", e)))
+            .map_err(|e| Error::new(Status::Unknown, format!("{e}")))
     }
 
     #[napi]

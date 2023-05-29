@@ -5,6 +5,7 @@
 use crate::{
     rewriter::{Config, RewrittenOutput},
     telemetry::TelemetryVerbosity,
+    util::DefaultFileReader,
     visitor::csi_methods::{CsiMethod, CsiMethods},
 };
 use anyhow::Error;
@@ -24,7 +25,8 @@ fn get_test_resources_folder() -> Result<PathBuf, String> {
 }
 
 fn rewrite_js(code: String, file: String) -> Result<RewrittenOutput, Error> {
-    crate::rewriter::rewrite_js(code, &file, &get_default_config(false))
+    let source_map_reader = DefaultFileReader {};
+    crate::rewriter::rewrite_js(code, &file, &get_default_config(false), &source_map_reader)
 }
 
 fn rewrite_js_with_telemetry_verbosity(
@@ -32,10 +34,12 @@ fn rewrite_js_with_telemetry_verbosity(
     file: String,
     verbosity: TelemetryVerbosity,
 ) -> Result<RewrittenOutput, Error> {
+    let source_map_reader = DefaultFileReader {};
     crate::rewriter::rewrite_js(
         code,
         &file,
         &get_default_config_with_verbosity(false, verbosity),
+        &source_map_reader,
     )
 }
 
@@ -44,6 +48,7 @@ fn rewrite_js_with_csi_methods(
     file: String,
     csi_methods: &CsiMethods,
 ) -> Result<RewrittenOutput, Error> {
+    let source_map_reader = DefaultFileReader {};
     crate::rewriter::rewrite_js(
         code,
         &file,
@@ -54,6 +59,7 @@ fn rewrite_js_with_csi_methods(
             csi_methods: csi_methods.clone(),
             verbosity: TelemetryVerbosity::Information,
         },
+        &source_map_reader,
     )
 }
 

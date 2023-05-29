@@ -4,13 +4,17 @@
 **/
 extern crate base64;
 
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    io::{Cursor, Read},
+    path::{Path, PathBuf},
+};
 
 use crate::{
     rewriter::{print_js, rewrite_js, Config},
     telemetry::{Telemetry, TelemetryVerbosity},
     transform::transform_status::TransformStatus,
-    util::rnd_string,
+    util::{rnd_string, FileReader},
     visitor::{self, csi_methods::CsiMethods},
 };
 use serde::{Deserialize, Serialize};
@@ -89,10 +93,62 @@ pub struct Rewriter {
     config: Config,
 }
 
+#[wasm_bindgen(module = "fs")]
+extern "C" {
+    #[wasm_bindgen(js_name = readFileSync, catch)]
+    fn read_file(path: &str) -> anyhow::Result<JsValue, JsValue>;
+}
+
+#[wasm_bindgen(module = "path")]
+extern "C" {
+    #[wasm_bindgen(js_name = dirname, catch)]
+    fn dirname(s: &str) -> anyhow::Result<JsValue, JsValue>;
+}
+
+struct WasmFileReader {}
+impl FileReader<Cursor<Vec<u8>>> for WasmFileReader {
+    fn read(&self, path: &Path) -> std::io::Result<Cursor<Vec<u8>>>
+    where
+        Cursor<Vec<u8>>: Read,
+    {
+        match path.to_str() {
+            Some(path) => read_file(path)
+                .map(|buffer| {
+                    let arr = js_sys::Uint8Array::new(&buffer);
+                    Cursor::new(arr.to_vec())
+                })
+                .map_err(|err| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Error reading source map from wasm {err:?}"),
+                    )
+                }),
+            None => Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Error reading source map. No path provided".to_string(),
+            )),
+        }
+    }
+
+    fn parent(&self, path: &Path) -> Option<PathBuf> {
+        match path.to_str() {
+            Some(path) => match dirname(path) {
+                Ok(parent) => Some(PathBuf::from(
+                    parent.as_string().unwrap_or_default().as_str(),
+                )),
+                Err(_) => None,
+            },
+            None => None,
+        }
+    }
+}
+
 #[wasm_bindgen]
 impl Rewriter {
     #[wasm_bindgen(constructor)]
     pub fn new(config_js: JsValue) -> Self {
+        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+
         let config = serde_wasm_bindgen::from_value::<RewriterConfig>(config_js);
         let rewriter_config: RewriterConfig = config.unwrap_or(RewriterConfig {
             chain_source_map: Some(false),
@@ -108,7 +164,9 @@ impl Rewriter {
 
     #[wasm_bindgen]
     pub fn rewrite(&mut self, code: String, file: String) -> anyhow::Result<JsValue, JsError> {
-        rewrite_js(code, &file, &self.config)
+        let source_map_reader = WasmFileReader {};
+
+        rewrite_js(code, &file, &self.config, &source_map_reader)
             .map(|result| Result {
                 content: print_js(&result, &self.config),
                 metrics: get_metrics(result.transform_status, file),
