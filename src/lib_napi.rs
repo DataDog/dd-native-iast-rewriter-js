@@ -25,6 +25,7 @@ pub struct CsiMethod {
 #[derive(Debug)]
 pub struct RewriterConfig {
     pub chain_source_map: Option<bool>,
+    pub inline_source_map: Option<bool>,
     pub comments: Option<bool>,
     pub local_var_prefix: Option<String>,
     pub csi_methods: Option<Vec<CsiMethod>>,
@@ -52,6 +53,7 @@ impl RewriterConfig {
     fn to_config(&self) -> Config {
         Config {
             chain_source_map: self.chain_source_map.unwrap_or(false),
+            inline_source_map: self.chain_source_map.unwrap_or(true),
             print_comments: self.comments.unwrap_or(false),
             local_var_prefix: self
                 .local_var_prefix
@@ -80,6 +82,7 @@ impl Rewriter {
     pub fn new(config: Option<RewriterConfig>) -> Self {
         let rewriter_config: RewriterConfig = config.unwrap_or(RewriterConfig {
             chain_source_map: Some(false),
+            inline_source_map: Some(true),
             comments: Some(false),
             local_var_prefix: None,
             csi_methods: None,
