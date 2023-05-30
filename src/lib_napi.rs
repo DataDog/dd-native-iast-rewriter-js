@@ -111,3 +111,8 @@ impl Rewriter {
             .collect())
     }
 }
+
+#[napi]
+pub fn init() -> napi::Result<()> {
+    Ok(())
+}

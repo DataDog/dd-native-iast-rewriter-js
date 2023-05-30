@@ -41,14 +41,13 @@ class CacheRewriter {
 
   setLogger (config) {
     if (config && (config.logger || config.logLevel)) {
+      const logger = config.logger || console
+      const logLevel = config.logLevel || 'ERROR'
       try {
-        const logger = config.logger || console
-        const logLevel = config.logLevel || 'ERROR'
-
         this.nativeRewriter.setLogger(logger, logLevel)
       } catch (e) {
-        if (config.logger.error) {
-          config.logger.error(e)
+        if (logger && logger.error) {
+          logger.error(e)
         }
       }
     }
