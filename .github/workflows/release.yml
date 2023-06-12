@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - v[0-9]+.x
+      - igor/release_workflow
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - run: |
+          cargo install wasm-pack
+          npm ci --ignore-scripts
+          npm run build
+          rm wasm/README.md wasm/package.json wasm/.gitignore
+          npm pack
+      - uses: codex-team/action-nodejs-package-info@v1
+        id: package
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
+          path: '*.tgz'
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: npm
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+      - uses: actions/setup-node@v3
+        with:
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm publish --dry-run
+      - id: pkg
+        run: |
+          content=`cat ./package.json | tr '\n' ' '`
+          echo "::set-output name=json::$content"
+      - run: |
+          git tag testing-auto-v${{ fromJson(steps.pkg.outputs.json).version }}
+          git push origin testing-auto-v${{ fromJson(steps.pkg.outputs.json).version }}
