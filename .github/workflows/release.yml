@@ -41,10 +41,8 @@ jobs:
         with:
           registry-url: 'https://registry.npmjs.org'
       - run: npm publish --dry-run
-      - id: pkg
-        run: |
-          content=`cat ./package.json | tr '\n' ' '`
-          echo "::set-output name=json::$content"
+      - uses: codex-team/action-nodejs-package-info@v1
+        id: package
       - run: |
-          git tag testing-auto-v${{ fromJson(steps.pkg.outputs.json).version }}
-          git push origin testing-auto-v${{ fromJson(steps.pkg.outputs.json).version }}
+          git tag testing-auto-v${{ steps.package.outputs.version }}
+          git push origin testing-auto-v${{ steps.package.outputs.version }}
