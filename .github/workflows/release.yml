@@ -1,5 +1,8 @@
 name: Release
 
+env:
+  ARTIFACT_NAME: datadog-native-iast-rewriter
+
 on:
   push:
     branches:
@@ -24,7 +27,7 @@ jobs:
         id: package
       - uses: actions/upload-artifact@v3
         with:
-          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
+          name: ${{ env.ARTIFACT_NAME }}-${{ steps.package.outputs.version }}
           path: '*.tgz'
 
   publish:
@@ -41,8 +44,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - uses: codex-team/action-nodejs-package-info@v1
         id: package
-      - run: ls -l -R
-      - run: npm publish ./datadog-native-iast-rewriter-${{ steps.package.outputs.version }}/datadog-native-iast-rewriter-${{ steps.package.outputs.version }}.tgz --access=public --dry-run
+      - run: npm publish ./${{ env.ARTIFACT_NAME }}-${{ steps.package.outputs.version }}/${{ env.ARTIFACT_NAME }}-${{ steps.package.outputs.version }}.tgz --access=public --dry-run
       - run: |
           git tag testing-auto-v${{ steps.package.outputs.version }}
           git push origin testing-auto-v${{ steps.package.outputs.version }}
