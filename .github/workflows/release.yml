@@ -22,7 +22,6 @@ jobs:
           npm pack
       - uses: codex-team/action-nodejs-package-info@v1
         id: package
-
       - uses: actions/upload-artifact@v3
         with:
           name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
@@ -40,10 +39,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           registry-url: 'https://registry.npmjs.org'
-      - run: npm install husky
-      - run: npm publish --dry-run
       - uses: codex-team/action-nodejs-package-info@v1
         id: package
+      - run: npm publish datadog-native-iast-rewriter-${{ steps.package.outputs.version }}.tgz --access=public --dry-run
       - run: |
           git tag testing-auto-v${{ steps.package.outputs.version }}
           git push origin testing-auto-v${{ steps.package.outputs.version }}
