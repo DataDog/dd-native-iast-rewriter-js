@@ -87,7 +87,7 @@
     "format:rs": "cargo fmt",
     "lint": "eslint . -c ./.eslintrc.json",
     "rustfmt": "rustfmt --config imports_granularity=Crate src/*.rs",
-    "prepublishOnly": "run-p artifacts:prepare artifacts:prepublish",
+    "prepublishOnly:napi": "run-p artifacts:prepare artifacts:prepublish",
     "version": "napi version",
     "test": "mocha --file 'test/setup.js' test/**/*.spec.js",
     "test:junit": "mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml test/**/*.spec.js",
