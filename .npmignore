@@ -8,3 +8,4 @@
 !js/**/*
 !package.json
 !wasm/**/*
+!tracer_logger.js
