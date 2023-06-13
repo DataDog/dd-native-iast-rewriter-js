@@ -17,6 +17,7 @@ export interface RewriterConfig {
 export interface ResultWithoutMetrics {
   content: string
 }
+export function init(): void
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)
   rewrite(code: string, file: string): ResultWithoutMetrics

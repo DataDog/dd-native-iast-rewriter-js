@@ -911,6 +911,7 @@ dependencies = [
  "fastrand",
  "instant",
  "js-sys",
+ "log",
  "napi",
  "napi-build",
  "napi-derive",
