@@ -23,6 +23,7 @@ class CacheRewriter {
   constructor (config) {
     if (NativeRewriter) {
       this.nativeRewriter = new NativeRewriter(config)
+      this.setLogger(config)
     } else {
       this.nativeRewriter = new DummyRewriter()
     }
@@ -37,11 +38,27 @@ class CacheRewriter {
   csiMethods () {
     return this.nativeRewriter.csiMethods()
   }
+
+  setLogger (config) {
+    if (config && (config.logger || config.logLevel)) {
+      const logger = config.logger || console
+      const logLevel = config.logLevel || 'ERROR'
+      try {
+        this.nativeRewriter.setLogger(logger, logLevel)
+      } catch (e) {
+        if (logger && logger.error) {
+          logger.error(e)
+        }
+      }
+    }
+  }
 }
 
 function getRewriter () {
   try {
     const iastRewriter = require('./wasm/wasm_iast_rewriter')
+    iastRewriter.init()
+
     NativeRewriter = iastRewriter.Rewriter
     return CacheRewriter
   } catch (e) {
@@ -52,5 +69,5 @@ function getRewriter () {
 module.exports = {
   Rewriter: getRewriter(),
   DummyRewriter,
-  getPrepareStackTrace: getPrepareStackTrace
+  getPrepareStackTrace
 }

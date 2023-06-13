@@ -23,6 +23,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde-wasm-bindgen = "0.4"
 console_error_panic_hook = "0.1.7"
 js-sys = "0.3.63"
+log = {version = "0.4", features = ["std"] }
 
 [dev-dependencies]
 tempfile = "3.3.0"

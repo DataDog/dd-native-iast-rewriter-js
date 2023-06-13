@@ -13,10 +13,12 @@ use std::{
 use crate::{
     rewriter::{print_js, rewrite_js, Config},
     telemetry::{Telemetry, TelemetryVerbosity},
+    tracer_logger::{self},
     transform::transform_status::TransformStatus,
     util::{rnd_string, FileReader},
     visitor::{self, csi_methods::CsiMethods},
 };
+use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 
@@ -45,7 +47,7 @@ pub struct Result {
     pub metrics: Option<Metrics>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct Metrics {
     pub status: String,
@@ -55,6 +57,16 @@ pub struct Metrics {
 }
 
 impl RewriterConfig {
+    fn default() -> Self {
+        RewriterConfig {
+            chain_source_map: Some(false),
+            comments: Some(false),
+            local_var_prefix: None,
+            csi_methods: None,
+            telemetry_verbosity: Some("INFORMATION".to_string()),
+        }
+    }
+
     fn get_csi_methods(&self) -> CsiMethods {
         match &self.csi_methods {
             Some(methods) => CsiMethods::new(
@@ -86,6 +98,13 @@ impl RewriterConfig {
             verbosity: TelemetryVerbosity::parse(self.telemetry_verbosity.clone()),
         }
     }
+}
+
+// Wasm module init function. Should it be called automatically if anotated with #[wasm_bindgen(start)]?
+// at the moment it is invoked when the wasm module is loaded in main.js
+#[wasm_bindgen]
+pub fn init() {
+    tracer_logger::init();
 }
 
 #[wasm_bindgen]
@@ -149,17 +168,12 @@ impl Rewriter {
     pub fn new(config_js: JsValue) -> Self {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-        let config = serde_wasm_bindgen::from_value::<RewriterConfig>(config_js);
-        let rewriter_config: RewriterConfig = config.unwrap_or(RewriterConfig {
-            chain_source_map: Some(false),
-            comments: Some(false),
-            local_var_prefix: None,
-            csi_methods: None,
-            telemetry_verbosity: Some("INFORMATION".to_string()),
-        });
-        Self {
-            config: rewriter_config.to_config(),
-        }
+        let rewriter_config = serde_wasm_bindgen::from_value::<RewriterConfig>(config_js);
+        let config: Config = rewriter_config
+            .unwrap_or(RewriterConfig::default())
+            .to_config();
+
+        Self { config }
     }
 
     #[wasm_bindgen]
@@ -169,11 +183,20 @@ impl Rewriter {
         rewrite_js(code, &file, &self.config, &source_map_reader)
             .map(|result| Result {
                 content: print_js(&result, &self.config),
-                metrics: get_metrics(result.transform_status, file),
+                metrics: get_metrics(result.transform_status, &file),
             })
             .as_ref()
-            .map(|result| serde_wasm_bindgen::to_value(result).unwrap())
-            .map_err(|e| JsError::new(&format!("{e}")))
+            .map(|result| {
+                let status = &result.metrics;
+                debug!("Rewritten {file}\n status {status:?}");
+
+                serde_wasm_bindgen::to_value(result).unwrap()
+            })
+            .map_err(|e| {
+                let error_msg = format!("{e}");
+                error!("Error rewriting {}: {}", &file, &error_msg);
+                JsError::new(&error_msg)
+            })
     }
 
     #[wasm_bindgen(js_name = csiMethods)]
@@ -185,17 +208,33 @@ impl Rewriter {
             .map(|csi_method| csi_method.dst.clone())
             .collect::<Vec<String>>();
 
-        serde_wasm_bindgen::to_value(&dst_methods).map_err(|e| JsError::new(&format!("{e}")))
+        serde_wasm_bindgen::to_value(&dst_methods).map_err(|e| {
+            let error_msg = format!("{e}");
+            error!("Error getting csi methods: {}", &error_msg);
+            JsError::new(&error_msg)
+        })
+    }
+
+    #[wasm_bindgen(js_name = setLogger)]
+    pub fn set_logger(&self, logger: &JsValue, level: &str) -> anyhow::Result<(), JsError> {
+        tracer_logger::set_logger(logger, level)
+            .map(|_| {
+                log::log!(
+                    log::max_level().to_level().unwrap_or(log::Level::Error),
+                    "IAST rewriter logger configured OK"
+                )
+            })
+            .map_err(|err| JsError::new(&format!("{err:?}")))
     }
 }
 
-fn get_metrics(status: Option<TransformStatus>, file: String) -> Option<Metrics> {
+fn get_metrics(status: Option<TransformStatus>, file: &str) -> Option<Metrics> {
     if let Some(transform_status) = status {
         return Some(Metrics {
             status: transform_status.status.to_string(),
             instrumented_propagation: transform_status.telemetry.get_instrumented_propagation(),
             propagation_debug: transform_status.telemetry.get_propagation_debug(),
-            file,
+            file: file.to_owned(),
         });
     }
     None

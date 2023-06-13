@@ -4,7 +4,7 @@
  **/
 use super::visitor_util::DD_PLUS_OPERATOR;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CsiMethod {
     pub src: String,
     pub dst: String,
@@ -18,7 +18,7 @@ impl CsiMethod {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CsiMethods {
     pub methods: Vec<CsiMethod>,
     pub plus_operator: Option<CsiMethod>,
