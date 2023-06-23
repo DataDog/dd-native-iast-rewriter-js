@@ -76,8 +76,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           registry-url: 'https://registry.npmjs.org'
-      - uses: codex-team/action-nodejs-package-info@v1.1
-        id: package
       - run: npm publish --dry-run --access=public ./${{ env.ARTIFACT_NAME }}-${{ steps.package.outputs.version }}.tgz
       # - run: |
       #     git tag v${{ steps.package.outputs.version }}
