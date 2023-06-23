@@ -6,7 +6,7 @@ env:
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]*'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   build:
@@ -76,7 +76,4 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           registry-url: 'https://registry.npmjs.org'
-      - run: npm publish --dry-run --access=public ./${{ env.ARTIFACT_NAME }}-${{ steps.package.outputs.version }}.tgz
-      # - run: |
-      #     git tag v${{ steps.package.outputs.version }}
-      #     git push origin v${{ steps.package.outputs.version }}
+      - run: npm publish --access=public ./${{ env.ARTIFACT_NAME }}-${{ steps.package.outputs.version }}.tgz
