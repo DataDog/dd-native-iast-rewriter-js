@@ -29,6 +29,7 @@
     "url": "https://github.com/DataDog/dd-native-iast-rewriter-js/issues"
   },
   "dependencies": {
+    "lru-cache": "^7.14.0",
     "node-gyp-build": "^4.5.0"
   },
   "devDependencies": {

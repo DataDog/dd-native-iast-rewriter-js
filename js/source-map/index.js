@@ -1,10 +1,14 @@
 'use strict'
 const path = require('path')
 const fs = require('fs')
+const LRU = require('lru-cache')
+
 const { SourceMap } = require('./node_source_map')
 const SOURCE_MAP_LINE_START = '//# sourceMappingURL='
 const SOURCE_MAP_INLINE_LINE_START = '//# sourceMappingURL=data:application/json;base64,'
+
 const rewrittenSourceMapsCache = new Map()
+const originalSourceMapsCache = new LRU({ max: 1000 })
 
 function generateSourceMapFromFileContent (fileContent, filePath) {
   const fileLines = fileContent.trim().split('\n')
@@ -36,9 +40,8 @@ function getFilePathFromName (filename) {
   return filenameParts.join(path.sep)
 }
 
-function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
+function getPathAndLine (sourceMap, filename, line, column) {
   try {
-    const sourceMap = rewrittenSourceMapsCache.get(filename)
     if (sourceMap) {
       const filePath = getFilePathFromName(filename)
       const { originalSource, originalLine, originalColumn } = sourceMap.findEntry(line - 1, column - 1)
@@ -54,8 +57,30 @@ function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
   return { path: filename, line, column }
 }
 
+function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
+  const sourceMap = rewrittenSourceMapsCache.get(filename)
+  return getPathAndLine(sourceMap, filename, line, column)
+}
+
+function getOriginalPathAndLine (filename, line, column = 0) {
+  if (filename && line) {
+    try {
+      let sourceMap = originalSourceMapsCache.get(filename)
+      if (sourceMap === undefined) {
+        sourceMap = generateSourceMapFromFileContent(fs.readFileSync(filename), filename)
+        originalSourceMapsCache.set(filename, sourceMap || null)
+      }
+      return getPathAndLine(sourceMap, filename, line, column)
+    } catch (e) {
+      // do nothing
+    }
+  }
+  return { path: filename, line, column }
+}
+
 module.exports = {
   getSourcePathAndLineFromSourceMaps,
+  getOriginalPathAndLine,
   cacheRewrittenSourceMap,
   generateSourceMapFromFileContent
 }
