@@ -20,7 +20,7 @@ function generateSourceMapFromFileContent (fileContent, filePath) {
   } else if (lastLine.indexOf(SOURCE_MAP_LINE_START) === 0) {
     let sourceMappingURL = lastLine.substring(SOURCE_MAP_LINE_START.length)
     if (sourceMappingURL) {
-      sourceMappingURL = path.join(filePath, sourceMappingURL)
+      sourceMappingURL = path.isAbsolute(sourceMappingURL) ? sourceMappingURL : path.join(filePath, sourceMappingURL)
       rawSourceMap = fs.readFileSync(sourceMappingURL).toString()
     }
   }
