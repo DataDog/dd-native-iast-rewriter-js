@@ -214,4 +214,18 @@ describe('getOriginalPathAndLine', () => {
     expect(pathAndLine.path).to.be.equals('error')
     expect(pathAndLine.line).to.be.equals(42)
   })
+
+  it('should resolve sourceMappgingURL file correctly', () => {
+    const fileName = 'test-min.min.js'
+    const originalPathAndLine = {
+      path: path.join(sourceMapResourcesPath, fileName),
+      line: 1
+    }
+
+    const pathAndLine = getOriginalPathAndLine(originalPathAndLine.path, originalPathAndLine.line, 23)
+
+    expect(setLRU).to.be.calledOnceWith(originalPathAndLine.path)
+    expect(pathAndLine.path).to.be.equals(path.join(sourceMapResourcesPath, 'test-min.js'))
+    expect(pathAndLine.line).to.be.equals(2)
+  })
 })

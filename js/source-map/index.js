@@ -67,7 +67,8 @@ function getOriginalPathAndLine (filename, line, column = 0) {
     try {
       let sourceMap = originalSourceMapsCache.get(filename)
       if (sourceMap === undefined) {
-        sourceMap = generateSourceMapFromFileContent(fs.readFileSync(filename).toString(), filename)
+        const filePath = getFilePathFromName(filename)
+        sourceMap = generateSourceMapFromFileContent(fs.readFileSync(filename).toString(), filePath)
         originalSourceMapsCache.set(filename, sourceMap || null)
       }
       return getPathAndLine(sourceMap, filename, line, column)
