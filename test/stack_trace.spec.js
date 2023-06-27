@@ -63,9 +63,7 @@ const sourceMapResourcesPath = path.join(__dirname, 'resources', 'stacktrace-sou
 const nodeSourceMap = require('../js/source-map/node_source_map')
 const { expect } = require('chai')
 const readFileSync = function (filename) {
-  if (filename.indexOf('.map') > 0) {
-    return fs.readFileSync(path.join(sourceMapResourcesPath, path.basename(filename)))
-  } else if (filename.indexOf('.js') > 0) {
+  if (filename.indexOf('.map') > 0 || filename.indexOf('.js') > 0) {
     return fs.readFileSync(path.join(sourceMapResourcesPath, path.basename(filename)))
   }
 }
@@ -167,7 +165,7 @@ describe('getOriginalPathAndLine', () => {
           case 'error':
             throw new Error('errr')
           default:
-            return readFileSync(filename).toString()
+            return readFileSync(filename)
         }
       }
     }
