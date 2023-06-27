@@ -62,7 +62,7 @@ function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
   return getPathAndLine(sourceMap, filename, line, column)
 }
 
-function getOriginalPathAndLine (filename, line, column = 0) {
+function getOriginalPathAndLineFromSourceMap (filename, line, column = 0) {
   if (filename && line) {
     try {
       let sourceMap = originalSourceMapsCache.get(filename)
@@ -81,7 +81,7 @@ function getOriginalPathAndLine (filename, line, column = 0) {
 
 module.exports = {
   getSourcePathAndLineFromSourceMaps,
-  getOriginalPathAndLine,
+  getOriginalPathAndLineFromSourceMap,
   cacheRewrittenSourceMap,
   generateSourceMapFromFileContent
 }

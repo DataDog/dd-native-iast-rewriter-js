@@ -138,7 +138,7 @@ describe('getFilenameFromSourceMap', () => {
   })
 })
 
-describe('getOriginalPathAndLine', () => {
+describe('getOriginalPathAndLineFromSourceMapFromSourceMap', () => {
   const sourceMapsMap = new Map()
   const setLRU = sinon.spy()
   const getLRU = sinon.spy()
@@ -154,7 +154,7 @@ describe('getOriginalPathAndLine', () => {
     }
   }
 
-  const { getOriginalPathAndLine } = proxyquire('../js/source-map', {
+  const { getOriginalPathAndLineFromSourceMap } = proxyquire('../js/source-map', {
     'lru-cache': LRU,
     './node_source_map': nodeSourceMap,
     fs: {
@@ -183,7 +183,7 @@ describe('getOriginalPathAndLine', () => {
   })
 
   it('should add SourceMap to cache', () => {
-    const pathAndLine = getOriginalPathAndLine(originalPathAndLine.path, originalPathAndLine.line, 12)
+    const pathAndLine = getOriginalPathAndLineFromSourceMap(originalPathAndLine.path, originalPathAndLine.line, 12)
 
     expect(setLRU).to.be.calledOnceWith(originalPathAndLine.path)
     expect(pathAndLine.path).to.be.equals(path.join(sourceMapResourcesPath, 'test-inline.ts'))
@@ -191,10 +191,10 @@ describe('getOriginalPathAndLine', () => {
   })
 
   it('should reuse previously cached SourceMap', () => {
-    const pathAndLine = getOriginalPathAndLine(originalPathAndLine.path, originalPathAndLine.line, 12)
+    const pathAndLine = getOriginalPathAndLineFromSourceMap(originalPathAndLine.path, originalPathAndLine.line, 12)
 
-    getOriginalPathAndLine(originalPathAndLine.path, originalPathAndLine.line, 12)
-    getOriginalPathAndLine(originalPathAndLine.path, originalPathAndLine.line, 12)
+    getOriginalPathAndLineFromSourceMap(originalPathAndLine.path, originalPathAndLine.line, 12)
+    getOriginalPathAndLineFromSourceMap(originalPathAndLine.path, originalPathAndLine.line, 12)
 
     expect(setLRU).to.be.calledOnceWith(originalPathAndLine.path)
     expect(pathAndLine.path).to.be.equals(path.join(sourceMapResourcesPath, 'test-inline.ts'))
@@ -202,27 +202,27 @@ describe('getOriginalPathAndLine', () => {
   })
 
   it('should not try to load again a previously failed SourceMap', () => {
-    getOriginalPathAndLine('no-sourcemap', originalPathAndLine.line, 12)
-    getOriginalPathAndLine('no-sourcemap', originalPathAndLine.line, 12)
-    getOriginalPathAndLine('no-sourcemap', originalPathAndLine.line, 12)
+    getOriginalPathAndLineFromSourceMap('no-sourcemap', originalPathAndLine.line, 12)
+    getOriginalPathAndLineFromSourceMap('no-sourcemap', originalPathAndLine.line, 12)
+    getOriginalPathAndLineFromSourceMap('no-sourcemap', originalPathAndLine.line, 12)
 
     expect(setLRU).to.be.calledOnceWith('no-sourcemap', null)
   })
 
   it('should return the original path and line if there is an Error', () => {
-    const pathAndLine = getOriginalPathAndLine('error', 42, 12)
+    const pathAndLine = getOriginalPathAndLineFromSourceMap('error', 42, 12)
     expect(pathAndLine.path).to.be.equals('error')
     expect(pathAndLine.line).to.be.equals(42)
   })
 
-  it('should resolve sourceMappgingURL file correctly', () => {
+  it('should resolve sourceMappingURL file correctly', () => {
     const fileName = 'test-min.min.js'
     const originalPathAndLine = {
       path: path.join(sourceMapResourcesPath, fileName),
       line: 1
     }
 
-    const pathAndLine = getOriginalPathAndLine(originalPathAndLine.path, originalPathAndLine.line, 23)
+    const pathAndLine = getOriginalPathAndLineFromSourceMap(originalPathAndLine.path, originalPathAndLine.line, 23)
 
     expect(setLRU).to.be.calledOnceWith(originalPathAndLine.path)
     expect(pathAndLine.path).to.be.equals(path.join(sourceMapResourcesPath, 'test-min.js'))
