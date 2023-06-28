@@ -1,10 +1,14 @@
 'use strict'
 const path = require('path')
 const fs = require('fs')
+const LRU = require('lru-cache')
+
 const { SourceMap } = require('./node_source_map')
 const SOURCE_MAP_LINE_START = '//# sourceMappingURL='
 const SOURCE_MAP_INLINE_LINE_START = '//# sourceMappingURL=data:application/json;base64,'
+
 const rewrittenSourceMapsCache = new Map()
+const originalSourceMapsCache = new LRU({ max: 1000 })
 
 function generateSourceMapFromFileContent (fileContent, filePath) {
   const fileLines = fileContent.trim().split('\n')
@@ -16,7 +20,7 @@ function generateSourceMapFromFileContent (fileContent, filePath) {
   } else if (lastLine.indexOf(SOURCE_MAP_LINE_START) === 0) {
     let sourceMappingURL = lastLine.substring(SOURCE_MAP_LINE_START.length)
     if (sourceMappingURL) {
-      sourceMappingURL = path.join(filePath, sourceMappingURL)
+      sourceMappingURL = path.isAbsolute(sourceMappingURL) ? sourceMappingURL : path.join(filePath, sourceMappingURL)
       rawSourceMap = fs.readFileSync(sourceMappingURL).toString()
     }
   }
@@ -36,9 +40,8 @@ function getFilePathFromName (filename) {
   return filenameParts.join(path.sep)
 }
 
-function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
+function getPathAndLine (sourceMap, filename, line, column) {
   try {
-    const sourceMap = rewrittenSourceMapsCache.get(filename)
     if (sourceMap) {
       const filePath = getFilePathFromName(filename)
       const { originalSource, originalLine, originalColumn } = sourceMap.findEntry(line - 1, column - 1)
@@ -54,8 +57,34 @@ function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
   return { path: filename, line, column }
 }
 
+function getSourcePathAndLineFromSourceMaps (filename, line, column = 0) {
+  const sourceMap = rewrittenSourceMapsCache.get(filename)
+  return getPathAndLine(sourceMap, filename, line, column)
+}
+
+function getOriginalPathAndLineFromSourceMap (filename, line, column = 0) {
+  if (filename && line) {
+    let sourceMap
+    try {
+      sourceMap = originalSourceMapsCache.get(filename)
+      if (sourceMap === undefined) {
+        const filePath = getFilePathFromName(filename)
+        sourceMap = generateSourceMapFromFileContent(fs.readFileSync(filename).toString(), filePath)
+        originalSourceMapsCache.set(filename, sourceMap || null)
+      }
+      return getPathAndLine(sourceMap, filename, line, column)
+    } catch (e) {
+      if (sourceMap === undefined) {
+        originalSourceMapsCache.set(filename, null)
+      }
+    }
+  }
+  return { path: filename, line, column }
+}
+
 module.exports = {
   getSourcePathAndLineFromSourceMaps,
+  getOriginalPathAndLineFromSourceMap,
   cacheRewrittenSourceMap,
   generateSourceMapFromFileContent
 }

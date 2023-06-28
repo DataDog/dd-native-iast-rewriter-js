@@ -60,18 +60,15 @@ describe('V8 prepareStackTrace', () => {
 })
 
 const sourceMapResourcesPath = path.join(__dirname, 'resources', 'stacktrace-sourcemap')
+const nodeSourceMap = require('../js/source-map/node_source_map')
+const { expect } = require('chai')
+const readFileSync = function (filename) {
+  if (filename.indexOf('.map') > 0 || filename.indexOf('.js') > 0) {
+    return fs.readFileSync(path.join(sourceMapResourcesPath, path.basename(filename)))
+  }
+}
 
 describe('getFilenameFromSourceMap', () => {
-  const nodeSourceMap = require('../js/source-map/node_source_map')
-
-  const readFileSync = function (filename) {
-    if (filename.indexOf('.map') > 0) {
-      return fs.readFileSync(path.join(sourceMapResourcesPath, path.basename(filename)))
-    } else if (filename.indexOf('.js') > 0) {
-      return fs.readFileSync(path.join(sourceMapResourcesPath, path.basename(filename)))
-    }
-  }
-
   it('should return original object if file does not exist', () => {
     const originalPathAndLine = {
       path: path.join(sourceMapResourcesPath, 'does-not-exist.js'),
@@ -136,6 +133,98 @@ describe('getFilenameFromSourceMap', () => {
     cacheRewrittenSourceMap(originalPathAndLine.path, fileContent)
 
     const pathAndLine = getSourcePathAndLineFromSourceMaps(originalPathAndLine.path, originalPathAndLine.line, 23)
+    expect(pathAndLine.path).to.be.equals(path.join(sourceMapResourcesPath, 'test-min.js'))
+    expect(pathAndLine.line).to.be.equals(2)
+  })
+})
+
+describe('getOriginalPathAndLineFromSourceMapFromSourceMap', () => {
+  const sourceMapsMap = new Map()
+  const setLRU = sinon.spy()
+  const getLRU = sinon.spy()
+  class LRU {
+    set (key, value) {
+      setLRU(key, value)
+      return sourceMapsMap.set(key, value)
+    }
+
+    get (key) {
+      getLRU(key)
+      return sourceMapsMap.get(key)
+    }
+  }
+
+  const { getOriginalPathAndLineFromSourceMap } = proxyquire('../js/source-map', {
+    'lru-cache': LRU,
+    './node_source_map': nodeSourceMap,
+    fs: {
+      readFileSync: (filename) => {
+        switch (filename) {
+          case 'no-sourcemap':
+            return ''
+          case 'error':
+            throw new Error('errr')
+          default:
+            return readFileSync(filename)
+        }
+      }
+    }
+  })
+
+  const fileName = 'test-inline.js'
+  const originalPathAndLine = {
+    path: path.join(sourceMapResourcesPath, fileName),
+    line: 5
+  }
+
+  afterEach(() => {
+    sinon.reset()
+    sourceMapsMap.clear()
+  })
+
+  it('should add SourceMap to cache', () => {
+    const pathAndLine = getOriginalPathAndLineFromSourceMap(originalPathAndLine.path, originalPathAndLine.line, 12)
+
+    expect(setLRU).to.be.calledOnceWith(originalPathAndLine.path)
+    expect(pathAndLine.path).to.be.equals(path.join(sourceMapResourcesPath, 'test-inline.ts'))
+    expect(pathAndLine.line).to.be.equals(2)
+  })
+
+  it('should reuse previously cached SourceMap', () => {
+    const pathAndLine = getOriginalPathAndLineFromSourceMap(originalPathAndLine.path, originalPathAndLine.line, 12)
+
+    getOriginalPathAndLineFromSourceMap(originalPathAndLine.path, originalPathAndLine.line, 12)
+    getOriginalPathAndLineFromSourceMap(originalPathAndLine.path, originalPathAndLine.line, 12)
+
+    expect(setLRU).to.be.calledOnceWith(originalPathAndLine.path)
+    expect(pathAndLine.path).to.be.equals(path.join(sourceMapResourcesPath, 'test-inline.ts'))
+    expect(pathAndLine.line).to.be.equals(2)
+  })
+
+  it('should not try to load again a previously failed SourceMap', () => {
+    getOriginalPathAndLineFromSourceMap('no-sourcemap', originalPathAndLine.line, 12)
+    getOriginalPathAndLineFromSourceMap('no-sourcemap', originalPathAndLine.line, 12)
+    getOriginalPathAndLineFromSourceMap('no-sourcemap', originalPathAndLine.line, 12)
+
+    expect(setLRU).to.be.calledOnceWith('no-sourcemap', null)
+  })
+
+  it('should return the original path and line if there is an Error', () => {
+    const pathAndLine = getOriginalPathAndLineFromSourceMap('error', 42, 12)
+    expect(pathAndLine.path).to.be.equals('error')
+    expect(pathAndLine.line).to.be.equals(42)
+  })
+
+  it('should resolve sourceMappingURL file correctly', () => {
+    const fileName = 'test-min.min.js'
+    const originalPathAndLine = {
+      path: path.join(sourceMapResourcesPath, fileName),
+      line: 1
+    }
+
+    const pathAndLine = getOriginalPathAndLineFromSourceMap(originalPathAndLine.path, originalPathAndLine.line, 23)
+
+    expect(setLRU).to.be.calledOnceWith(originalPathAndLine.path)
     expect(pathAndLine.path).to.be.equals(path.join(sourceMapResourcesPath, 'test-min.js'))
     expect(pathAndLine.line).to.be.equals(2)
   })
