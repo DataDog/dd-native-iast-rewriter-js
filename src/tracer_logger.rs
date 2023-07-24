@@ -3,7 +3,10 @@
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
 use log::{LevelFilter, Log, Metadata, Record};
-use std::str::FromStr;
+use std::{
+    str::FromStr,
+    sync::atomic::{AtomicBool, Ordering},
+};
 use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
 type LoggerFn<'a> = &'a (dyn Fn(&str, String) + Send + Sync);
@@ -55,15 +58,20 @@ impl Log for TracerLogger<'_> {
     fn flush(&self) {}
 }
 
+static LOGGER_INITIATED: AtomicBool = AtomicBool::new(false);
+
 pub fn set_logger(logger: &JsValue, level: &str) -> anyhow::Result<JsValue, JsValue> {
-    log::set_max_level(LevelFilter::from_str(level).unwrap_or(log::max_level()));
-    setLogger(logger)
+    if !LOGGER_INITIATED.load(Ordering::Relaxed) {
+        log::set_boxed_logger(Box::new(TracerLogger::default()))
+            .map(|_| LOGGER_INITIATED.store(true, Ordering::Relaxed))
+            .map_err(|err| JsValue::from_str(&format!("{err:?}")))
+            .and_then(|_| set_logger_and_level(logger, level))
+    } else {
+        set_logger_and_level(logger, level)
+    }
 }
 
-// NOTE: log::set_boxed_logger should be called only once. Maybe in a function when wasm module is initialized. See #[wasm_bindgen(start)]
-pub fn init() {
-    let tracer_logger = TracerLogger::default();
-    log::set_boxed_logger(Box::new(tracer_logger))
-        .map(|_| log::set_max_level(LevelFilter::Off))
-        .ok();
+fn set_logger_and_level(logger: &JsValue, level: &str) -> anyhow::Result<JsValue, JsValue> {
+    log::set_max_level(LevelFilter::from_str(level).unwrap_or(log::max_level()));
+    setLogger(logger)
 }

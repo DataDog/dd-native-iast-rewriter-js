@@ -218,7 +218,6 @@ if (!nativeBinding) {
   throw new Error('Failed to load native binding')
 }
 
-const { Rewriter, init } = nativeBinding
+const { Rewriter } = nativeBinding
 
 module.exports.Rewriter = Rewriter
-module.exports.init = init

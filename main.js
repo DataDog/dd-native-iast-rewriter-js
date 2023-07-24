@@ -57,7 +57,6 @@ class CacheRewriter {
 function getRewriter () {
   try {
     const iastRewriter = require('./wasm/wasm_iast_rewriter')
-    iastRewriter.init()
 
     NativeRewriter = iastRewriter.Rewriter
     return CacheRewriter
