@@ -58,12 +58,12 @@ impl Log for TracerLogger<'_> {
     fn flush(&self) {}
 }
 
-static LOGGER_INITIATED: AtomicBool = AtomicBool::new(false);
+static LOGGER_INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 pub fn set_logger(logger: &JsValue, level: &str) -> anyhow::Result<JsValue, JsValue> {
-    if !LOGGER_INITIATED.load(Ordering::Relaxed) {
+    if !LOGGER_INITIALIZED.load(Ordering::Relaxed) {
         log::set_boxed_logger(Box::new(TracerLogger::default()))
-            .map(|_| LOGGER_INITIATED.store(true, Ordering::Relaxed))
+            .map(|_| LOGGER_INITIALIZED.store(true, Ordering::Relaxed))
             .map_err(|err| JsValue::from_str(&format!("{err:?}")))
             .and_then(|_| set_logger_and_level(logger, level))
     } else {
