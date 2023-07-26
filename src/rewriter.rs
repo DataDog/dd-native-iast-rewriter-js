@@ -11,7 +11,6 @@ use crate::{
 use anyhow::{Error, Result};
 use log::debug;
 use std::{
-    borrow::Borrow,
     collections::HashMap,
     io::Read,
     path::{Path, PathBuf},
@@ -72,13 +71,13 @@ pub fn rewrite_js<R: Read>(
 
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
-        let program = parse_js(&code, file, handler, compiler.borrow())?;
+        let program = parse_js(&code, file, handler, &compiler)?;
 
         // extract sourcemap before printing otherwise comments are consumed
         // and looks like it is not possible to read them after compiler.print() invocation
         let original_map = extract_source_map(file, compiler.comments(), file_reader);
 
-        let result = transform_js(program, &code, file, config, compiler.borrow());
+        let result = transform_js(program, &code, file, config, &compiler);
 
         result.map(|transformed| RewrittenOutput {
             code: transformed.output.code,
@@ -324,7 +323,7 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let js_file = "debug.js".to_string();
-        let program = parse_js(&code, &js_file, handler, compiler.borrow())?;
+        let program = parse_js(&code, &js_file, handler, &compiler)?;
 
         print!("{:#?}", program);
 

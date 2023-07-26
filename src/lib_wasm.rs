@@ -100,13 +100,6 @@ impl RewriterConfig {
     }
 }
 
-// Wasm module init function. Should it be called automatically if anotated with #[wasm_bindgen(start)]?
-// at the moment it is invoked when the wasm module is loaded in main.js
-#[wasm_bindgen]
-pub fn init() {
-    tracer_logger::init();
-}
-
 #[wasm_bindgen]
 pub struct Rewriter {
     config: Config,
