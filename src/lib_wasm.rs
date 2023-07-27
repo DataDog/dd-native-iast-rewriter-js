@@ -103,6 +103,7 @@ impl RewriterConfig {
 #[wasm_bindgen]
 pub struct Rewriter {
     config: Config,
+    file_reader: WasmFileReader,
 }
 
 #[wasm_bindgen(module = "fs")]
@@ -159,21 +160,20 @@ impl FileReader<Cursor<Vec<u8>>> for WasmFileReader {
 impl Rewriter {
     #[wasm_bindgen(constructor)]
     pub fn new(config_js: JsValue) -> Self {
-        std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-
         let rewriter_config = serde_wasm_bindgen::from_value::<RewriterConfig>(config_js);
         let config: Config = rewriter_config
             .unwrap_or(RewriterConfig::default())
             .to_config();
 
-        Self { config }
+        Self {
+            config,
+            file_reader: WasmFileReader {},
+        }
     }
 
     #[wasm_bindgen]
     pub fn rewrite(&mut self, code: String, file: String) -> anyhow::Result<JsValue, JsError> {
-        let source_map_reader = WasmFileReader {};
-
-        rewrite_js(code, &file, &self.config, &source_map_reader)
+        rewrite_js(code, &file, &self.config, &self.file_reader)
             .map(|result| Result {
                 content: print_js(&result, &self.config),
                 metrics: get_metrics(result.transform_status, &file),
