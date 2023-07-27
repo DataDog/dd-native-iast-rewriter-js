@@ -13,12 +13,10 @@ use std::{
 use crate::{
     rewriter::{print_js, rewrite_js, Config},
     telemetry::{Telemetry, TelemetryVerbosity},
-    tracer_logger::{self},
     transform::transform_status::TransformStatus,
     util::{rnd_string, FileReader},
     visitor::{self, csi_methods::CsiMethods},
 };
-use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 
@@ -179,15 +177,9 @@ impl Rewriter {
                 metrics: get_metrics(result.transform_status, &file),
             })
             .as_ref()
-            .map(|result| {
-                let status = &result.metrics;
-                debug!("Rewritten {file}\n status {status:?}");
-
-                serde_wasm_bindgen::to_value(result).unwrap()
-            })
+            .map(|result| serde_wasm_bindgen::to_value(result).unwrap())
             .map_err(|e| {
                 let error_msg = format!("{e}");
-                error!("Error rewriting {}: {}", &file, &error_msg);
                 JsError::new(&error_msg)
             })
     }
@@ -203,21 +195,21 @@ impl Rewriter {
 
         serde_wasm_bindgen::to_value(&dst_methods).map_err(|e| {
             let error_msg = format!("{e}");
-            error!("Error getting csi methods: {}", &error_msg);
             JsError::new(&error_msg)
         })
     }
 
     #[wasm_bindgen(js_name = setLogger)]
-    pub fn set_logger(&self, logger: &JsValue, level: &str) -> anyhow::Result<(), JsError> {
-        tracer_logger::set_logger(logger, level)
-            .map(|_| {
-                log::log!(
-                    log::max_level().to_level().unwrap_or(log::Level::Error),
-                    "IAST rewriter logger configured OK"
-                )
-            })
-            .map_err(|err| JsError::new(&format!("{err:?}")))
+    pub fn set_logger(&self, _logger: &JsValue, _level: &str) -> anyhow::Result<(), JsError> {
+        // tracer_logger::set_logger(logger, level)
+        //     .map(|_| {
+        //         log::log!(
+        //             log::max_level().to_level().unwrap_or(log::Level::Error),
+        //             "IAST rewriter logger configured OK"
+        //         )
+        //     })
+        //     .map_err(|err| JsError::new(&format!("{err:?}")))
+        Ok(())
     }
 }
 

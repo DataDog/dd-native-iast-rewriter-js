@@ -5,7 +5,7 @@
 **/
 mod rewriter;
 mod telemetry;
-mod tracer_logger;
+// mod tracer_logger;
 mod transform;
 mod util;
 mod visitor;
