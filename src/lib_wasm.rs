@@ -4,17 +4,13 @@
 **/
 extern crate base64;
 
-use std::{
-    collections::HashMap,
-    io::{Cursor, Read},
-    path::{Path, PathBuf},
-};
+use std::collections::HashMap;
 
 use crate::{
     rewriter::{print_js, rewrite_js, Config},
     telemetry::{Telemetry, TelemetryVerbosity},
     transform::transform_status::TransformStatus,
-    util::{rnd_string, FileReader},
+    util::{rnd_string, DefaultFileReader},
     visitor::{self, csi_methods::CsiMethods},
 };
 use serde::{Deserialize, Serialize};
@@ -101,57 +97,7 @@ impl RewriterConfig {
 #[wasm_bindgen]
 pub struct Rewriter {
     config: Config,
-    file_reader: WasmFileReader,
-}
-
-#[wasm_bindgen(module = "fs")]
-extern "C" {
-    #[wasm_bindgen(js_name = readFileSync, catch)]
-    fn read_file(path: &str) -> anyhow::Result<JsValue, JsValue>;
-}
-
-#[wasm_bindgen(module = "path")]
-extern "C" {
-    #[wasm_bindgen(js_name = dirname, catch)]
-    fn dirname(s: &str) -> anyhow::Result<JsValue, JsValue>;
-}
-
-struct WasmFileReader {}
-impl FileReader<Cursor<Vec<u8>>> for WasmFileReader {
-    fn read(&self, path: &Path) -> std::io::Result<Cursor<Vec<u8>>>
-    where
-        Cursor<Vec<u8>>: Read,
-    {
-        match path.to_str() {
-            Some(path) => read_file(path)
-                .map(|buffer| {
-                    let arr = js_sys::Uint8Array::new(&buffer);
-                    Cursor::new(arr.to_vec())
-                })
-                .map_err(|err| {
-                    std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        format!("Error reading source map from wasm {err:?}"),
-                    )
-                }),
-            None => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Error reading source map. No path provided".to_string(),
-            )),
-        }
-    }
-
-    fn parent(&self, path: &Path) -> Option<PathBuf> {
-        match path.to_str() {
-            Some(path) => match dirname(path) {
-                Ok(parent) => Some(PathBuf::from(
-                    parent.as_string().unwrap_or_default().as_str(),
-                )),
-                Err(_) => None,
-            },
-            None => None,
-        }
-    }
+    file_reader: DefaultFileReader,
 }
 
 #[wasm_bindgen]
@@ -165,7 +111,7 @@ impl Rewriter {
 
         Self {
             config,
-            file_reader: WasmFileReader {},
+            file_reader: DefaultFileReader {},
         }
     }
 

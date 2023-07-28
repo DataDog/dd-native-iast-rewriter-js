@@ -892,14 +892,13 @@ dependencies = [
 
 [[package]]
 name = "native-iast-rewriter"
-version = "2.1.2-beta.2"
+version = "2.1.2-beta.3"
 dependencies = [
  "anyhow",
  "base64",
  "ctor",
  "fastrand",
  "instant",
- "js-sys",
  "napi",
  "napi-build",
  "napi-derive",

@@ -247,22 +247,5 @@ _ddiast.plus("b" + c, "b", c));
         expect(source).to.contain('StrUtil_external.js')
       }
     })
-
-    it('should chain original source map', () => {
-      const rewriter = new Rewriter({ csiMethods, chainSourceMap: true })
-
-      const resource = resourceFile('sourcemap', 'StrUtil_external.js')
-      const result = rewriter.rewrite(resource.content, resource.filename)
-
-      const content = result.content
-      expect(content).to.not.undefined
-
-      const sourceMap = generateSourceMapFromFileContent(content, resource.filename)
-      expect(sourceMap).to.not.undefined
-
-      for (const source in sourceMap._sources) {
-        expect(source).to.contain('StrUtil.ts')
-      }
-    })
   })
 })
