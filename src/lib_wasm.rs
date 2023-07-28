@@ -10,7 +10,7 @@ use crate::{
     rewriter::{print_js, rewrite_js, Config},
     telemetry::{Telemetry, TelemetryVerbosity},
     transform::transform_status::TransformStatus,
-    util::{rnd_string, DefaultFileReader},
+    util::rnd_string,
     visitor::{self, csi_methods::CsiMethods},
 };
 use serde::{Deserialize, Serialize};
@@ -97,7 +97,6 @@ impl RewriterConfig {
 #[wasm_bindgen]
 pub struct Rewriter {
     config: Config,
-    file_reader: DefaultFileReader,
 }
 
 #[wasm_bindgen]
@@ -109,15 +108,12 @@ impl Rewriter {
             .unwrap_or(RewriterConfig::default())
             .to_config();
 
-        Self {
-            config,
-            file_reader: DefaultFileReader {},
-        }
+        Self { config }
     }
 
     #[wasm_bindgen]
     pub fn rewrite(&mut self, code: String, file: String) -> anyhow::Result<JsValue, JsError> {
-        rewrite_js(code, &file, &self.config, &self.file_reader)
+        rewrite_js(code, &file, &self.config)
             .map(|result| Result {
                 content: print_js(&result, &self.config),
                 metrics: get_metrics(result.transform_status, &file),

@@ -15,7 +15,6 @@ mod tests {
         tests::{
             get_chained_and_print_comments_config, get_default_config, get_test_resources_folder,
         },
-        util::DefaultFileReader,
     };
 
     #[derive(Clone)]
@@ -90,13 +89,11 @@ mod tests {
         let js_file_to_rewrite = sourcemap_resources_folder.join(js_file_name);
         let original_code =
             fs::read_to_string(js_file_to_rewrite.clone()).map_err(|e| e.to_string())?;
-        let source_map_reader = DefaultFileReader {};
 
         rewrite_js(
             original_code,
             &String::from(js_file_to_rewrite.to_str().unwrap()),
             &get_default_config(true),
-            &source_map_reader,
         )
         .map_err(|e| e.to_string())
     }
