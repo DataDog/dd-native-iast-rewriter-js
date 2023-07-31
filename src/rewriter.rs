@@ -6,7 +6,13 @@ use crate::{
     telemetry::TelemetryVerbosity,
     transform::transform_status::{Status, TransformStatus},
     util::{file_name, parse_source_map, FileReader},
-    visitor::{block_transform_visitor::BlockTransformVisitor, csi_methods::CsiMethods},
+    visitor::{
+        block_transform_visitor::BlockTransformVisitor,
+        csi_methods::CsiMethods,
+        hardcoded_secret_visitor::{
+            get_hardcoded_secret_matches, get_hardcoded_secret_visitor, HardcodedSecretResult,
+        },
+    },
 };
 use anyhow::{Error, Result};
 use log::debug;
@@ -40,6 +46,7 @@ pub struct RewrittenOutput {
     pub source_map: String,
     pub original_source_map: OriginalSourceMap,
     pub transform_status: Option<TransformStatus>,
+    pub hardcoded_secret_result: Option<HardcodedSecretResult>,
 }
 
 pub struct OriginalSourceMap {
@@ -50,6 +57,7 @@ pub struct OriginalSourceMap {
 pub struct TransformOutputWithStatus {
     pub output: TransformOutput,
     pub status: TransformStatus,
+    pub hardcoded_secret_result: HardcodedSecretResult,
 }
 
 #[derive(Debug)]
@@ -59,6 +67,7 @@ pub struct Config {
     pub local_var_prefix: String,
     pub csi_methods: CsiMethods,
     pub verbosity: TelemetryVerbosity,
+    pub hardcoded_secret: bool,
 }
 
 pub fn rewrite_js<R: Read>(
@@ -84,6 +93,7 @@ pub fn rewrite_js<R: Read>(
             source_map: transformed.output.map.unwrap_or_default(),
             original_source_map: original_map,
             transform_status: Some(transformed.status),
+            hardcoded_secret_result: Some(transformed.hardcoded_secret_result),
         })
     })
 }
@@ -169,8 +179,17 @@ fn transform_js(
     compiler: &Compiler,
 ) -> Result<TransformOutputWithStatus, Error> {
     let mut transform_status = TransformStatus::not_modified(config);
-    let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status, config);
+
+    let mut hardcoded_secret_visitor = get_hardcoded_secret_visitor(config.hardcoded_secret);
+    let mut block_transform_visitor = BlockTransformVisitor::default(
+        &mut transform_status,
+        hardcoded_secret_visitor.as_mut(),
+        config,
+    );
     program.visit_mut_with(&mut block_transform_visitor);
+
+    let hardcoded_secret_result =
+        get_hardcoded_secret_matches(&hardcoded_secret_visitor.get_found_literals());
 
     match transform_status.status {
         Status::Modified => compiler
@@ -193,14 +212,18 @@ fn transform_js(
             .map(|output| TransformOutputWithStatus {
                 output,
                 status: transform_status,
+                hardcoded_secret_result,
             }),
+
         Status::NotModified => Ok(TransformOutputWithStatus {
             output: TransformOutput {
                 code: code.to_string(),
                 map: None,
             },
             status: transform_status,
+            hardcoded_secret_result,
         }),
+
         Status::Cancelled => Err(Error::msg(format!(
             "Cancelling {} file rewrite. Reason: {}",
             file,
@@ -351,6 +374,7 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
             source_map: printed.map.unwrap(),
             original_source_map: original_map,
             transform_status: None,
+            hardcoded_secret_result: None,
         })
     });
 }

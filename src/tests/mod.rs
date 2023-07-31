@@ -13,6 +13,7 @@ use std::path::PathBuf;
 
 mod binary_assignation_test;
 mod binary_expression_test;
+mod hardcoded_secret_test;
 mod source_map_test;
 mod string_method_test;
 mod telemetry_test;
@@ -58,9 +59,15 @@ fn rewrite_js_with_csi_methods(
             local_var_prefix: "test".to_string(),
             csi_methods: csi_methods.clone(),
             verbosity: TelemetryVerbosity::Information,
+            hardcoded_secret: false,
         },
         &source_map_reader,
     )
+}
+
+fn rewrite_js_with_config(code: String, config: &Config) -> Result<RewrittenOutput, Error> {
+    let source_map_reader = DefaultFileReader {};
+    crate::rewriter::rewrite_js(code, "test.js", config, &source_map_reader)
 }
 
 fn get_default_csi_methods() -> CsiMethods {
@@ -91,6 +98,7 @@ fn get_default_config_with_verbosity(
         local_var_prefix: "test".to_string(),
         csi_methods: get_default_csi_methods(),
         verbosity,
+        hardcoded_secret: false,
     }
 }
 
@@ -101,6 +109,18 @@ fn get_chained_and_print_comments_config() -> Config {
         local_var_prefix: "test".to_string(),
         csi_methods: get_default_csi_methods(),
         verbosity: TelemetryVerbosity::Debug,
+        hardcoded_secret: false,
+    }
+}
+
+fn get_hardcoded_secret_config() -> Config {
+    Config {
+        chain_source_map: true,
+        print_comments: true,
+        local_var_prefix: "test".to_string(),
+        csi_methods: get_default_csi_methods(),
+        verbosity: TelemetryVerbosity::Debug,
+        hardcoded_secret: true,
     }
 }
 

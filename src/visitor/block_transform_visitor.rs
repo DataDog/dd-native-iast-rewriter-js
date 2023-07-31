@@ -16,6 +16,7 @@ use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use super::{
     csi_methods::CsiMethods,
+    hardcoded_secret_visitor::HardcodedSecretVisitor,
     ident_provider::{DefaultIdentProvider, IdentProvider},
     no_plus_operator_visitor::NoPlusOperatorVisitor,
     visitor_with_context::Ctx,
@@ -23,16 +24,19 @@ use super::{
 
 pub struct BlockTransformVisitor<'a> {
     pub transform_status: &'a mut TransformStatus,
+    hardcoded_secret_visitor: &'a mut dyn HardcodedSecretVisitor,
     pub config: &'a Config,
 }
 
 impl BlockTransformVisitor<'_> {
     pub fn default<'a>(
         transform_status: &'a mut TransformStatus,
+        hardcoded_secret_visitor: &'a mut dyn HardcodedSecretVisitor,
         config: &'a Config,
     ) -> BlockTransformVisitor<'a> {
         BlockTransformVisitor {
             transform_status,
+            hardcoded_secret_visitor,
             config,
         }
     }
@@ -77,6 +81,10 @@ impl VisitMut for BlockTransformVisitor<'_> {
         }
 
         expr.visit_mut_children_with(self);
+    }
+
+    fn visit_mut_lit(&mut self, literal: &mut Lit) {
+        self.hardcoded_secret_visitor.visit_lit(literal)
     }
 }
 

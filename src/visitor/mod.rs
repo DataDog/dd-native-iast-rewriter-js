@@ -4,6 +4,7 @@
 **/
 pub(crate) mod block_transform_visitor;
 pub(crate) mod csi_methods;
+pub(crate) mod hardcoded_secret_visitor;
 pub(crate) mod ident_provider;
 pub(crate) mod no_plus_operator_visitor;
 pub(crate) mod operation_transform_visitor;
