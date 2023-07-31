@@ -8,7 +8,7 @@ use crate::{
     rewriter::{print_js, rewrite_js, Config},
     telemetry::TelemetryVerbosity,
     util::{rnd_string, DefaultFileReader},
-    visitor::{self, csi_methods::CsiMethods},
+    visitor::{self, csi_methods::CsiMethods, hardcoded_secret_visitor::LiteralInfo},
 };
 
 use napi::{Error, Status};
@@ -28,6 +28,7 @@ pub struct RewriterConfig {
     pub comments: Option<bool>,
     pub local_var_prefix: Option<String>,
     pub csi_methods: Option<Vec<CsiMethod>>,
+    pub hardcoded_secret: Option<bool>,
 }
 
 impl RewriterConfig {
@@ -59,6 +60,7 @@ impl RewriterConfig {
                 .unwrap_or_else(|| rnd_string(6)),
             csi_methods: self.get_csi_methods(),
             verbosity: TelemetryVerbosity::Information,
+            hardcoded_secret: self.hardcoded_secret.unwrap_or(true),
         }
     }
 }
@@ -67,6 +69,35 @@ impl RewriterConfig {
 #[derive(Debug)]
 pub struct ResultWithoutMetrics {
     pub content: String,
+    pub hardcoded_secret_result: Option<HardcodedSecretResultNapi>,
+}
+
+#[napi(object, js_name = "HardcodedSecretResult")]
+#[derive(Debug)]
+pub struct HardcodedSecretResultNapi {
+    pub file: String,
+    pub literals: Vec<LiteralInfoNapi>,
+}
+
+#[napi(object, js_name = "LiteralInfo")]
+#[derive(Debug)]
+pub struct LiteralInfoNapi {
+    pub value: String,
+    pub ident: Option<String>,
+    pub line: Option<i32>,
+}
+
+impl LiteralInfoNapi {
+    fn from(literals: Vec<LiteralInfo>) -> Vec<LiteralInfoNapi> {
+        literals
+            .iter()
+            .map(|literal| LiteralInfoNapi {
+                value: literal.value.clone(),
+                ident: literal.ident.clone(),
+                line: literal.line.map(|line| line as i32),
+            })
+            .collect()
+    }
 }
 
 #[napi]
@@ -83,6 +114,7 @@ impl Rewriter {
             comments: Some(false),
             local_var_prefix: None,
             csi_methods: None,
+            hardcoded_secret: Some(true),
         });
         Self {
             config: rewriter_config.to_config(),
@@ -96,6 +128,13 @@ impl Rewriter {
         rewrite_js(code, &file, &self.config, &default_file_reader)
             .map(|result| ResultWithoutMetrics {
                 content: print_js(&result, &self.config),
+                hardcoded_secret_result: match result.hardcoded_secret_result {
+                    Some(hardcoded_secret_result) => Some(HardcodedSecretResultNapi {
+                        file,
+                        literals: LiteralInfoNapi::from(hardcoded_secret_result.literals),
+                    }),
+                    _ => None,
+                },
             })
             .map_err(|e| Error::new(Status::Unknown, format!("{e}")))
     }

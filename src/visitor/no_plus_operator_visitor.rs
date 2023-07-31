@@ -80,6 +80,7 @@ impl VisitMut for NoPlusOperatorVisitor<'_> {
                     opv_with_child_ctx.update_status(result.status, result.tag);
                 }
             }
+
             _ => expr.visit_mut_children_with(self),
         }
     }

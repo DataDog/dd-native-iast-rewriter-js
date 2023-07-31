@@ -16,7 +16,7 @@ use crate::{
     tracer_logger::{self},
     transform::transform_status::TransformStatus,
     util::{rnd_string, FileReader},
-    visitor::{self, csi_methods::CsiMethods},
+    visitor::{self, csi_methods::CsiMethods, hardcoded_secret_visitor::HardcodedSecretResult},
 };
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
@@ -38,6 +38,7 @@ pub struct RewriterConfig {
     pub local_var_prefix: Option<String>,
     pub csi_methods: Option<Vec<CsiMethod>>,
     pub telemetry_verbosity: Option<String>,
+    pub hardcoded_secret: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -45,6 +46,7 @@ pub struct RewriterConfig {
 pub struct Result {
     pub content: String,
     pub metrics: Option<Metrics>,
+    pub hardcoded_secret_result: Option<HardcodedSecretResult>,
 }
 
 #[derive(Serialize, Debug)]
@@ -64,6 +66,7 @@ impl RewriterConfig {
             local_var_prefix: None,
             csi_methods: None,
             telemetry_verbosity: Some("INFORMATION".to_string()),
+            hardcoded_secret: Some(true),
         }
     }
 
@@ -96,6 +99,7 @@ impl RewriterConfig {
                 .unwrap_or_else(|| rnd_string(6)),
             csi_methods: self.get_csi_methods(),
             verbosity: TelemetryVerbosity::parse(self.telemetry_verbosity.clone()),
+            hardcoded_secret: self.hardcoded_secret.unwrap_or(true),
         }
     }
 }
@@ -177,6 +181,7 @@ impl Rewriter {
             .map(|result| Result {
                 content: print_js(&result, &self.config),
                 metrics: get_metrics(result.transform_status, &file),
+                hardcoded_secret_result: result.hardcoded_secret_result,
             })
             .as_ref()
             .map(|result| {
