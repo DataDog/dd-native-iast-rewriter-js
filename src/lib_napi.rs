@@ -75,6 +75,7 @@ pub struct ResultWithoutMetrics {
 #[napi(object)]
 #[derive(Debug)]
 pub struct HardcodedSecretResultNapi {
+    pub file: String,
     pub literals: Vec<String>,
 }
 
@@ -108,6 +109,7 @@ impl Rewriter {
                 content: print_js(&result, &self.config),
                 hardcoded_secret_result: match result.hardcoded_secret_result {
                     Some(hardcoded_secret_result) => Some(HardcodedSecretResultNapi {
+                        file,
                         literals: hardcoded_secret_result.literals,
                     }),
                     _ => None,

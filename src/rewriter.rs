@@ -186,7 +186,7 @@ fn transform_js(
     );
     program.visit_mut_with(&mut block_transform_visitor);
 
-    let hardcoded_secret_result = hardcoded_secret_visitor.get_result();
+    let hardcoded_secret_result = hardcoded_secret_visitor.get_result(file);
 
     match transform_status.status {
         Status::Modified => compiler

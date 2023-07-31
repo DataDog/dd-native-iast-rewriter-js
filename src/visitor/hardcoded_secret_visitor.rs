@@ -8,7 +8,7 @@ use swc_ecma_visit::swc_ecma_ast::Lit;
 pub trait HardcodedSecretVisitor {
     fn visit_lit(&mut self, literal: &Lit);
 
-    fn get_result(&self) -> Option<HardcodedSecretResult>;
+    fn get_result(&self, file: &str) -> Option<HardcodedSecretResult>;
 }
 
 pub struct DefaultHardcodedSecretVisitor {
@@ -26,8 +26,9 @@ impl HardcodedSecretVisitor for DefaultHardcodedSecretVisitor {
         }
     }
 
-    fn get_result(&self) -> Option<HardcodedSecretResult> {
+    fn get_result(&self, file: &str) -> Option<HardcodedSecretResult> {
         Some(HardcodedSecretResult {
+            file: file.to_owned(),
             literals: self.literals.clone(),
         })
     }
@@ -38,13 +39,14 @@ pub struct NoOpHardcodedSecretVisitor {}
 impl HardcodedSecretVisitor for NoOpHardcodedSecretVisitor {
     fn visit_lit(&mut self, _literal: &Lit) {}
 
-    fn get_result(&self) -> Option<HardcodedSecretResult> {
+    fn get_result(&self, _file: &str) -> Option<HardcodedSecretResult> {
         None
     }
 }
 
 #[derive(Serialize)]
 pub struct HardcodedSecretResult {
+    pub file: String,
     pub literals: Vec<String>,
 }
 

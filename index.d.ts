@@ -13,9 +13,15 @@ export interface RewriterConfig {
   comments?: boolean
   localVarPrefix?: string
   csiMethods?: Array<CsiMethod>
+  hardcodedSecret?: boolean
 }
 export interface ResultWithoutMetrics {
   content: string
+  hardcodedSecretResult?: HardcodedSecretResultNapi
+}
+export interface HardcodedSecretResultNapi {
+  file: string
+  literals: Array<string>
 }
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)

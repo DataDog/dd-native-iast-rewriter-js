@@ -4,7 +4,11 @@
  **/
 /* eslint-disable no-unused-expressions */
 
+const path = require('path')
+const { expect } = require('chai')
 const { rewriteWithOpts } = require('./util')
+
+const FILE_PATH = path.join(process.cwd(), 'index.spec.js')
 
 describe('hardcoded secrets', () => {
   it('does double quoted literals found', () => {
@@ -12,6 +16,7 @@ describe('hardcoded secrets', () => {
     const result = rewriteWithOpts(js)
 
     expect(result.hardcodedSecretResult).to.not.undefined
+    expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
     expect(result.hardcodedSecretResult.literals).to.deep.eq(['this_is_a_secret'])
   })
 
@@ -29,6 +34,7 @@ describe('hardcoded secrets', () => {
     const result = rewriteWithOpts(js)
 
     expect(result.hardcodedSecretResult).to.not.undefined
+    expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
     expect(result.hardcodedSecretResult.literals).to.deep.eq(['this_is_a_secret'])
   })
 
