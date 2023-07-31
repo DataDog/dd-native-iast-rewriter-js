@@ -17,7 +17,7 @@ mod tests {
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().matches)
+        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals)
             .contains("literal_literal".to_string());
         Ok(())
     }
@@ -30,7 +30,7 @@ mod tests {
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().matches)
+        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals)
             .contains("literal_literal".to_string());
         Ok(())
     }
@@ -43,7 +43,7 @@ mod tests {
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().matches).is_equal_to(vec![]);
+        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals).is_equal_to(vec![]);
         Ok(())
     }
 }

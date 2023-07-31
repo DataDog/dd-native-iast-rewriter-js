@@ -35,19 +35,24 @@ const csiMethods = [
   { src: 'concat' }
 ]
 
-const rewriteAst = (code, opts) => {
-  opts = opts || {}
-  const rewriter =
-    opts.rewriter ??
-    new Rewriter({
+const rewriteWithOpts = (code, opts) => {
+  opts = Object.assign(
+    {
       localVarPrefix: 'test',
       csiMethods,
-      chainSourceMap: opts.chainSourceMap ?? false,
       telemetryVerbosity: TELEMETRY_VERBOSITY
-    })
+    },
+    opts || {}
+  )
+
+  const rewriter = opts.rewriter ?? new Rewriter(opts)
   const file = opts.file ?? path.join(process.cwd(), 'index.spec.js')
-  const rewritten = rewriter.rewrite(code, file)
-  return opts.keepSourceMap ? rewritten.content : removeSourceMap(rewritten.content)
+  return rewriter.rewrite(code, file)
+}
+
+const rewriteAst = (code, opts) => {
+  const rewritten = rewriteWithOpts(code, opts)
+  return opts && opts.keepSourceMap ? rewritten.content : removeSourceMap(rewritten.content)
 }
 
 const wrapBlock = (code) => `{${os.EOL}${code}${os.EOL}}`
@@ -58,8 +63,8 @@ const rewriteAndExpectNoTransformation = (code, opts) => {
 
 const rewriteAndExpect = (code, expect, block, opts) => {
   code = !block ? `{${code}}` : code
-  const rewrited = rewriteAst(code, opts)
-  expectAst(rewrited, expect)
+  const rewritten = rewriteAst(code, opts)
+  expectAst(rewritten, expect)
 }
 
 const rewriteAndExpectError = (code) => {
@@ -163,6 +168,7 @@ function resourceFile (...paths) {
 
 module.exports = {
   rewriteAst,
+  rewriteWithOpts,
   rewriteAndExpectNoTransformation,
   rewriteAndExpect,
   rewriteAndExpectError,

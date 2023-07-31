@@ -9,9 +9,7 @@ use crate::{
     visitor::{
         block_transform_visitor::BlockTransformVisitor,
         csi_methods::CsiMethods,
-        hardcoded_secret_visitor::{
-            get_hardcoded_secret_matches, get_hardcoded_secret_visitor, HardcodedSecretResult,
-        },
+        hardcoded_secret_visitor::{get_hardcoded_secret_visitor, HardcodedSecretResult},
     },
 };
 use anyhow::{Error, Result};
@@ -57,7 +55,7 @@ pub struct OriginalSourceMap {
 pub struct TransformOutputWithStatus {
     pub output: TransformOutput,
     pub status: TransformStatus,
-    pub hardcoded_secret_result: HardcodedSecretResult,
+    pub hardcoded_secret_result: Option<HardcodedSecretResult>,
 }
 
 #[derive(Debug)]
@@ -93,7 +91,7 @@ pub fn rewrite_js<R: Read>(
             source_map: transformed.output.map.unwrap_or_default(),
             original_source_map: original_map,
             transform_status: Some(transformed.status),
-            hardcoded_secret_result: Some(transformed.hardcoded_secret_result),
+            hardcoded_secret_result: transformed.hardcoded_secret_result,
         })
     })
 }
@@ -188,8 +186,7 @@ fn transform_js(
     );
     program.visit_mut_with(&mut block_transform_visitor);
 
-    let hardcoded_secret_result =
-        get_hardcoded_secret_matches(&hardcoded_secret_visitor.get_found_literals());
+    let hardcoded_secret_result = hardcoded_secret_visitor.get_result();
 
     match transform_status.status {
         Status::Modified => compiler

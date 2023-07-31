@@ -1,3 +1,4 @@
+use serde::Serialize;
 /**
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
@@ -7,7 +8,7 @@ use swc_ecma_visit::swc_ecma_ast::Lit;
 pub trait HardcodedSecretVisitor {
     fn visit_lit(&mut self, literal: &Lit);
 
-    fn get_found_literals(&self) -> Vec<String>;
+    fn get_result(&self) -> Option<HardcodedSecretResult>;
 }
 
 pub struct DefaultHardcodedSecretVisitor {
@@ -25,8 +26,10 @@ impl HardcodedSecretVisitor for DefaultHardcodedSecretVisitor {
         }
     }
 
-    fn get_found_literals(&self) -> Vec<String> {
-        self.literals.clone()
+    fn get_result(&self) -> Option<HardcodedSecretResult> {
+        Some(HardcodedSecretResult {
+            literals: self.literals.clone(),
+        })
     }
 }
 
@@ -35,13 +38,14 @@ pub struct NoOpHardcodedSecretVisitor {}
 impl HardcodedSecretVisitor for NoOpHardcodedSecretVisitor {
     fn visit_lit(&mut self, _literal: &Lit) {}
 
-    fn get_found_literals(&self) -> Vec<String> {
-        vec![]
+    fn get_result(&self) -> Option<HardcodedSecretResult> {
+        None
     }
 }
 
+#[derive(Serialize)]
 pub struct HardcodedSecretResult {
-    pub matches: Vec<String>,
+    pub literals: Vec<String>,
 }
 
 pub fn get_hardcoded_secret_visitor(enabled: bool) -> Box<dyn HardcodedSecretVisitor> {
@@ -52,12 +56,5 @@ pub fn get_hardcoded_secret_visitor(enabled: bool) -> Box<dyn HardcodedSecretVis
         })
     } else {
         Box::new(NoOpHardcodedSecretVisitor {})
-    }
-}
-
-pub fn get_hardcoded_secret_matches(literals: &[String]) -> HardcodedSecretResult {
-    // TODO: run regexes
-    HardcodedSecretResult {
-        matches: literals.to_vec(),
     }
 }

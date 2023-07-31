@@ -28,6 +28,7 @@ pub struct RewriterConfig {
     pub comments: Option<bool>,
     pub local_var_prefix: Option<String>,
     pub csi_methods: Option<Vec<CsiMethod>>,
+    pub hardcoded_secret: Option<bool>,
 }
 
 impl RewriterConfig {
@@ -59,6 +60,7 @@ impl RewriterConfig {
                 .unwrap_or_else(|| rnd_string(6)),
             csi_methods: self.get_csi_methods(),
             verbosity: TelemetryVerbosity::Information,
+            hardcoded_secret: self.hardcoded_secret.unwrap_or(true),
         }
     }
 }
@@ -67,6 +69,13 @@ impl RewriterConfig {
 #[derive(Debug)]
 pub struct ResultWithoutMetrics {
     pub content: String,
+    pub hardcoded_secret_result: Option<HardcodedSecretResultNapi>,
+}
+
+#[napi(object)]
+#[derive(Debug)]
+pub struct HardcodedSecretResultNapi {
+    pub literals: Vec<String>,
 }
 
 #[napi]
@@ -83,6 +92,7 @@ impl Rewriter {
             comments: Some(false),
             local_var_prefix: None,
             csi_methods: None,
+            hardcoded_secret: Some(true),
         });
         Self {
             config: rewriter_config.to_config(),
@@ -96,6 +106,12 @@ impl Rewriter {
         rewrite_js(code, &file, &self.config, &default_file_reader)
             .map(|result| ResultWithoutMetrics {
                 content: print_js(&result, &self.config),
+                hardcoded_secret_result: match result.hardcoded_secret_result {
+                    Some(hardcoded_secret_result) => Some(HardcodedSecretResultNapi {
+                        literals: hardcoded_secret_result.literals,
+                    }),
+                    _ => None,
+                },
             })
             .map_err(|e| Error::new(Status::Unknown, format!("{e}")))
     }

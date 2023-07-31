@@ -16,7 +16,7 @@ use crate::{
     tracer_logger::{self},
     transform::transform_status::TransformStatus,
     util::{rnd_string, FileReader},
-    visitor::{self, csi_methods::CsiMethods},
+    visitor::{self, csi_methods::CsiMethods, hardcoded_secret_visitor::HardcodedSecretResult},
 };
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
@@ -46,6 +46,7 @@ pub struct RewriterConfig {
 pub struct Result {
     pub content: String,
     pub metrics: Option<Metrics>,
+    pub hardcoded_secret_result: Option<HardcodedSecretResult>,
 }
 
 #[derive(Serialize, Debug)]
@@ -180,6 +181,7 @@ impl Rewriter {
             .map(|result| Result {
                 content: print_js(&result, &self.config),
                 metrics: get_metrics(result.transform_status, &file),
+                hardcoded_secret_result: result.hardcoded_secret_result,
             })
             .as_ref()
             .map(|result| {
