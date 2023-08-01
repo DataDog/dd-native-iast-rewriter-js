@@ -26,7 +26,7 @@ use swc::{
     common::{
         comments::Comments,
         errors::{ColorConfig, Handler},
-        FileName, FilePathMapping,
+        FileName, FilePathMapping, SourceFile,
     },
     config::{IsModule, SourceMapsConfig},
     ecmascript::ast::*,
@@ -78,13 +78,17 @@ pub fn rewrite_js<R: Read>(
 
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
-        let program = parse_js(&code, file, handler, &compiler)?;
+        let source_file = compiler
+            .cm
+            .new_source_file(FileName::Real(PathBuf::from(file)), code);
+
+        let program = parse_js(&source_file, handler, &compiler)?;
 
         // extract sourcemap before printing otherwise comments are consumed
         // and looks like it is not possible to read them after compiler.print() invocation
         let original_map = extract_source_map(file, compiler.comments(), file_reader);
 
-        let result = transform_js(program, &code, file, config, &compiler);
+        let result = transform_js(program, &source_file, file, config, &compiler);
 
         result.map(|transformed| RewrittenOutput {
             code: transformed.output.code,
@@ -139,14 +143,10 @@ fn default_handler_opts() -> HandlerOpts {
 }
 
 fn parse_js(
-    source: &String,
-    file: &str,
+    source_file: &Arc<SourceFile>,
     handler: &Handler,
     compiler: &Compiler,
 ) -> Result<Program> {
-    let fm = compiler
-        .cm
-        .new_source_file(FileName::Real(PathBuf::from(file)), source.into());
     let es_config = EsConfig {
         jsx: false,
         fn_bind: false,
@@ -160,7 +160,7 @@ fn parse_js(
     };
 
     compiler.parse_js(
-        fm,
+        source_file.to_owned(),
         handler,
         EsVersion::latest(),
         Syntax::Es(es_config),
@@ -171,7 +171,7 @@ fn parse_js(
 
 fn transform_js(
     mut program: Program,
-    code: &str,
+    source_file: &SourceFile,
     file: &str,
     config: &Config,
     compiler: &Compiler,
@@ -186,7 +186,7 @@ fn transform_js(
     );
     program.visit_mut_with(&mut block_transform_visitor);
 
-    let hardcoded_secret_result = hardcoded_secret_visitor.get_result(file);
+    let hardcoded_secret_result = hardcoded_secret_visitor.get_result(file, source_file);
 
     match transform_status.status {
         Status::Modified => compiler
@@ -214,7 +214,7 @@ fn transform_js(
 
         Status::NotModified => Ok(TransformOutputWithStatus {
             output: TransformOutput {
-                code: code.to_string(),
+                code: source_file.src.to_string(),
                 map: None,
             },
             status: transform_status,
@@ -343,7 +343,11 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let js_file = "debug.js".to_string();
-        let program = parse_js(&code, &js_file, handler, &compiler)?;
+        let source_file = compiler
+            .cm
+            .new_source_file(FileName::Real(PathBuf::from(js_file.clone())), code);
+
+        let program = parse_js(&source_file, handler, &compiler)?;
 
         print!("{:#?}", program);
 

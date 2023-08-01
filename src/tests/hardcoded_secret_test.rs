@@ -5,20 +5,31 @@
 
 #[cfg(test)]
 mod tests {
-    use spectral::{assert_that, prelude::ContainingIntoIterAssertions};
+    use spectral::assert_that;
 
     use crate::tests::{get_hardcoded_secret_config, rewrite_js_with_config};
 
     #[test]
     fn test_literal_outside_block() -> Result<(), String> {
-        let original_code = "const a = 'literal_literal';".to_string();
+        let original_code = "const b = 1
+
+            /*
+            comment
+             */
+
+            const a = 'literal_literal';"
+            .to_string();
 
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals)
-            .contains("literal_literal".to_string());
+        let result = rewritten.hardcoded_secret_result.unwrap();
+        let literal_info = result.literals.get(0).unwrap();
+
+        assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
+        assert_that(&literal_info.line).is_equal_to(Some(7));
+
         Ok(())
     }
 
@@ -30,8 +41,12 @@ mod tests {
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals)
-            .contains("literal_literal".to_string());
+        let result = rewritten.hardcoded_secret_result.unwrap();
+        let literal_info = result.literals.get(0).unwrap();
+
+        assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
+        assert_that(&literal_info.line).is_equal_to(Some(1));
+
         Ok(())
     }
 
@@ -43,7 +58,7 @@ mod tests {
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals).is_equal_to(vec![]);
+        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals.len()).is_equal_to(0);
         Ok(())
     }
 }
