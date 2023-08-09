@@ -26,6 +26,8 @@ impl HardcodedSecretVisitor for DefaultHardcodedSecretVisitor {
     fn visit_lit(&mut self, literal: &Lit) {
         if let Lit::Str(str_literal) = literal {
             let value = str_literal.value.to_string();
+
+            // TODO: filter very long values
             if value.len() > self.min_literal_length {
                 self.literals.push(LiteralWithSpan {
                     value,
