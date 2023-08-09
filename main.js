@@ -4,7 +4,7 @@
  **/
 'use strict'
 const { getPrepareStackTrace } = require('./js/stack-trace/')
-const { cacheRewrittenSourceMap } = require('./js/source-map')
+const { cacheRewrittenSourceMap, getOriginalPathAndLineFromSourceMap } = require('./js/source-map')
 
 class DummyRewriter {
   rewrite (code, file) {
@@ -52,5 +52,6 @@ function getRewriter () {
 module.exports = {
   Rewriter: getRewriter(),
   DummyRewriter,
-  getPrepareStackTrace: getPrepareStackTrace
+  getPrepareStackTrace,
+  getOriginalPathAndLineFromSourceMap
 }
