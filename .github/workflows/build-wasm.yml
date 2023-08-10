@@ -55,6 +55,9 @@ jobs:
       - run: |
           cargo install wasm-pack
           npm ci --ignore-scripts
+          rustc --version
+          wasm-pack --version
+          cargo clippy --version
           npm run build
           rm wasm/README.md wasm/package.json wasm/.gitignore
           npm pack
