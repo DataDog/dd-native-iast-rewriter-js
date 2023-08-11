@@ -1,7 +1,7 @@
 {
   "name": "@datadog/native-iast-rewriter",
   "homepage": "https://github.com/DataDog/dd-native-iast-rewriter-js/blob/main/README.md",
-  "version": "2.0.1-rt.1",
+  "version": "2.0.1-rt.2",
   "description": "Datadog IAST instrumentation addon for NodeJS",
   "main": "main.js",
   "types": "index.d.ts",
@@ -74,7 +74,7 @@
     "artifacts:prepare": "node ./scripts/artifacts.mjs",
     "artifacts:prepublish": "napi prepublish --skip-gh-release",
     "artifacts:gyp": "node ./scripts/artifacts-gyp.mjs",
-    "build": "wasm-pack build --scope datadog --out-dir wasm --out-name wasm_iast_rewriter --target nodejs",
+    "build": "wasm-pack build --release --scope datadog --out-dir wasm --out-name wasm_iast_rewriter --target nodejs",
     "build:napi": "napi build --platform --release --features \"napi\" && npm run artifacts:gyp",
     "build:napi:debug": "napi build --platform --features \"napi\" && npm run artifacts:gyp",
     "build:napi:linux": "napi build --target x86_64-unknown-linux-gnu --platform --release --features \"napi\"",
