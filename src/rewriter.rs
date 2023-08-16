@@ -9,6 +9,7 @@ use crate::{
     visitor::{block_transform_visitor::BlockTransformVisitor, csi_methods::CsiMethods},
 };
 use anyhow::{Error, Result};
+use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use std::{
     borrow::Borrow,
     collections::HashMap,
@@ -105,7 +106,7 @@ pub fn print_js(output: &RewrittenOutput, config: &Config) -> String {
             "{}\n//{}data:application/json;base64,{}",
             final_code,
             SOURCE_MAP_URL,
-            base64::encode(final_source_map)
+            URL_SAFE_NO_PAD.encode(final_source_map)
         )
     }
 }
