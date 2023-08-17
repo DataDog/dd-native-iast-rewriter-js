@@ -42,7 +42,7 @@ jobs:
           cargo test
 
   wasm-pack:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         target:
@@ -53,9 +53,9 @@ jobs:
         with:
           node-version: '16'
       - run: |
-          rustup install 1.68.2
-          rustup default 1.68.2
-          cargo install wasm-pack@0.11.1
+          rustup install 1.66.1
+          rustup default 1.66.1
+          cargo install wasm-pack@0.10.3
           npm ci --ignore-scripts
           npm run build
           rm wasm/README.md wasm/package.json wasm/.gitignore
