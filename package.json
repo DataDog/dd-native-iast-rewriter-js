@@ -1,7 +1,7 @@
 {
   "name": "@datadog/native-iast-rewriter",
   "homepage": "https://github.com/DataDog/dd-native-iast-rewriter-js/blob/main/README.md",
-  "version": "2.0.1-rt.9",
+  "version": "2.0.1-rt.10",
   "description": "Datadog IAST instrumentation addon for NodeJS",
   "main": "main.js",
   "types": "index.d.ts",
