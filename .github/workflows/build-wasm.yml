@@ -53,8 +53,6 @@ jobs:
         with:
           node-version: '16'
       - run: |
-          rustup install 1.66.1
-          rustup default 1.66.1
           cargo install wasm-pack@0.10.3
           npm ci --ignore-scripts
           npm run build
