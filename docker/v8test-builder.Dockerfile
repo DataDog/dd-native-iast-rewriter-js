@@ -16,7 +16,8 @@ RUN apt-get update -y \
     libxml2 \
     python3 \
     python3-pip \
-    lsb-release;
+    lsb-release \
+    && apt-get clean;
 
 # fetch and build v8
 RUN pip3 install httplib2 six \
@@ -25,5 +26,6 @@ RUN pip3 install httplib2 six \
     && cd v8 \
     && git checkout $V8_BRANCH \
     && gclient sync \
-    && tools/dev/gm.py x64.release;
+    && tools/dev/gm.py x64.release \
+    && rm -rf .git buildtools third_party;
 
