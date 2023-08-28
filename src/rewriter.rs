@@ -9,7 +9,7 @@ use crate::{
     visitor::{
         block_transform_visitor::BlockTransformVisitor,
         csi_methods::CsiMethods,
-        hardcoded_secret_visitor::{get_hardcoded_secret_visitor, HardcodedSecretResult},
+        hardcoded_secret_visitor::{get_hardcoded_secrets, HardcodedSecretResult},
     },
 };
 use anyhow::{Error, Result};
@@ -178,15 +178,11 @@ fn transform_js(
 ) -> Result<TransformOutputWithStatus, Error> {
     let mut transform_status = TransformStatus::not_modified(config);
 
-    let mut hardcoded_secret_visitor = get_hardcoded_secret_visitor(config.hardcoded_secret);
-    let mut block_transform_visitor = BlockTransformVisitor::default(
-        &mut transform_status,
-        hardcoded_secret_visitor.as_mut(),
-        config,
-    );
+    let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status, config);
     program.visit_mut_with(&mut block_transform_visitor);
 
-    let hardcoded_secret_result = hardcoded_secret_visitor.get_result(file, source_file);
+    let hardcoded_secret_result =
+        get_hardcoded_secrets(config.hardcoded_secret, file, source_file, &mut program);
 
     match transform_status.status {
         Status::Modified => compiler
