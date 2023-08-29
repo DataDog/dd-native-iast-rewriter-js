@@ -1,12 +1,12 @@
-use serde::Serialize;
 /**
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
+use serde::Serialize;
 use std::collections::HashMap;
 use swc::{
     common::{SourceFile, Span},
-    ecmascript::ast::{Expr, ObjectLit, Program, Prop, VarDeclarator},
+    ecmascript::ast::{Expr, ObjectLit, Program, Prop, Str, VarDeclarator},
 };
 use swc_ecma_visit::{swc_ecma_ast::Lit, Visit, VisitMut, VisitMutWith};
 
@@ -65,7 +65,10 @@ impl HardcodedSecretVisitor {
         })
     }
 
-    fn add_literal(&mut self, value: String, span: Span, ident: Option<String>) {
+    fn add_literal(&mut self, str_literal: &Str, ident: Option<String>) {
+        let value = str_literal.value.to_string();
+        let span = str_literal.span;
+
         if value.len() > self.min_literal_length
             && value.len() <= self.max_literal_length
             && !self.literals.contains_key(&span)
@@ -81,8 +84,7 @@ impl Visit for HardcodedSecretVisitor {}
 impl VisitMut for HardcodedSecretVisitor {
     fn visit_mut_lit(&mut self, literal: &mut Lit) {
         if let Lit::Str(str_literal) = literal {
-            let value = str_literal.value.to_string();
-            self.add_literal(value, str_literal.span, None);
+            self.add_literal(str_literal, None);
         }
     }
 
@@ -92,8 +94,7 @@ impl VisitMut for HardcodedSecretVisitor {
                 if let Expr::Lit(Lit::Str(str_literal)) = &**decl_init {
                     let ident = decl.name.as_ident().map(|ident| ident.id.sym.to_string());
 
-                    let value = str_literal.value.to_string();
-                    self.add_literal(value, str_literal.span, ident);
+                    self.add_literal(str_literal, ident);
                 }
             };
             decl.visit_mut_children_with(self);
@@ -111,8 +112,7 @@ impl VisitMut for HardcodedSecretVisitor {
                             .as_ident()
                             .map(|ident| ident.sym.to_string());
 
-                        let value = str_literal.value.to_string();
-                        self.add_literal(value, str_literal.span, ident);
+                        self.add_literal(str_literal, ident);
                     }
                 }
             }
