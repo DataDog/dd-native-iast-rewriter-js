@@ -17,7 +17,7 @@ describe('hardcoded secrets', () => {
 
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', line: 1 }])
+    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', ident: 'secret', line: 1 }])
   })
 
   it('does not found literals if disabled by conf', () => {
@@ -35,7 +35,7 @@ describe('hardcoded secrets', () => {
 
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', line: 1 }])
+    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', ident: 'secret', line: 1 }])
   })
 
   it('does return single quoted literals found with correct line', () => {
@@ -49,7 +49,7 @@ describe('hardcoded secrets', () => {
 
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', line: 6 }])
+    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', ident: 'secret', line: 6 }])
   })
 
   it('does return multiple literals found', () => {
@@ -57,10 +57,16 @@ describe('hardcoded secrets', () => {
     const result = rewriteWithOpts(js)
 
     expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([
-      { value: 'this_is_a_secret', line: 1 },
-      { value: 'another_secret', line: 1 }
-    ])
+    expect(result.hardcodedSecretResult.literals).to.deep.include({
+      value: 'this_is_a_secret',
+      ident: 'secret1',
+      line: 1
+    })
+    expect(result.hardcodedSecretResult.literals).to.deep.include({
+      value: 'another_secret',
+      ident: 'secret2',
+      line: 1
+    })
   })
 
   it('does return literals found inside a block', () => {
@@ -68,7 +74,7 @@ describe('hardcoded secrets', () => {
     const result = rewriteWithOpts(js)
 
     expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', line: 1 }])
+    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', ident: 'secret', line: 1 }])
   })
 
   it('does return parameter literals in a call', () => {
@@ -76,7 +82,23 @@ describe('hardcoded secrets', () => {
     const result = rewriteWithOpts(js)
 
     expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', line: 1 }])
+    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', ident: undefined, line: 1 }])
+  })
+
+  it('does return literals in an object definition with ident as key', () => {
+    const js = "const TOKENS = { secret: 'this_is_a_secret' }"
+    const result = rewriteWithOpts(js)
+
+    expect(result.hardcodedSecretResult).to.not.undefined
+    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', ident: 'secret', line: 1 }])
+  })
+
+  it('does return literals in an object definition without ident', () => {
+    const js = "const TOKENS = { [secret]: 'this_is_a_secret' }"
+    const result = rewriteWithOpts(js)
+
+    expect(result.hardcodedSecretResult).to.not.undefined
+    expect(result.hardcodedSecretResult.literals).to.deep.eq([{ value: 'this_is_a_secret', ident: undefined, line: 1 }])
   })
 
   it('does not return literals with less or eq than 8 chars length', () => {

@@ -6,7 +6,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use swc::{
     common::{SourceFile, Span},
-    ecmascript::ast::{Expr, Ident, ObjectPatProp, Program, VarDeclarator},
+    ecmascript::ast::{Expr, ObjectLit, Program, Prop, VarDeclarator},
 };
 use swc_ecma_visit::{swc_ecma_ast::Lit, Visit, VisitMut, VisitMutWith};
 
@@ -19,11 +19,13 @@ pub struct HardcodedSecretResult {
 #[derive(Serialize)]
 pub struct LiteralInfo {
     pub value: String,
+    pub ident: Option<String>,
     pub line: Option<usize>,
 }
 
 struct LiteralWithSpan {
     value: String,
+    ident: Option<String>,
     span: Span,
 }
 
@@ -54,6 +56,7 @@ impl HardcodedSecretVisitor {
                 .values()
                 .map(|literal| LiteralInfo {
                     value: literal.value.clone(),
+                    ident: literal.ident.clone(),
                     line: source_file
                         .lookup_line(literal.span.lo)
                         .map(|line| line + 1),
@@ -62,13 +65,13 @@ impl HardcodedSecretVisitor {
         })
     }
 
-    fn add_literal(&mut self, value: String, span: Span, _ident: Option<Ident>) {
-        // TODO: filter very long values
+    fn add_literal(&mut self, value: String, span: Span, ident: Option<String>) {
         if value.len() > self.min_literal_length
             && value.len() <= self.max_literal_length
             && !self.literals.contains_key(&span)
         {
-            self.literals.insert(span, LiteralWithSpan { value, span });
+            self.literals
+                .insert(span, LiteralWithSpan { value, span, ident });
         }
     }
 }
@@ -84,21 +87,37 @@ impl VisitMut for HardcodedSecretVisitor {
     }
 
     fn visit_mut_var_declarators(&mut self, declarators: &mut Vec<VarDeclarator>) {
-        print!("{:#?}", declarators);
-        declarators.iter().for_each(|decl| {
+        declarators.iter_mut().for_each(|decl| {
             if let Some(decl_init) = decl.init.as_ref() {
-                if let Expr::Lit(Lit::Str(str_literal)) = *decl_init.clone() {
-                    //let name = decl.name
+                if let Expr::Lit(Lit::Str(str_literal)) = &**decl_init {
+                    let ident = decl.name.as_ident().map(|ident| ident.id.sym.to_string());
 
                     let value = str_literal.value.to_string();
-                    self.add_literal(value, str_literal.span, None);
+                    self.add_literal(value, str_literal.span, ident);
                 }
             };
+            decl.visit_mut_children_with(self);
         })
     }
 
-    fn visit_mut_object_pat_prop(&mut self, obj_pat_prop: &mut ObjectPatProp) {
-        print!("{:#?}", obj_pat_prop);
+    fn visit_mut_object_lit(&mut self, obj_lit: &mut ObjectLit) {
+        let props = &obj_lit.props;
+        props.iter().for_each(|prop_or_spread| {
+            if let Some(prop) = prop_or_spread.as_prop() {
+                if let Prop::KeyValue(key_value_prop) = &**prop {
+                    if let Expr::Lit(Lit::Str(str_literal)) = &*key_value_prop.value {
+                        let ident = key_value_prop
+                            .key
+                            .as_ident()
+                            .map(|ident| ident.sym.to_string());
+
+                        let value = str_literal.value.to_string();
+                        self.add_literal(value, str_literal.span, ident);
+                    }
+                }
+            }
+        });
+        obj_lit.visit_mut_children_with(self);
     }
 }
 
