@@ -6,7 +6,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use swc::{
     common::{SourceFile, Span},
-    ecmascript::ast::{Expr, ObjectLit, Program, Prop, Str, VarDeclarator},
+    ecmascript::ast::{Callee, Expr, ObjectLit, Program, Prop, Str, VarDeclarator},
 };
 use swc_ecma_visit::{swc_ecma_ast::Lit, Visit, VisitMut, VisitMutWith};
 
@@ -118,6 +118,27 @@ impl VisitMut for HardcodedSecretVisitor {
             }
         });
         obj_lit.visit_mut_children_with(self);
+    }
+
+    fn visit_mut_expr(&mut self, expr: &mut Expr) {
+        if let Expr::Call(call) = expr {
+            if call.callee.is_expr() {
+                if let Callee::Expr(callee_expr) = &call.callee {
+                    if let Expr::Ident(ident) = &**callee_expr {
+                        if ident.sym.to_string() == "require"
+                            && !call.args.is_empty()
+                            && call.args[0].spread.is_none()
+                            && call.args[0].expr.is_lit()
+                        {
+                            // if the call is a require('path_or_module') skip visiting children
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        expr.visit_mut_children_with(self);
     }
 }
 
