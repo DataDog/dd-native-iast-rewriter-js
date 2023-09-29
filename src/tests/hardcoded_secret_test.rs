@@ -147,4 +147,30 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_new_regexp_is_discarded() -> Result<(), String> {
+        let original_code = "const a = new RegExp('literal_literal')".to_string();
+
+        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+            .map_err(|e| e.to_string())?;
+
+        assert_that(&rewritten.hardcoded_secret_result.is_some());
+        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals.len()).is_equal_to(0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_regexp_is_discarded() -> Result<(), String> {
+        let original_code = "const a = /literal_literal/".to_string();
+
+        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+            .map_err(|e| e.to_string())?;
+
+        assert_that(&rewritten.hardcoded_secret_result.is_some());
+        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals.len()).is_equal_to(0);
+
+        Ok(())
+    }
 }

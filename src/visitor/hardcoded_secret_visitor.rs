@@ -8,7 +8,7 @@ use swc::{
     common::{SourceFile, Span},
     ecmascript::ast::{Callee, Expr, ObjectLit, Program, Prop, Str, VarDeclarator},
 };
-use swc_ecma_visit::{swc_ecma_ast::Lit, Visit, VisitMut, VisitMutWith};
+use swc_ecma_visit::{swc_ecma_ast::Lit, Visit, VisitWith};
 
 #[derive(Serialize)]
 pub struct HardcodedSecretResult {
@@ -79,17 +79,15 @@ impl HardcodedSecretVisitor {
     }
 }
 
-impl Visit for HardcodedSecretVisitor {}
-
-impl VisitMut for HardcodedSecretVisitor {
-    fn visit_mut_lit(&mut self, literal: &mut Lit) {
+impl Visit for HardcodedSecretVisitor {
+    fn visit_lit(&mut self, literal: &Lit) {
         if let Lit::Str(str_literal) = literal {
             self.add_literal(str_literal, None);
         }
     }
 
-    fn visit_mut_var_declarators(&mut self, declarators: &mut Vec<VarDeclarator>) {
-        declarators.iter_mut().for_each(|decl| {
+    fn visit_var_declarators(&mut self, declarators: &[VarDeclarator]) {
+        declarators.iter().for_each(|decl| {
             if let Some(decl_init) = decl.init.as_ref() {
                 if let Expr::Lit(Lit::Str(str_literal)) = &**decl_init {
                     let ident = decl.name.as_ident().map(|ident| ident.id.sym.to_string());
@@ -97,11 +95,11 @@ impl VisitMut for HardcodedSecretVisitor {
                     self.add_literal(str_literal, ident);
                 }
             };
-            decl.visit_mut_children_with(self);
+            decl.visit_children_with(self);
         })
     }
 
-    fn visit_mut_object_lit(&mut self, obj_lit: &mut ObjectLit) {
+    fn visit_object_lit(&mut self, obj_lit: &ObjectLit) {
         let props = &obj_lit.props;
         props.iter().for_each(|prop_or_spread| {
             if let Some(prop) = prop_or_spread.as_prop() {
@@ -117,12 +115,12 @@ impl VisitMut for HardcodedSecretVisitor {
                 }
             }
         });
-        obj_lit.visit_mut_children_with(self);
+        obj_lit.visit_children_with(self);
     }
 
-    fn visit_mut_expr(&mut self, expr: &mut Expr) {
-        if let Expr::Call(call) = expr {
-            if call.callee.is_expr() {
+    fn visit_expr(&mut self, expr: &Expr) {
+        match expr {
+            Expr::Call(call) => {
                 if let Callee::Expr(callee_expr) = &call.callee {
                     if let Expr::Ident(ident) = &**callee_expr {
                         if ident.sym.to_string() == "require"
@@ -136,9 +134,26 @@ impl VisitMut for HardcodedSecretVisitor {
                     }
                 }
             }
+
+            Expr::New(new_exp) => {
+                if let Expr::Ident(ident) = &*new_exp.callee {
+                    if ident.sym.to_string() == "RegExp"
+                        && new_exp
+                            .args
+                            .as_ref()
+                            .map(|args| args[0].spread.is_none() && args[0].expr.is_lit())
+                            .is_some()
+                    {
+                        // if the call is a new RegExp('regex') skip visiting children
+                        return;
+                    }
+                }
+            }
+
+            _ => {}
         }
 
-        expr.visit_mut_children_with(self);
+        expr.visit_children_with(self);
     }
 }
 
@@ -150,7 +165,7 @@ pub fn get_hardcoded_secrets(
 ) -> Option<HardcodedSecretResult> {
     if hardcoded_secret_enabled {
         let mut hardcoded_secret_visitor = HardcodedSecretVisitor::default();
-        program.visit_mut_with(&mut hardcoded_secret_visitor);
+        program.visit_with(&mut hardcoded_secret_visitor);
         hardcoded_secret_visitor.get_result(file, source_file)
     } else {
         None
