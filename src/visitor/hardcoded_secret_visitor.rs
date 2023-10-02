@@ -3,7 +3,7 @@
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
 use serde::Serialize;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use swc::{
     common::{SourceFile, Span},
     ecmascript::ast::{Callee, Expr, ObjectLit, Program, Prop, Str, VarDeclarator},
@@ -17,14 +17,19 @@ pub struct HardcodedSecretResult {
 }
 
 #[derive(Serialize)]
-pub struct LiteralInfo {
-    pub value: String,
+pub struct LiteralLocation {
     pub ident: Option<String>,
     pub line: Option<usize>,
 }
 
-struct LiteralWithSpan {
-    value: String,
+#[derive(Serialize)]
+pub struct LiteralInfo {
+    pub value: String,
+    pub locations: Vec<LiteralLocation>,
+}
+
+#[derive(Eq, Hash, PartialEq)]
+struct LiteralSpan {
     ident: Option<String>,
     span: Span,
 }
@@ -32,7 +37,7 @@ struct LiteralWithSpan {
 pub struct HardcodedSecretVisitor {
     min_literal_length: usize,
     max_literal_length: usize,
-    literals: HashMap<Span, LiteralWithSpan>,
+    literals: HashMap<String, HashSet<LiteralSpan>>,
 }
 
 impl HardcodedSecretVisitor {
@@ -53,13 +58,18 @@ impl HardcodedSecretVisitor {
             file: file.to_owned(),
             literals: self
                 .literals
-                .values()
-                .map(|literal| LiteralInfo {
-                    value: literal.value.clone(),
-                    ident: literal.ident.clone(),
-                    line: source_file
-                        .lookup_line(literal.span.lo)
-                        .map(|line| line + 1),
+                .iter()
+                .map(|(value, span_set)| LiteralInfo {
+                    value: value.clone(),
+                    locations: span_set
+                        .iter()
+                        .map(|literal_span| LiteralLocation {
+                            ident: literal_span.ident.clone(),
+                            line: source_file
+                                .lookup_line(literal_span.span.lo)
+                                .map(|line| line + 1),
+                        })
+                        .collect(),
                 })
                 .collect(),
         })
@@ -69,12 +79,22 @@ impl HardcodedSecretVisitor {
         let value = str_literal.value.to_string();
         let span = str_literal.span;
 
-        if value.len() > self.min_literal_length
-            && value.len() <= self.max_literal_length
-            && !self.literals.contains_key(&span)
-        {
-            self.literals
-                .insert(span, LiteralWithSpan { value, span, ident });
+        if value.len() > self.min_literal_length && value.len() <= self.max_literal_length {
+            if !self.literals.contains_key(&value) {
+                self.literals.insert(value.clone(), HashSet::new());
+            }
+
+            self.literals.get_mut(&value).and_then(|span_set| {
+                // check if the span has been inserted before and skip it if true
+                if !span_set
+                    .iter()
+                    .any(|literal_span| literal_span.span == span)
+                {
+                    Some(span_set.insert(LiteralSpan { span, ident }))
+                } else {
+                    None
+                }
+            });
         }
     }
 }

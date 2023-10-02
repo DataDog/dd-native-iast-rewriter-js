@@ -25,10 +25,13 @@ mod tests {
 
         assert_that(&rewritten.hardcoded_secret_result.is_some());
         let result = rewritten.hardcoded_secret_result.unwrap();
+
         let literal_info = result.literals.get(0).unwrap();
 
+        assert_that(&literal_info.locations.len()).is_equal_to(1);
+
         assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
-        assert_that(&literal_info.line).is_equal_to(Some(7));
+        assert_that(&literal_info.locations[0].line).is_equal_to(Some(7));
 
         Ok(())
     }
@@ -44,8 +47,45 @@ mod tests {
         let result = rewritten.hardcoded_secret_result.unwrap();
         let literal_info = result.literals.get(0).unwrap();
 
+        assert_that(&literal_info.locations.len()).is_equal_to(1);
+
         assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
-        assert_that(&literal_info.line).is_equal_to(Some(1));
+        assert_that(&literal_info.locations[0].line).is_equal_to(Some(1));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_multiple_literal() -> Result<(), String> {
+        let original_code = "
+            const secret = 'literal_literal'; 
+            const b = getB();
+            const repeated = 'literal_literal';
+        "
+        .to_string();
+
+        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+            .map_err(|e| e.to_string())?;
+
+        assert_that(&rewritten.hardcoded_secret_result.is_some());
+        let result = rewritten.hardcoded_secret_result.unwrap();
+        let literal_info = result.literals.get(0).unwrap();
+
+        assert_that(&literal_info.locations.len()).is_equal_to(2);
+
+        assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
+
+        let location1 = &literal_info.locations[0];
+        let location2 = &literal_info.locations[1];
+        if location1.ident == Some("secret".to_string()) {
+            assert_that(&location1.line).is_equal_to(Some(2));
+            assert_that(&location2.line).is_equal_to(Some(4));
+            assert_that(&location2.ident).is_equal_to(Some("repeated".to_string()));
+        } else {
+            assert_that(&location1.line).is_equal_to(Some(4));
+            assert_that(&location2.line).is_equal_to(Some(2));
+            assert_that(&location2.ident).is_equal_to(Some("secret".to_string()));
+        }
 
         Ok(())
     }
@@ -61,8 +101,10 @@ mod tests {
         let result = rewritten.hardcoded_secret_result.unwrap();
         let literal_info = result.literals.get(0).unwrap();
 
+        assert_that(&literal_info.locations.len()).is_equal_to(1);
+
         assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
-        assert_that(&literal_info.line).is_equal_to(Some(1));
+        assert_that(&literal_info.locations[0].line).is_equal_to(Some(1));
 
         Ok(())
     }
@@ -78,8 +120,10 @@ mod tests {
         let result = rewritten.hardcoded_secret_result.unwrap();
         let literal_info = result.literals.get(0).unwrap();
 
+        assert_that(&literal_info.locations.len()).is_equal_to(1);
+
         assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
-        assert_that(&literal_info.line).is_equal_to(Some(1));
+        assert_that(&literal_info.locations[0].line).is_equal_to(Some(1));
 
         Ok(())
     }

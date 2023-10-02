@@ -53,12 +53,15 @@ const DEFAULT_OPTIONS = {
   help: false
 }
 
+const white = console.log
 const green = console.log.bind(this, '\x1b[32m%s\x1b[0m')
 const red = console.log.bind(this, '\x1b[31m%s\x1b[0m')
 const blue = console.log.bind(this, '\x1b[34m%s\x1b[0m')
 const cyan = console.log.bind(this, '\x1b[35m%s\x1b[0m')
 
-const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS, telemetryVerbosity: 'Debug' })
+const hardcodedSecret = process.env.HARDCODED_SECRET !== 'false'
+
+const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS, telemetryVerbosity: 'Debug', hardcodedSecret })
 
 const getGlobalMethods = function (methods) {
   const fnSignAndBody = '(res) {return res;}'
@@ -202,6 +205,7 @@ if (options.filePattern) {
     exit()
   }
 }
+let time = 0
 crawl(options.rootPath, options, {
   visit (code, fileName, path) {
     if (options.rewrite) {
@@ -209,6 +213,9 @@ crawl(options.rootPath, options, {
         if (options.natives) {
           code = this.replaceNativeV8Calls(code, fileName)
         }
+
+        const start = process.hrtime.bigint()
+
         const response = rewriter.rewrite(code, path)
         let rewritten = response.content
 
@@ -225,6 +232,21 @@ crawl(options.rootPath, options, {
           }
           console.log('\n')
         }
+
+        const end = process.hrtime.bigint()
+
+        const hardcodedSecretResult = response.hardcodedSecretResult
+        if (hardcodedSecretResult?.literals?.length) {
+          red(`---------------- literals ${hardcodedSecretResult.file}`)
+          hardcodedSecretResult.literals.forEach((lit) => {
+            white(lit)
+          })
+        }
+
+        const partialTime = parseInt(end - start) / 1e6
+        time += partialTime
+
+        white(`Partial rewrite time: ${partialTime} - ${path}`)
 
         if (options.natives) {
           rewritten = this.replaceNativeV8Calls(rewritten, fileName, true)
@@ -273,3 +295,5 @@ crawl(options.rootPath, options, {
     return rewritten
   }
 })
+
+white(`TOTAL time: ${time}`)
