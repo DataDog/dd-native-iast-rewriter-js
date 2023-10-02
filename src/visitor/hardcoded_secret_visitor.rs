@@ -59,9 +59,9 @@ impl HardcodedSecretVisitor {
             literals: self
                 .literals
                 .iter()
-                .map(|(value, span_set)| LiteralInfo {
+                .map(|(value, literal_spans)| LiteralInfo {
                     value: value.clone(),
-                    locations: span_set
+                    locations: literal_spans
                         .iter()
                         .map(|literal_span| LiteralLocation {
                             ident: literal_span.ident.clone(),
@@ -84,13 +84,13 @@ impl HardcodedSecretVisitor {
                 self.literals.insert(value.clone(), HashSet::new());
             }
 
-            self.literals.get_mut(&value).and_then(|span_set| {
+            self.literals.get_mut(&value).and_then(|literal_spans| {
                 // check if the span has been inserted before and skip it if true
-                if !span_set
+                if !literal_spans
                     .iter()
                     .any(|literal_span| literal_span.span == span)
                 {
-                    Some(span_set.insert(LiteralSpan { span, ident }))
+                    Some(literal_spans.insert(LiteralSpan { span, ident }))
                 } else {
                     None
                 }
