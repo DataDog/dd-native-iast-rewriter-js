@@ -23,10 +23,13 @@ export interface HardcodedSecretResult {
   file: string
   literals: Array<LiteralInfo>
 }
-export interface LiteralInfo {
-  value: string
+export interface LiteralLocation {
   ident?: string
   line?: number
+}
+export interface LiteralInfo {
+  value: string
+  locations: Array<LiteralLocation>
 }
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)
