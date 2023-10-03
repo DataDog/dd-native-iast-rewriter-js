@@ -29,15 +29,15 @@ pub struct LiteralInfo {
 }
 
 #[derive(Eq, Hash, PartialEq)]
-struct LiteralSpan {
-    ident: Option<String>,
+struct SpanAndIdent {
     span: Span,
+    ident: Option<String>,
 }
 
 pub struct HardcodedSecretVisitor {
     min_literal_length: usize,
     max_literal_length: usize,
-    literals: HashMap<String, HashSet<LiteralSpan>>,
+    literals: HashMap<String, HashSet<SpanAndIdent>>,
 }
 
 impl HardcodedSecretVisitor {
@@ -90,7 +90,7 @@ impl HardcodedSecretVisitor {
                     .iter()
                     .any(|literal_span| literal_span.span == span)
                 {
-                    Some(literal_spans.insert(LiteralSpan { span, ident }))
+                    Some(literal_spans.insert(SpanAndIdent { span, ident }))
                 } else {
                     None
                 }

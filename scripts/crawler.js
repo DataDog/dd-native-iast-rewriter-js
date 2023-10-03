@@ -53,7 +53,7 @@ const DEFAULT_OPTIONS = {
   help: false
 }
 
-const white = console.log
+const log = console.log
 const green = console.log.bind(this, '\x1b[32m%s\x1b[0m')
 const red = console.log.bind(this, '\x1b[31m%s\x1b[0m')
 const blue = console.log.bind(this, '\x1b[34m%s\x1b[0m')
@@ -205,7 +205,9 @@ if (options.filePattern) {
     exit()
   }
 }
+
 let time = 0
+
 crawl(options.rootPath, options, {
   visit (code, fileName, path) {
     if (options.rewrite) {
@@ -239,14 +241,14 @@ crawl(options.rootPath, options, {
         if (hardcodedSecretResult?.literals?.length) {
           red(`---------------- literals ${hardcodedSecretResult.file}`)
           hardcodedSecretResult.literals.forEach((lit) => {
-            white(lit)
+            log(lit)
           })
         }
 
         const partialTime = parseInt(end - start) / 1e6
         time += partialTime
 
-        white(`Partial rewrite time: ${partialTime} - ${path}`)
+        log(`Partial rewrite time: ${partialTime} - ${path}`)
 
         if (options.natives) {
           rewritten = this.replaceNativeV8Calls(rewritten, fileName, true)
@@ -296,4 +298,4 @@ crawl(options.rootPath, options, {
   }
 })
 
-white(`TOTAL time: ${time}`)
+log(`TOTAL time: ${time}`)
