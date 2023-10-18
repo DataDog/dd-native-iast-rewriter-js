@@ -18,7 +18,7 @@ describe('hardcoded secrets', () => {
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
     expect(result.hardcodedSecretResult.literals).to.deep.eq([
-      { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1 }] }
+      { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1, column: 16 }] }
     ])
   })
 
@@ -38,7 +38,7 @@ describe('hardcoded secrets', () => {
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
     expect(result.hardcodedSecretResult.literals).to.deep.eq([
-      { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1 }] }
+      { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1, column: 16 }] }
     ])
   })
 
@@ -54,7 +54,7 @@ describe('hardcoded secrets', () => {
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
     expect(result.hardcodedSecretResult.literals).to.deep.eq([
-      { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 6 }] }
+      { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 6, column: 20 }] }
     ])
   })
 
@@ -65,11 +65,11 @@ describe('hardcoded secrets', () => {
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.literals).to.deep.include({
       value: 'this_is_a_secret',
-      locations: [{ ident: 'secret1', line: 1 }]
+      locations: [{ ident: 'secret1', line: 1, column: 17 }]
     })
     expect(result.hardcodedSecretResult.literals).to.deep.include({
       value: 'another_secret',
-      locations: [{ ident: 'secret2', line: 1 }]
+      locations: [{ ident: 'secret2', line: 1, column: 53 }]
     })
   })
 
@@ -79,7 +79,7 @@ describe('hardcoded secrets', () => {
 
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.literals).to.deep.eq([
-      { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1 }] }
+      { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1, column: 34 }] }
     ])
   })
 
@@ -89,7 +89,7 @@ describe('hardcoded secrets', () => {
 
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.literals).to.deep.eq([
-      { value: 'this_is_a_secret', locations: [{ ident: undefined, line: 1 }] }
+      { value: 'this_is_a_secret', locations: [{ ident: undefined, line: 1, column: 32 }] }
     ])
   })
 
@@ -99,7 +99,7 @@ describe('hardcoded secrets', () => {
 
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.literals).to.deep.eq([
-      { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1 }] }
+      { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1, column: 26 }] }
     ])
   })
 
@@ -109,7 +109,7 @@ describe('hardcoded secrets', () => {
 
     expect(result.hardcodedSecretResult).to.not.undefined
     expect(result.hardcodedSecretResult.literals).to.deep.eq([
-      { value: 'this_is_a_secret', locations: [{ ident: undefined, line: 1 }] }
+      { value: 'this_is_a_secret', locations: [{ ident: undefined, line: 1, column: 28 }] }
     ])
   })
 

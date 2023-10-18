@@ -31,7 +31,7 @@ mod tests {
         assert_that(&literal_info.locations.len()).is_equal_to(1);
 
         assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
-        assert_that(&literal_info.locations[0].line).is_equal_to(Some(7));
+        assert_that(&literal_info.locations[0].line).is_equal_to(7);
 
         Ok(())
     }
@@ -50,7 +50,7 @@ mod tests {
         assert_that(&literal_info.locations.len()).is_equal_to(1);
 
         assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
-        assert_that(&literal_info.locations[0].line).is_equal_to(Some(1));
+        assert_that(&literal_info.locations[0].line).is_equal_to(1);
 
         Ok(())
     }
@@ -78,12 +78,12 @@ mod tests {
         let location1 = &literal_info.locations[0];
         let location2 = &literal_info.locations[1];
         if location1.ident == Some("secret".to_string()) {
-            assert_that(&location1.line).is_equal_to(Some(2));
-            assert_that(&location2.line).is_equal_to(Some(4));
+            assert_that(&location1.line).is_equal_to(2);
+            assert_that(&location2.line).is_equal_to(4);
             assert_that(&location2.ident).is_equal_to(Some("repeated".to_string()));
         } else {
-            assert_that(&location1.line).is_equal_to(Some(4));
-            assert_that(&location2.line).is_equal_to(Some(2));
+            assert_that(&location1.line).is_equal_to(4);
+            assert_that(&location2.line).is_equal_to(2);
             assert_that(&location2.ident).is_equal_to(Some("secret".to_string()));
         }
 
@@ -104,7 +104,7 @@ mod tests {
         assert_that(&literal_info.locations.len()).is_equal_to(1);
 
         assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
-        assert_that(&literal_info.locations[0].line).is_equal_to(Some(1));
+        assert_that(&literal_info.locations[0].line).is_equal_to(1);
 
         Ok(())
     }
@@ -123,7 +123,8 @@ mod tests {
         assert_that(&literal_info.locations.len()).is_equal_to(1);
 
         assert_that(&literal_info.value).is_equal_to("literal_literal".to_string());
-        assert_that(&literal_info.locations[0].line).is_equal_to(Some(1));
+        assert_that(&literal_info.locations[0].line).is_equal_to(1);
+        assert_that(&literal_info.locations[0].column).is_equal_to(9);
 
         Ok(())
     }

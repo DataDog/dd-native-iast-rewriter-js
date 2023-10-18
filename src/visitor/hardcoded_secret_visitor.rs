@@ -5,8 +5,9 @@
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 use swc::{
-    common::{SourceFile, Span},
+    common::Span,
     ecmascript::ast::{Callee, Expr, ObjectLit, Program, Prop, Str, VarDeclarator},
+    Compiler,
 };
 use swc_ecma_visit::{swc_ecma_ast::Lit, Visit, VisitWith};
 
@@ -19,7 +20,8 @@ pub struct HardcodedSecretResult {
 #[derive(Serialize)]
 pub struct LiteralLocation {
     pub ident: Option<String>,
-    pub line: Option<usize>,
+    pub line: usize,
+    pub column: usize,
 }
 
 #[derive(Serialize)]
@@ -49,11 +51,7 @@ impl HardcodedSecretVisitor {
         }
     }
 
-    pub fn get_result(
-        &self,
-        file: &str,
-        source_file: &SourceFile,
-    ) -> Option<HardcodedSecretResult> {
+    pub fn get_result(&self, file: &str, compiler: &Compiler) -> Option<HardcodedSecretResult> {
         Some(HardcodedSecretResult {
             file: file.to_owned(),
             literals: self
@@ -63,11 +61,13 @@ impl HardcodedSecretVisitor {
                     value: value.clone(),
                     locations: spans
                         .iter()
-                        .map(|span_and_ident| LiteralLocation {
-                            ident: span_and_ident.ident.clone(),
-                            line: source_file
-                                .lookup_line(span_and_ident.span.lo)
-                                .map(|line| line + 1),
+                        .map(|span_and_ident| {
+                            let pos = compiler.cm.lookup_char_pos(span_and_ident.span.lo);
+                            LiteralLocation {
+                                ident: span_and_ident.ident.clone(),
+                                line: pos.line,
+                                column: pos.col.0 + 1,
+                            }
                         })
                         .collect(),
                 })
@@ -180,13 +180,13 @@ impl Visit for HardcodedSecretVisitor {
 pub fn get_hardcoded_secrets(
     hardcoded_secret_enabled: bool,
     file: &str,
-    source_file: &SourceFile,
     program: &mut Program,
+    compiler: &Compiler,
 ) -> Option<HardcodedSecretResult> {
     if hardcoded_secret_enabled {
         let mut hardcoded_secret_visitor = HardcodedSecretVisitor::default();
         program.visit_with(&mut hardcoded_secret_visitor);
-        hardcoded_secret_visitor.get_result(file, source_file)
+        hardcoded_secret_visitor.get_result(file, compiler)
     } else {
         None
     }

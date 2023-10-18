@@ -25,7 +25,8 @@ export interface HardcodedSecretResult {
 }
 export interface LiteralLocation {
   ident?: string
-  line?: number
+  line: number
+  column: number
 }
 export interface LiteralInfo {
   value: string
