@@ -83,7 +83,8 @@ pub struct HardcodedSecretResult {
 #[derive(Debug)]
 pub struct LiteralLocation {
     pub ident: Option<String>,
-    pub line: Option<i32>,
+    pub line: i32,
+    pub column: i32,
 }
 
 #[napi(object)]
@@ -104,7 +105,8 @@ impl LiteralInfo {
                     .iter()
                     .map(|location| LiteralLocation {
                         ident: location.ident.clone(),
-                        line: location.line.map(|line| line as i32),
+                        line: location.line as i32,
+                        column: location.column as i32,
                     })
                     .collect(),
             })
