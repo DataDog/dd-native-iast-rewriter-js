@@ -6,7 +6,6 @@ pub(crate) mod block_transform_visitor;
 pub(crate) mod csi_methods;
 pub(crate) mod ident_provider;
 pub(crate) mod literal_visitor;
-pub(crate) mod no_plus_operator_visitor;
 pub(crate) mod operation_transform_visitor;
 pub(crate) mod visitor_util;
 pub(crate) mod visitor_with_context;

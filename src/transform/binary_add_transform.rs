@@ -23,9 +23,10 @@ impl BinaryAddTransform {
     ) -> TransformResult<Expr> {
         let expr_clone = expr.clone();
         if let Expr::Bin(mut binary) = expr_clone {
-            if let Some(result) = to_dd_binary_expr_binary(&mut binary, csi_methods, ident_provider)
+            if let Some(dd_expr) =
+                to_dd_binary_expr_binary(&mut binary, csi_methods, ident_provider)
             {
-                return result;
+                return TransformResult::modified(dd_expr);
             }
         }
         TransformResult::not_modified()
@@ -36,7 +37,7 @@ fn to_dd_binary_expr_binary(
     binary: &mut BinExpr,
     csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
-) -> Option<TransformResult<Expr>> {
+) -> Option<Expr> {
     let mut assignations = Vec::new();
     let mut arguments = Vec::new();
 
@@ -54,7 +55,7 @@ fn to_dd_binary_expr_binary(
             &binary.span,
         );
 
-        return Some(TransformResult::modified(expr));
+        return Some(expr);
     }
     None
 }
