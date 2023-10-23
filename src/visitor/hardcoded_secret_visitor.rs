@@ -1,3 +1,4 @@
+use log::debug;
 /**
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
@@ -30,10 +31,22 @@ pub struct LiteralInfo {
     pub locations: Vec<LiteralLocation>,
 }
 
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq)]
 struct SpanAndIdent {
     span: Span,
     ident: Option<String>,
+}
+
+impl PartialEq for SpanAndIdent {
+    fn eq(&self, other: &Self) -> bool {
+        self.span == other.span
+    }
+}
+
+impl std::hash::Hash for SpanAndIdent {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.span.hash(state);
+    }
 }
 
 pub struct HardcodedSecretVisitor {
@@ -84,17 +97,9 @@ impl HardcodedSecretVisitor {
                 self.literals.insert(value.clone(), HashSet::new());
             }
 
-            self.literals.get_mut(&value).and_then(|spans| {
-                // check if the span has been inserted before and skip it if true
-                if !spans
-                    .iter()
-                    .any(|span_and_ident| span_and_ident.span == span)
-                {
-                    Some(spans.insert(SpanAndIdent { span, ident }))
-                } else {
-                    None
-                }
-            });
+            self.literals
+                .get_mut(&value)
+                .map(|spans| spans.insert(SpanAndIdent { span, ident }));
         }
     }
 }
@@ -184,8 +189,11 @@ pub fn get_hardcoded_secrets(
     compiler: &Compiler,
 ) -> Option<HardcodedSecretResult> {
     if hardcoded_secret_enabled {
+        debug!("Searching for literals");
+
         let mut hardcoded_secret_visitor = HardcodedSecretVisitor::default();
         program.visit_with(&mut hardcoded_secret_visitor);
+
         hardcoded_secret_visitor.get_result(file, compiler)
     } else {
         None
