@@ -38,7 +38,7 @@ pub struct RewriterConfig {
     pub local_var_prefix: Option<String>,
     pub csi_methods: Option<Vec<CsiMethod>>,
     pub telemetry_verbosity: Option<String>,
-    pub hardcoded_secret: Option<bool>,
+    pub literals: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -66,7 +66,7 @@ impl RewriterConfig {
             local_var_prefix: None,
             csi_methods: None,
             telemetry_verbosity: Some("INFORMATION".to_string()),
-            hardcoded_secret: Some(true),
+            literals: Some(true),
         }
     }
 
@@ -99,7 +99,7 @@ impl RewriterConfig {
                 .unwrap_or_else(|| rnd_string(6)),
             csi_methods: self.get_csi_methods(),
             verbosity: TelemetryVerbosity::parse(self.telemetry_verbosity.clone()),
-            hardcoded_secret: self.hardcoded_secret.unwrap_or(true),
+            literals: self.literals.unwrap_or(true),
         }
     }
 }

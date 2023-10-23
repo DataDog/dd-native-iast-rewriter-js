@@ -59,7 +59,7 @@ fn rewrite_js_with_csi_methods(
             local_var_prefix: "test".to_string(),
             csi_methods: csi_methods.clone(),
             verbosity: TelemetryVerbosity::Information,
-            hardcoded_secret: false,
+            literals: false,
         },
         &source_map_reader,
     )
@@ -98,7 +98,7 @@ fn get_default_config_with_verbosity(
         local_var_prefix: "test".to_string(),
         csi_methods: get_default_csi_methods(),
         verbosity,
-        hardcoded_secret: false,
+        literals: false,
     }
 }
 
@@ -109,18 +109,18 @@ fn get_chained_and_print_comments_config() -> Config {
         local_var_prefix: "test".to_string(),
         csi_methods: get_default_csi_methods(),
         verbosity: TelemetryVerbosity::Debug,
-        hardcoded_secret: false,
+        literals: false,
     }
 }
 
-fn get_hardcoded_secret_config() -> Config {
+fn get_literals_config() -> Config {
     Config {
         chain_source_map: true,
         print_comments: true,
         local_var_prefix: "test".to_string(),
         csi_methods: get_default_csi_methods(),
         verbosity: TelemetryVerbosity::Debug,
-        hardcoded_secret: true,
+        literals: true,
     }
 }
 

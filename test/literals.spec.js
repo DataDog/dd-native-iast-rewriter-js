@@ -25,7 +25,7 @@ describe('hardcoded literals', () => {
   it('does not found literals if disabled by conf', () => {
     const js = 'const secret = "this_is_a_secret";'
     const result = rewriteWithOpts(js, {
-      hardcodedSecret: false
+      literals: false
     })
 
     expect(result.literalsResult).to.undefined

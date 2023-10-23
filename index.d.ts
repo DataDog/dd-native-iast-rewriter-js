@@ -13,7 +13,7 @@ export interface RewriterConfig {
   comments?: boolean
   localVarPrefix?: string
   csiMethods?: Array<CsiMethod>
-  hardcodedSecret?: boolean
+  literals?: boolean
 }
 export interface ResultWithoutMetrics {
   content: string

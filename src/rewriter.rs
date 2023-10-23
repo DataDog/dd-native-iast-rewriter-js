@@ -65,7 +65,7 @@ pub struct Config {
     pub local_var_prefix: String,
     pub csi_methods: CsiMethods,
     pub verbosity: TelemetryVerbosity,
-    pub hardcoded_secret: bool,
+    pub literals: bool,
 }
 
 pub fn rewrite_js<R: Read>(
@@ -181,7 +181,7 @@ fn transform_js(
     let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status, config);
     program.visit_mut_with(&mut block_transform_visitor);
 
-    let literals_result = get_literals(config.hardcoded_secret, file, &mut program, compiler);
+    let literals_result = get_literals(config.literals, file, &mut program, compiler);
 
     match transform_status.status {
         Status::Modified => compiler

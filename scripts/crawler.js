@@ -59,9 +59,9 @@ const red = console.log.bind(this, '\x1b[31m%s\x1b[0m')
 const blue = console.log.bind(this, '\x1b[34m%s\x1b[0m')
 const cyan = console.log.bind(this, '\x1b[35m%s\x1b[0m')
 
-const hardcodedSecret = process.env.HARDCODED_SECRET_ENABLED !== 'false' && process.env.HARDCODED_SECRET_ENABLED !== '0'
+const literals = process.env.HARDCODED_SECRET_ENABLED !== 'false' && process.env.HARDCODED_SECRET_ENABLED !== '0'
 
-const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS, telemetryVerbosity: 'Debug', hardcodedSecret })
+const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS, telemetryVerbosity: 'Debug', literals })
 
 const getGlobalMethods = function (methods) {
   const fnSignAndBody = '(res) {return res;}'
@@ -237,10 +237,10 @@ crawl(options.rootPath, options, {
 
         const end = process.hrtime.bigint()
 
-        const hardcodedSecretResult = response.hardcodedSecretResult
-        if (hardcodedSecretResult?.literals?.length) {
-          red(`---------------- literals ${hardcodedSecretResult.file}`)
-          hardcodedSecretResult.literals.forEach((lit) => {
+        const literalsResult = response.literalsResult
+        if (literalsResult?.literals?.length) {
+          red(`---------------- literals ${literalsResult.file}`)
+          literalsResult.literals.forEach((lit) => {
             log(lit)
           })
         }

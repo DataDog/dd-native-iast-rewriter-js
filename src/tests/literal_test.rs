@@ -7,7 +7,7 @@
 mod tests {
     use spectral::assert_that;
 
-    use crate::tests::{get_hardcoded_secret_config, rewrite_js_with_config};
+    use crate::tests::{get_literals_config, rewrite_js_with_config};
 
     #[test]
     fn test_literal_outside_block() -> Result<(), String> {
@@ -20,7 +20,7 @@ mod tests {
             const a = 'literal_literal';"
             .to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -40,7 +40,7 @@ mod tests {
     fn test_literal_inside_block() -> Result<(), String> {
         let original_code = "{ const secret = 'literal_literal'; }".to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -64,7 +64,7 @@ mod tests {
         "
         .to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -94,7 +94,7 @@ mod tests {
     fn test_literal_inside_obj_prop() -> Result<(), String> {
         let original_code = "{ const a = { secret: 'literal_literal' }; }".to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -113,7 +113,7 @@ mod tests {
     fn test_literal_as_argument() -> Result<(), String> {
         let original_code = "{ login('literal_literal') }".to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -133,7 +133,7 @@ mod tests {
     fn test_literal_skipped_due_length() -> Result<(), String> {
         let original_code = "{ const a = 'literal'; }".to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -145,7 +145,7 @@ mod tests {
     fn test_require_literals_discarded() -> Result<(), String> {
         let original_code = "const a = require('literal_literal')".to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -158,7 +158,7 @@ mod tests {
     fn test_require_literals_with_no_literal_discarded() -> Result<(), String> {
         let original_code = "const a = require(getmodule())".to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -171,7 +171,7 @@ mod tests {
     fn test_require_literals_with_no_literal_spread_discarded() -> Result<(), String> {
         let original_code = "const a = require(...a)".to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -184,7 +184,7 @@ mod tests {
     fn test_non_require_calls_literals_included() -> Result<(), String> {
         let original_code = "const a = no_require('literal_literal')".to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -197,7 +197,7 @@ mod tests {
     fn test_new_regexp_is_discarded() -> Result<(), String> {
         let original_code = "const a = new RegExp('literal_literal')".to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());
@@ -210,7 +210,7 @@ mod tests {
     fn test_regexp_is_discarded() -> Result<(), String> {
         let original_code = "const a = /literal_literal/".to_string();
 
-        let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
+        let rewritten = rewrite_js_with_config(original_code, &get_literals_config())
             .map_err(|e| e.to_string())?;
 
         assert_that(&rewritten.literals_result.is_some());

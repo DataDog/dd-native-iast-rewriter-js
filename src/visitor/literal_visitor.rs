@@ -183,12 +183,12 @@ impl Visit for LiteralVisitor {
 }
 
 pub fn get_literals(
-    hardcoded_secret_enabled: bool,
+    literals_enabled: bool,
     file: &str,
     program: &mut Program,
     compiler: &Compiler,
 ) -> Option<LiteralsResult> {
-    if hardcoded_secret_enabled {
+    if literals_enabled {
         debug!("Searching for literals");
 
         let mut literal_visitor = LiteralVisitor::default();
