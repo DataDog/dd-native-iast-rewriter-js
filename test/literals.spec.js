@@ -10,14 +10,14 @@ const { rewriteWithOpts } = require('./util')
 
 const FILE_PATH = path.join(process.cwd(), 'index.spec.js')
 
-describe('hardcoded secrets', () => {
+describe('hardcoded literals', () => {
   it('does double quoted literals found', () => {
     const js = 'const secret = "this_is_a_secret";'
     const result = rewriteWithOpts(js)
 
-    expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([
+    expect(result.literalsResult).to.not.undefined
+    expect(result.literalsResult.file).to.be.eq(FILE_PATH)
+    expect(result.literalsResult.literals).to.deep.eq([
       { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1, column: 16 }] }
     ])
   })
@@ -28,16 +28,16 @@ describe('hardcoded secrets', () => {
       hardcodedSecret: false
     })
 
-    expect(result.hardcodedSecretResult).to.undefined
+    expect(result.literalsResult).to.undefined
   })
 
   it('does return single quoted literals found', () => {
     const js = "const secret = 'this_is_a_secret';"
     const result = rewriteWithOpts(js)
 
-    expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([
+    expect(result.literalsResult).to.not.undefined
+    expect(result.literalsResult.file).to.be.eq(FILE_PATH)
+    expect(result.literalsResult.literals).to.deep.eq([
       { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1, column: 16 }] }
     ])
   })
@@ -51,9 +51,9 @@ describe('hardcoded secrets', () => {
     const secret = 'this_is_a_secret';`
     const result = rewriteWithOpts(js)
 
-    expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.file).to.be.eq(FILE_PATH)
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([
+    expect(result.literalsResult).to.not.undefined
+    expect(result.literalsResult.file).to.be.eq(FILE_PATH)
+    expect(result.literalsResult.literals).to.deep.eq([
       { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 6, column: 20 }] }
     ])
   })
@@ -62,12 +62,12 @@ describe('hardcoded secrets', () => {
     const js = "const secret1 = 'this_is_a_secret'; const secret2 = 'another_secret'"
     const result = rewriteWithOpts(js)
 
-    expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.literals).to.deep.include({
+    expect(result.literalsResult).to.not.undefined
+    expect(result.literalsResult.literals).to.deep.include({
       value: 'this_is_a_secret',
       locations: [{ ident: 'secret1', line: 1, column: 17 }]
     })
-    expect(result.hardcodedSecretResult.literals).to.deep.include({
+    expect(result.literalsResult.literals).to.deep.include({
       value: 'another_secret',
       locations: [{ ident: 'secret2', line: 1, column: 53 }]
     })
@@ -77,8 +77,8 @@ describe('hardcoded secrets', () => {
     const js = "function auth() { const secret = 'this_is_a_secret'; }"
     const result = rewriteWithOpts(js)
 
-    expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([
+    expect(result.literalsResult).to.not.undefined
+    expect(result.literalsResult.literals).to.deep.eq([
       { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1, column: 34 }] }
     ])
   })
@@ -87,8 +87,8 @@ describe('hardcoded secrets', () => {
     const js = "function login() { return auth('this_is_a_secret'); }"
     const result = rewriteWithOpts(js)
 
-    expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([
+    expect(result.literalsResult).to.not.undefined
+    expect(result.literalsResult.literals).to.deep.eq([
       { value: 'this_is_a_secret', locations: [{ ident: undefined, line: 1, column: 32 }] }
     ])
   })
@@ -97,8 +97,8 @@ describe('hardcoded secrets', () => {
     const js = "const TOKENS = { secret: 'this_is_a_secret' }"
     const result = rewriteWithOpts(js)
 
-    expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([
+    expect(result.literalsResult).to.not.undefined
+    expect(result.literalsResult.literals).to.deep.eq([
       { value: 'this_is_a_secret', locations: [{ ident: 'secret', line: 1, column: 26 }] }
     ])
   })
@@ -107,8 +107,8 @@ describe('hardcoded secrets', () => {
     const js = "const TOKENS = { [secret]: 'this_is_a_secret' }"
     const result = rewriteWithOpts(js)
 
-    expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([
+    expect(result.literalsResult).to.not.undefined
+    expect(result.literalsResult.literals).to.deep.eq([
       { value: 'this_is_a_secret', locations: [{ ident: undefined, line: 1, column: 28 }] }
     ])
   })
@@ -117,7 +117,7 @@ describe('hardcoded secrets', () => {
     const js = 'const secret = "12345678";'
     const result = rewriteWithOpts(js)
 
-    expect(result.hardcodedSecretResult).to.not.undefined
-    expect(result.hardcodedSecretResult.literals).to.deep.eq([])
+    expect(result.literalsResult).to.not.undefined
+    expect(result.literalsResult.literals).to.deep.eq([])
   })
 })

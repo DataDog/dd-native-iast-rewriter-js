@@ -17,9 +17,9 @@ export interface RewriterConfig {
 }
 export interface ResultWithoutMetrics {
   content: string
-  hardcodedSecretResult?: HardcodedSecretResult
+  literalsResult?: LiteralsResult
 }
-export interface HardcodedSecretResult {
+export interface LiteralsResult {
   file: string
   literals: Array<LiteralInfo>
 }

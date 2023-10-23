@@ -8,7 +8,7 @@ use crate::{
     rewriter::{print_js, rewrite_js, Config},
     telemetry::TelemetryVerbosity,
     util::{rnd_string, DefaultFileReader},
-    visitor::{self, csi_methods::CsiMethods, hardcoded_secret_visitor},
+    visitor::{self, csi_methods::CsiMethods, literal_visitor},
 };
 
 use napi::{Error, Status};
@@ -69,12 +69,12 @@ impl RewriterConfig {
 #[derive(Debug)]
 pub struct ResultWithoutMetrics {
     pub content: String,
-    pub hardcoded_secret_result: Option<HardcodedSecretResult>,
+    pub literals_result: Option<LiteralsResult>,
 }
 
 #[napi(object)]
 #[derive(Debug)]
-pub struct HardcodedSecretResult {
+pub struct LiteralsResult {
     pub file: String,
     pub literals: Vec<LiteralInfo>,
 }
@@ -95,7 +95,7 @@ pub struct LiteralInfo {
 }
 
 impl LiteralInfo {
-    fn from(literals: Vec<hardcoded_secret_visitor::LiteralInfo>) -> Vec<LiteralInfo> {
+    fn from(literals: Vec<literal_visitor::LiteralInfo>) -> Vec<LiteralInfo> {
         literals
             .iter()
             .map(|literal| LiteralInfo {
@@ -142,10 +142,10 @@ impl Rewriter {
         rewrite_js(code, &file, &self.config, &default_file_reader)
             .map(|result| ResultWithoutMetrics {
                 content: print_js(&result, &self.config),
-                hardcoded_secret_result: match result.hardcoded_secret_result {
-                    Some(hardcoded_secret_result) => Some(HardcodedSecretResult {
+                literals_result: match result.literals_result {
+                    Some(literals_result) => Some(LiteralsResult {
                         file,
-                        literals: LiteralInfo::from(hardcoded_secret_result.literals),
+                        literals: LiteralInfo::from(literals_result.literals),
                     }),
                     _ => None,
                 },

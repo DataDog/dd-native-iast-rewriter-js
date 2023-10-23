@@ -13,7 +13,7 @@ use std::path::PathBuf;
 
 mod binary_assignation_test;
 mod binary_expression_test;
-mod hardcoded_secret_test;
+mod literal_test;
 mod source_map_test;
 mod string_method_test;
 mod telemetry_test;

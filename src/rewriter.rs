@@ -9,7 +9,7 @@ use crate::{
     visitor::{
         block_transform_visitor::BlockTransformVisitor,
         csi_methods::CsiMethods,
-        hardcoded_secret_visitor::{get_hardcoded_secrets, HardcodedSecretResult},
+        literal_visitor::{get_literals, LiteralsResult},
     },
 };
 use anyhow::{Error, Result};
@@ -44,7 +44,7 @@ pub struct RewrittenOutput {
     pub source_map: String,
     pub original_source_map: OriginalSourceMap,
     pub transform_status: Option<TransformStatus>,
-    pub hardcoded_secret_result: Option<HardcodedSecretResult>,
+    pub literals_result: Option<LiteralsResult>,
 }
 
 pub struct OriginalSourceMap {
@@ -55,7 +55,7 @@ pub struct OriginalSourceMap {
 pub struct TransformOutputWithStatus {
     pub output: TransformOutput,
     pub status: TransformStatus,
-    pub hardcoded_secret_result: Option<HardcodedSecretResult>,
+    pub literals_result: Option<LiteralsResult>,
 }
 
 #[derive(Debug)]
@@ -95,7 +95,7 @@ pub fn rewrite_js<R: Read>(
             source_map: transformed.output.map.unwrap_or_default(),
             original_source_map: original_map,
             transform_status: Some(transformed.status),
-            hardcoded_secret_result: transformed.hardcoded_secret_result,
+            literals_result: transformed.literals_result,
         })
     })
 }
@@ -181,8 +181,7 @@ fn transform_js(
     let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status, config);
     program.visit_mut_with(&mut block_transform_visitor);
 
-    let hardcoded_secret_result =
-        get_hardcoded_secrets(config.hardcoded_secret, file, &mut program, compiler);
+    let literals_result = get_literals(config.hardcoded_secret, file, &mut program, compiler);
 
     match transform_status.status {
         Status::Modified => compiler
@@ -205,7 +204,7 @@ fn transform_js(
             .map(|output| TransformOutputWithStatus {
                 output,
                 status: transform_status,
-                hardcoded_secret_result,
+                literals_result,
             }),
 
         Status::NotModified => Ok(TransformOutputWithStatus {
@@ -214,7 +213,7 @@ fn transform_js(
                 map: None,
             },
             status: transform_status,
-            hardcoded_secret_result,
+            literals_result,
         }),
 
         Status::Cancelled => Err(Error::msg(format!(
@@ -371,7 +370,7 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
             source_map: printed.map.unwrap(),
             original_source_map: original_map,
             transform_status: None,
-            hardcoded_secret_result: None,
+            literals_result: None,
         })
     });
 }

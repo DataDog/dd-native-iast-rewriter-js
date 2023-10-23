@@ -13,7 +13,7 @@ use swc::{
 use swc_ecma_visit::{swc_ecma_ast::Lit, Visit, VisitWith};
 
 #[derive(Serialize)]
-pub struct HardcodedSecretResult {
+pub struct LiteralsResult {
     pub file: String,
     pub literals: Vec<LiteralInfo>,
 }
@@ -49,23 +49,23 @@ impl std::hash::Hash for SpanAndIdent {
     }
 }
 
-pub struct HardcodedSecretVisitor {
+pub struct LiteralVisitor {
     min_literal_length: usize,
     max_literal_length: usize,
     literals: HashMap<String, HashSet<SpanAndIdent>>,
 }
 
-impl HardcodedSecretVisitor {
+impl LiteralVisitor {
     pub fn default() -> Self {
-        HardcodedSecretVisitor {
+        LiteralVisitor {
             min_literal_length: 10,
             max_literal_length: 256,
             literals: HashMap::new(),
         }
     }
 
-    pub fn get_result(&self, file: &str, compiler: &Compiler) -> Option<HardcodedSecretResult> {
-        Some(HardcodedSecretResult {
+    pub fn get_result(&self, file: &str, compiler: &Compiler) -> Option<LiteralsResult> {
+        Some(LiteralsResult {
             file: file.to_owned(),
             literals: self
                 .literals
@@ -104,7 +104,7 @@ impl HardcodedSecretVisitor {
     }
 }
 
-impl Visit for HardcodedSecretVisitor {
+impl Visit for LiteralVisitor {
     fn visit_lit(&mut self, literal: &Lit) {
         if let Lit::Str(str_literal) = literal {
             self.add_literal(str_literal, None);
@@ -182,19 +182,19 @@ impl Visit for HardcodedSecretVisitor {
     }
 }
 
-pub fn get_hardcoded_secrets(
+pub fn get_literals(
     hardcoded_secret_enabled: bool,
     file: &str,
     program: &mut Program,
     compiler: &Compiler,
-) -> Option<HardcodedSecretResult> {
+) -> Option<LiteralsResult> {
     if hardcoded_secret_enabled {
         debug!("Searching for literals");
 
-        let mut hardcoded_secret_visitor = HardcodedSecretVisitor::default();
-        program.visit_with(&mut hardcoded_secret_visitor);
+        let mut literal_visitor = LiteralVisitor::default();
+        program.visit_with(&mut literal_visitor);
 
-        hardcoded_secret_visitor.get_result(file, compiler)
+        literal_visitor.get_result(file, compiler)
     } else {
         None
     }

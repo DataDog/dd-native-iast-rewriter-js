@@ -23,8 +23,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        let result = rewritten.hardcoded_secret_result.unwrap();
+        assert_that(&rewritten.literals_result.is_some());
+        let result = rewritten.literals_result.unwrap();
 
         let literal_info = result.literals.get(0).unwrap();
 
@@ -43,8 +43,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        let result = rewritten.hardcoded_secret_result.unwrap();
+        assert_that(&rewritten.literals_result.is_some());
+        let result = rewritten.literals_result.unwrap();
         let literal_info = result.literals.get(0).unwrap();
 
         assert_that(&literal_info.locations.len()).is_equal_to(1);
@@ -67,8 +67,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        let result = rewritten.hardcoded_secret_result.unwrap();
+        assert_that(&rewritten.literals_result.is_some());
+        let result = rewritten.literals_result.unwrap();
         let literal_info = result.literals.get(0).unwrap();
 
         assert_that(&literal_info.locations.len()).is_equal_to(2);
@@ -97,8 +97,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        let result = rewritten.hardcoded_secret_result.unwrap();
+        assert_that(&rewritten.literals_result.is_some());
+        let result = rewritten.literals_result.unwrap();
         let literal_info = result.literals.get(0).unwrap();
 
         assert_that(&literal_info.locations.len()).is_equal_to(1);
@@ -116,8 +116,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        let result = rewritten.hardcoded_secret_result.unwrap();
+        assert_that(&rewritten.literals_result.is_some());
+        let result = rewritten.literals_result.unwrap();
         let literal_info = result.literals.get(0).unwrap();
 
         assert_that(&literal_info.locations.len()).is_equal_to(1);
@@ -136,8 +136,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals.len()).is_equal_to(0);
+        assert_that(&rewritten.literals_result.is_some());
+        assert_that(&rewritten.literals_result.unwrap().literals.len()).is_equal_to(0);
         Ok(())
     }
 
@@ -148,8 +148,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals.len()).is_equal_to(0);
+        assert_that(&rewritten.literals_result.is_some());
+        assert_that(&rewritten.literals_result.unwrap().literals.len()).is_equal_to(0);
 
         Ok(())
     }
@@ -161,8 +161,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals.len()).is_equal_to(0);
+        assert_that(&rewritten.literals_result.is_some());
+        assert_that(&rewritten.literals_result.unwrap().literals.len()).is_equal_to(0);
 
         Ok(())
     }
@@ -174,8 +174,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals.len()).is_equal_to(0);
+        assert_that(&rewritten.literals_result.is_some());
+        assert_that(&rewritten.literals_result.unwrap().literals.len()).is_equal_to(0);
 
         Ok(())
     }
@@ -187,8 +187,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals.len()).is_equal_to(1);
+        assert_that(&rewritten.literals_result.is_some());
+        assert_that(&rewritten.literals_result.unwrap().literals.len()).is_equal_to(1);
 
         Ok(())
     }
@@ -200,8 +200,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals.len()).is_equal_to(0);
+        assert_that(&rewritten.literals_result.is_some());
+        assert_that(&rewritten.literals_result.unwrap().literals.len()).is_equal_to(0);
 
         Ok(())
     }
@@ -213,8 +213,8 @@ mod tests {
         let rewritten = rewrite_js_with_config(original_code, &get_hardcoded_secret_config())
             .map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.hardcoded_secret_result.is_some());
-        assert_that(&rewritten.hardcoded_secret_result.unwrap().literals.len()).is_equal_to(0);
+        assert_that(&rewritten.literals_result.is_some());
+        assert_that(&rewritten.literals_result.unwrap().literals.len()).is_equal_to(0);
 
         Ok(())
     }
