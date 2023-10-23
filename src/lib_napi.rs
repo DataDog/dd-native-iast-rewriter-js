@@ -8,7 +8,7 @@ use crate::{
     rewriter::{print_js, rewrite_js, Config},
     telemetry::TelemetryVerbosity,
     util::{rnd_string, DefaultFileReader},
-    visitor::{self, csi_methods::CsiMethods},
+    visitor::{self, csi_methods::CsiMethods, literal_visitor},
 };
 
 use napi::{Error, Status};
@@ -28,6 +28,7 @@ pub struct RewriterConfig {
     pub comments: Option<bool>,
     pub local_var_prefix: Option<String>,
     pub csi_methods: Option<Vec<CsiMethod>>,
+    pub literals: Option<bool>,
 }
 
 impl RewriterConfig {
@@ -59,6 +60,7 @@ impl RewriterConfig {
                 .unwrap_or_else(|| rnd_string(6)),
             csi_methods: self.get_csi_methods(),
             verbosity: TelemetryVerbosity::Information,
+            literals: self.literals.unwrap_or(true),
         }
     }
 }
@@ -67,6 +69,49 @@ impl RewriterConfig {
 #[derive(Debug)]
 pub struct ResultWithoutMetrics {
     pub content: String,
+    pub literals_result: Option<LiteralsResult>,
+}
+
+#[napi(object)]
+#[derive(Debug)]
+pub struct LiteralsResult {
+    pub file: String,
+    pub literals: Vec<LiteralInfo>,
+}
+
+#[napi(object)]
+#[derive(Debug)]
+pub struct LiteralLocation {
+    pub ident: Option<String>,
+    pub line: i32,
+    pub column: i32,
+}
+
+#[napi(object)]
+#[derive(Debug)]
+pub struct LiteralInfo {
+    pub value: String,
+    pub locations: Vec<LiteralLocation>,
+}
+
+impl LiteralInfo {
+    fn from(literals: Vec<literal_visitor::LiteralInfo>) -> Vec<LiteralInfo> {
+        literals
+            .iter()
+            .map(|literal| LiteralInfo {
+                value: literal.value.clone(),
+                locations: literal
+                    .locations
+                    .iter()
+                    .map(|location| LiteralLocation {
+                        ident: location.ident.clone(),
+                        line: location.line as i32,
+                        column: location.column as i32,
+                    })
+                    .collect(),
+            })
+            .collect()
+    }
 }
 
 #[napi]
@@ -83,6 +128,7 @@ impl Rewriter {
             comments: Some(false),
             local_var_prefix: None,
             csi_methods: None,
+            literals: Some(true),
         });
         Self {
             config: rewriter_config.to_config(),
@@ -96,6 +142,13 @@ impl Rewriter {
         rewrite_js(code, &file, &self.config, &default_file_reader)
             .map(|result| ResultWithoutMetrics {
                 content: print_js(&result, &self.config),
+                literals_result: match result.literals_result {
+                    Some(literals_result) => Some(LiteralsResult {
+                        file,
+                        literals: LiteralInfo::from(literals_result.literals),
+                    }),
+                    _ => None,
+                },
             })
             .map_err(|e| Error::new(Status::Unknown, format!("{e}")))
     }

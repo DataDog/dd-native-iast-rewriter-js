@@ -6,7 +6,11 @@ use crate::{
     telemetry::TelemetryVerbosity,
     transform::transform_status::{Status, TransformStatus},
     util::{file_name, parse_source_map, FileReader},
-    visitor::{block_transform_visitor::BlockTransformVisitor, csi_methods::CsiMethods},
+    visitor::{
+        block_transform_visitor::BlockTransformVisitor,
+        csi_methods::CsiMethods,
+        literal_visitor::{get_literals, LiteralsResult},
+    },
 };
 use anyhow::{Error, Result};
 use log::debug;
@@ -22,7 +26,7 @@ use swc::{
     common::{
         comments::Comments,
         errors::{ColorConfig, Handler},
-        FileName, FilePathMapping,
+        FileName, FilePathMapping, SourceFile,
     },
     config::{IsModule, SourceMapsConfig},
     ecmascript::ast::*,
@@ -40,6 +44,7 @@ pub struct RewrittenOutput {
     pub source_map: String,
     pub original_source_map: OriginalSourceMap,
     pub transform_status: Option<TransformStatus>,
+    pub literals_result: Option<LiteralsResult>,
 }
 
 pub struct OriginalSourceMap {
@@ -50,6 +55,7 @@ pub struct OriginalSourceMap {
 pub struct TransformOutputWithStatus {
     pub output: TransformOutput,
     pub status: TransformStatus,
+    pub literals_result: Option<LiteralsResult>,
 }
 
 #[derive(Debug)]
@@ -59,6 +65,7 @@ pub struct Config {
     pub local_var_prefix: String,
     pub csi_methods: CsiMethods,
     pub verbosity: TelemetryVerbosity,
+    pub literals: bool,
 }
 
 pub fn rewrite_js<R: Read>(
@@ -71,19 +78,24 @@ pub fn rewrite_js<R: Read>(
 
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
-        let program = parse_js(&code, file, handler, &compiler)?;
+        let source_file = compiler
+            .cm
+            .new_source_file(FileName::Real(PathBuf::from(file)), code);
+
+        let program = parse_js(&source_file, handler, &compiler)?;
 
         // extract sourcemap before printing otherwise comments are consumed
         // and looks like it is not possible to read them after compiler.print() invocation
         let original_map = extract_source_map(file, compiler.comments(), file_reader);
 
-        let result = transform_js(program, &code, file, config, &compiler);
+        let result = transform_js(program, &source_file, file, config, &compiler);
 
         result.map(|transformed| RewrittenOutput {
             code: transformed.output.code,
             source_map: transformed.output.map.unwrap_or_default(),
             original_source_map: original_map,
             transform_status: Some(transformed.status),
+            literals_result: transformed.literals_result,
         })
     })
 }
@@ -131,14 +143,10 @@ fn default_handler_opts() -> HandlerOpts {
 }
 
 fn parse_js(
-    source: &String,
-    file: &str,
+    source_file: &Arc<SourceFile>,
     handler: &Handler,
     compiler: &Compiler,
 ) -> Result<Program> {
-    let fm = compiler
-        .cm
-        .new_source_file(FileName::Real(PathBuf::from(file)), source.into());
     let es_config = EsConfig {
         jsx: false,
         fn_bind: false,
@@ -152,7 +160,7 @@ fn parse_js(
     };
 
     compiler.parse_js(
-        fm,
+        source_file.to_owned(),
         handler,
         EsVersion::latest(),
         Syntax::Es(es_config),
@@ -163,14 +171,17 @@ fn parse_js(
 
 fn transform_js(
     mut program: Program,
-    code: &str,
+    source_file: &SourceFile,
     file: &str,
     config: &Config,
     compiler: &Compiler,
 ) -> Result<TransformOutputWithStatus, Error> {
     let mut transform_status = TransformStatus::not_modified(config);
+
     let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status, config);
     program.visit_mut_with(&mut block_transform_visitor);
+
+    let literals_result = get_literals(config.literals, file, &mut program, compiler);
 
     match transform_status.status {
         Status::Modified => compiler
@@ -193,14 +204,18 @@ fn transform_js(
             .map(|output| TransformOutputWithStatus {
                 output,
                 status: transform_status,
+                literals_result,
             }),
+
         Status::NotModified => Ok(TransformOutputWithStatus {
             output: TransformOutput {
-                code: code.to_string(),
+                code: source_file.src.to_string(),
                 map: None,
             },
             status: transform_status,
+            literals_result,
         }),
+
         Status::Cancelled => Err(Error::msg(format!(
             "Cancelling {} file rewrite. Reason: {}",
             file,
@@ -323,7 +338,11 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
     let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let js_file = "debug.js".to_string();
-        let program = parse_js(&code, &js_file, handler, &compiler)?;
+        let source_file = compiler
+            .cm
+            .new_source_file(FileName::Real(PathBuf::from(js_file.clone())), code);
+
+        let program = parse_js(&source_file, handler, &compiler)?;
 
         print!("{:#?}", program);
 
@@ -351,6 +370,7 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
             source_map: printed.map.unwrap(),
             original_source_map: original_map,
             transform_status: None,
+            literals_result: None,
         })
     });
 }

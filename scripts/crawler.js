@@ -53,12 +53,15 @@ const DEFAULT_OPTIONS = {
   help: false
 }
 
+const log = console.log
 const green = console.log.bind(this, '\x1b[32m%s\x1b[0m')
 const red = console.log.bind(this, '\x1b[31m%s\x1b[0m')
 const blue = console.log.bind(this, '\x1b[34m%s\x1b[0m')
 const cyan = console.log.bind(this, '\x1b[35m%s\x1b[0m')
 
-const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS, telemetryVerbosity: 'Debug' })
+const literals = process.env.HARDCODED_SECRET_ENABLED !== 'false' && process.env.HARDCODED_SECRET_ENABLED !== '0'
+
+const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS, telemetryVerbosity: 'Debug', literals })
 
 const getGlobalMethods = function (methods) {
   const fnSignAndBody = '(res) {return res;}'
@@ -202,6 +205,9 @@ if (options.filePattern) {
     exit()
   }
 }
+
+let time = 0
+
 crawl(options.rootPath, options, {
   visit (code, fileName, path) {
     if (options.rewrite) {
@@ -209,6 +215,9 @@ crawl(options.rootPath, options, {
         if (options.natives) {
           code = this.replaceNativeV8Calls(code, fileName)
         }
+
+        const start = process.hrtime.bigint()
+
         const response = rewriter.rewrite(code, path)
         let rewritten = response.content
 
@@ -225,6 +234,21 @@ crawl(options.rootPath, options, {
           }
           console.log('\n')
         }
+
+        const end = process.hrtime.bigint()
+
+        const literalsResult = response.literalsResult
+        if (literalsResult?.literals?.length) {
+          red(`---------------- literals ${literalsResult.file}`)
+          literalsResult.literals.forEach((lit) => {
+            log(lit)
+          })
+        }
+
+        const partialTime = parseInt(end - start) / 1e6
+        time += partialTime
+
+        log(`Partial rewrite time: ${partialTime} - ${path}`)
 
         if (options.natives) {
           rewritten = this.replaceNativeV8Calls(rewritten, fileName, true)
@@ -273,3 +297,5 @@ crawl(options.rootPath, options, {
     return rewritten
   }
 })
+
+log(`TOTAL time: ${time}`)

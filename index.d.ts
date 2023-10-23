@@ -13,9 +13,24 @@ export interface RewriterConfig {
   comments?: boolean
   localVarPrefix?: string
   csiMethods?: Array<CsiMethod>
+  literals?: boolean
 }
 export interface ResultWithoutMetrics {
   content: string
+  literalsResult?: LiteralsResult
+}
+export interface LiteralsResult {
+  file: string
+  literals: Array<LiteralInfo>
+}
+export interface LiteralLocation {
+  ident?: string
+  line: number
+  column: number
+}
+export interface LiteralInfo {
+  value: string
+  locations: Array<LiteralLocation>
 }
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)

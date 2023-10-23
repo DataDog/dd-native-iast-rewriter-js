@@ -168,6 +168,7 @@ fn replace_call_expr_if_csi_method_with_member(
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
     let method_name = &ident.sym.to_string();
+
     if let Some(csi_method) = csi_methods.get(method_name) {
         let mut assignations = Vec::new();
         let mut arguments = Vec::new();
@@ -222,6 +223,7 @@ fn replace_call_expr_if_csi_method_with_member(
                 optional: false,
             }),
         })));
+
         call_replacement.args.iter_mut().for_each(|expr_or_spread| {
             DefaultOperandHandler::replace_expressions_in_operand(
                 &mut expr_or_spread.expr,
@@ -232,6 +234,7 @@ fn replace_call_expr_if_csi_method_with_member(
                 ident_provider,
             )
         });
+
         // insert .call(this) argument
         call_replacement.args.insert(
             0,

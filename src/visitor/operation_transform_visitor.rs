@@ -67,6 +67,7 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 // check WithCtx::drop. It calls reset_ctx() method when it is destructed
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 binary.visit_mut_children_with(opv_with_child_ctx);
+
                 if binary.op == BinaryOp::Add {
                     expr.map_with_mut(|bin| {
                         let result = BinaryAddTransform::to_dd_binary_expr(
@@ -79,9 +80,11 @@ impl VisitMut for OperationTransformVisitor<'_> {
                     });
                 }
             }
+
             Expr::Assign(assign) => {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 assign.visit_mut_children_with(opv_with_child_ctx);
+
                 if assign.op == AssignOp::AddAssign {
                     assign.map_with_mut(|mut assign| {
                         let result =
@@ -92,12 +95,14 @@ impl VisitMut for OperationTransformVisitor<'_> {
                     });
                 }
             }
+
             Expr::Tpl(tpl) => {
                 if !tpl.exprs.is_empty() {
                     // transform tpl into binary and act as if it were a binary expr
                     let mut binary = TemplateTransform::get_binary_from_tpl(tpl);
                     let opv_with_child_ctx = &mut *self.with_child_ctx();
                     binary.visit_mut_children_with(opv_with_child_ctx);
+
                     expr.map_with_mut(|tpl| {
                         let result = BinaryAddTransform::to_dd_binary_expr(
                             &binary,
@@ -109,19 +114,23 @@ impl VisitMut for OperationTransformVisitor<'_> {
                     });
                 }
             }
+
             Expr::Call(call) => {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 call.visit_mut_children_with(opv_with_child_ctx);
+
                 let result = NoPlusOperatorVisitor::get_dd_call_expr(
                     call,
                     opv_with_child_ctx.csi_methods,
                     opv_with_child_ctx.ident_provider,
                 );
+
                 if result.is_modified() {
                     expr.map_with_mut(|e| result.expr.unwrap_or(e));
                     opv_with_child_ctx.update_status(result.status, result.tag);
                 }
             }
+
             _ => {
                 expr.visit_mut_children_with(self);
             }

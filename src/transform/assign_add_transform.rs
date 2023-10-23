@@ -26,6 +26,7 @@ impl AssignAddTransform {
                 assign.visit_mut_children_with(opv);
                 TransformResult::not_modified()
             }
+
             PatOrExpr::Expr(left_expr) => {
                 let binary = Expr::Bin(BinExpr {
                     span,
