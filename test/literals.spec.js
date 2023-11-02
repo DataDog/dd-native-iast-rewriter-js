@@ -120,4 +120,11 @@ describe('hardcoded literals', () => {
     expect(result.literalsResult).to.not.undefined
     expect(result.literalsResult.literals).to.deep.eq([])
   })
+
+  it('does not fail with an empty regexp constructor', () => {
+    const js = 'const reg = new RegExp();'
+    const result = rewriteWithOpts(js)
+
+    expect(result.literalsResult).to.not.undefined
+  })
 })
