@@ -166,7 +166,11 @@ impl Visit for LiteralVisitor {
                         && new_exp
                             .args
                             .as_ref()
-                            .map(|args| args[0].spread.is_none() && args[0].expr.is_lit())
+                            .map(|args| {
+                                !args.is_empty()
+                                    && args[0].spread.is_none()
+                                    && args[0].expr.is_lit()
+                            })
                             .is_some()
                     {
                         // if the call is a new RegExp('regex') skip visiting children
