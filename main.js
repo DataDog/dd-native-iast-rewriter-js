@@ -31,7 +31,16 @@ class CacheRewriter {
 
   rewrite (code, file) {
     const response = this.nativeRewriter.rewrite(code, file)
-    cacheRewrittenSourceMap(file, response.content)
+
+    try {
+      cacheRewrittenSourceMap(file, response.content)
+    } catch (e) {
+      // all rewritten source files have the sourceMap inlined so this error can occur when trying
+      // to read a sourcemap of an unmodified source file from disk: because the file doesn't exist
+      // o because we don't have permissions to read it
+      this.logError(e)
+    }
+
     return response
   }
 
@@ -41,15 +50,19 @@ class CacheRewriter {
 
   setLogger (config) {
     if (config && (config.logger || config.logLevel)) {
-      const logger = config.logger || console
+      this.logger = config.logger || console
       const logLevel = config.logLevel || 'ERROR'
       try {
-        this.nativeRewriter.setLogger(logger, logLevel)
+        this.nativeRewriter.setLogger(this.logger, logLevel)
       } catch (e) {
-        if (logger && logger.error) {
-          logger.error(e)
-        }
+        this.logError(e)
       }
+    }
+  }
+
+  logError (e) {
+    if (this.logger?.error) {
+      this.logger.error(e)
     }
   }
 }
