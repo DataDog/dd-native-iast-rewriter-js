@@ -4,9 +4,12 @@
 **/
 extern crate base64;
 
+use std::collections::HashMap;
+
 use crate::{
     rewriter::{print_js, rewrite_js, Config},
-    telemetry::TelemetryVerbosity,
+    telemetry::{Telemetry, TelemetryVerbosity},
+    transform::transform_status::TransformStatus,
     util::{rnd_string, DefaultFileReader},
     visitor::{self, csi_methods::CsiMethods, literal_visitor},
 };
@@ -65,11 +68,21 @@ impl RewriterConfig {
     }
 }
 
+#[napi(object, js_name = "Result")]
+#[derive(Debug)]
+pub struct RewriteResult {
+    pub content: String,
+    pub metrics: Option<Metrics>,
+    pub literals_result: Option<LiteralsResult>,
+}
+
 #[napi(object)]
 #[derive(Debug)]
-pub struct ResultWithoutMetrics {
-    pub content: String,
-    pub literals_result: Option<LiteralsResult>,
+pub struct Metrics {
+    pub status: String,
+    pub instrumented_propagation: u32,
+    pub file: String,
+    pub propagation_debug: Option<HashMap<String, u32>>,
 }
 
 #[napi(object)]
@@ -136,12 +149,13 @@ impl Rewriter {
     }
 
     #[napi]
-    pub fn rewrite(&self, code: String, file: String) -> napi::Result<ResultWithoutMetrics> {
+    pub fn rewrite(&self, code: String, file: String) -> napi::Result<RewriteResult> {
         let default_file_reader = DefaultFileReader {};
 
         rewrite_js(code, &file, &self.config, &default_file_reader)
-            .map(|result| ResultWithoutMetrics {
+            .map(|result| RewriteResult {
                 content: print_js(&result, &self.config),
+                metrics: get_metrics(result.transform_status, &file),
                 literals_result: match result.literals_result {
                     Some(literals_result) => Some(LiteralsResult {
                         file,
@@ -163,4 +177,16 @@ impl Rewriter {
             .map(|csi_method| csi_method.dst.clone())
             .collect())
     }
+}
+
+fn get_metrics(status: Option<TransformStatus>, file: &str) -> Option<Metrics> {
+    if let Some(transform_status) = status {
+        return Some(Metrics {
+            status: transform_status.status.to_string().to_lowercase(),
+            instrumented_propagation: transform_status.telemetry.get_instrumented_propagation(),
+            propagation_debug: transform_status.telemetry.get_propagation_debug(),
+            file: file.to_owned(),
+        });
+    }
+    None
 }

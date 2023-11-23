@@ -229,7 +229,7 @@ impl Rewriter {
 fn get_metrics(status: Option<TransformStatus>, file: &str) -> Option<Metrics> {
     if let Some(transform_status) = status {
         return Some(Metrics {
-            status: transform_status.status.to_string(),
+            status: transform_status.status.to_string().to_lowercase(),
             instrumented_propagation: transform_status.telemetry.get_instrumented_propagation(),
             propagation_debug: transform_status.telemetry.get_propagation_debug(),
             file: file.to_owned(),

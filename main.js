@@ -33,11 +33,11 @@ class CacheRewriter {
     const response = this.nativeRewriter.rewrite(code, file)
 
     try {
-      cacheRewrittenSourceMap(file, response.content)
+      const { metrics, content } = response
+      if (metrics?.status === 'modified') {
+        cacheRewrittenSourceMap(file, content)
+      }
     } catch (e) {
-      // all rewritten source files have the sourceMap inlined so this error can occur when trying
-      // to read a sourcemap of an unmodified source file from disk: because the file doesn't exist
-      // o because we don't have permissions to read it
       this.logError(e)
     }
 

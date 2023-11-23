@@ -226,7 +226,7 @@ crawl(options.rootPath, options, {
         const metrics = response.metrics
         if (metrics) {
           cyan(`status: ${metrics.status}`)
-          if (metrics.status !== 'NotModified') {
+          if (metrics.status?.toLowerCase() !== 'notmodified') {
             cyan(`count: ${metrics.instrumentedPropagation}`)
             if (metrics.propagationDebug && metrics.propagationDebug.size > 0) {
               cyan(metrics.propagationDebug)

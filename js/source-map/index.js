@@ -14,9 +14,13 @@ function generateSourceMapFromFileContent (fileContent, filePath) {
   const fileLines = fileContent.trim().split('\n')
   const lastLine = fileLines[fileLines.length - 1]
   let rawSourceMap
+
+  // all rewritten source files have the sourceMap inlined
   if (lastLine.indexOf(SOURCE_MAP_INLINE_LINE_START) === 0) {
     const sourceMapInBase64 = lastLine.substring(SOURCE_MAP_INLINE_LINE_START.length)
     rawSourceMap = Buffer.from(sourceMapInBase64, 'base64').toString('utf8')
+
+    // unmodified source files could originally point to a sourceMap file but it could not exist
   } else if (lastLine.indexOf(SOURCE_MAP_LINE_START) === 0) {
     let sourceMappingURL = lastLine.substring(SOURCE_MAP_LINE_START.length)
     if (sourceMappingURL) {
@@ -30,8 +34,10 @@ function generateSourceMapFromFileContent (fileContent, filePath) {
 }
 
 function cacheRewrittenSourceMap (filename, fileContent) {
-  const sm = generateSourceMapFromFileContent(fileContent, getFilePathFromName(filename))
-  rewrittenSourceMapsCache.set(filename, sm)
+  if (fileContent) {
+    const sm = generateSourceMapFromFileContent(fileContent, getFilePathFromName(filename))
+    rewrittenSourceMapsCache.set(filename, sm)
+  }
 }
 
 function getFilePathFromName (filename) {

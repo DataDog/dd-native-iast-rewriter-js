@@ -15,9 +15,16 @@ export interface RewriterConfig {
   csiMethods?: Array<CsiMethod>
   literals?: boolean
 }
-export interface ResultWithoutMetrics {
+export interface Result {
   content: string
+  metrics?: Metrics
   literalsResult?: LiteralsResult
+}
+export interface Metrics {
+  status: string
+  instrumentedPropagation: number
+  file: string
+  propagationDebug?: Record<string, number>
 }
 export interface LiteralsResult {
   file: string
@@ -34,6 +41,6 @@ export interface LiteralInfo {
 }
 export class Rewriter {
   constructor(config?: RewriterConfig | undefined | null)
-  rewrite(code: string, file: string): ResultWithoutMetrics
+  rewrite(code: string, file: string): Result
   csiMethods(): Array<string>
 }
