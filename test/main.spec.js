@@ -30,7 +30,9 @@ describe('main', () => {
       }
     })
 
-    rewriter = new main.Rewriter()
+    rewriter = new main.Rewriter({
+      logLevel: 'ERROR'
+    })
   })
 
   it('loads sourceMap when source file has been modified', () => {
@@ -56,6 +58,6 @@ describe('main', () => {
 
     cacheRewrittenSourceMap.throws(() => new Error('Error reading sourceMap file'))
 
-    expect(() => rewriter.rewrite('content', 'file')).to.not.throw
+    expect(() => rewriter.rewrite('content', 'file')).to.not.throw()
   })
 })
