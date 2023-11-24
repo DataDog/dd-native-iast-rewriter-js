@@ -23,6 +23,7 @@ describe('main', () => {
     cacheRewrittenSourceMap = sinon.stub()
     main = proxyquire('../main', {
       './wasm/wasm_iast_rewriter': {
+        '@noCallThru': true,
         Rewriter
       },
       './js/source-map': {
@@ -30,9 +31,7 @@ describe('main', () => {
       }
     })
 
-    rewriter = new main.Rewriter({
-      logLevel: 'ERROR'
-    })
+    rewriter = new main.Rewriter()
   })
 
   it('loads sourceMap when source file has been modified', () => {
