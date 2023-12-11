@@ -61,9 +61,7 @@ class CacheRewriter {
   }
 
   logError (e) {
-    if (this.logger?.error) {
-      this.logger.error(e)
-    }
+    this.logger?.error?.(e)
   }
 }
 
