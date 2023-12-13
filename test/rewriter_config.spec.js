@@ -149,7 +149,7 @@ _ddiast.plus("b" + c, "b", c));
 
       const metrics = response.metrics
       expect(metrics).to.not.be.undefined
-      expect(metrics.status).eq('Modified')
+      expect(metrics.status).eq('modified')
       expect(metrics.instrumentedPropagation).eq(0)
       expect(metrics.propagationDebug).to.be.undefined
     })
@@ -162,7 +162,7 @@ _ddiast.plus("b" + c, "b", c));
 
       const metrics = response.metrics
       expect(metrics).to.not.be.undefined
-      expect(metrics.status).eq('Modified')
+      expect(metrics.status).eq('modified')
       expect(metrics.instrumentedPropagation).eq(1)
       expect(metrics.propagationDebug).to.be.undefined
     })
@@ -175,7 +175,7 @@ _ddiast.plus("b" + c, "b", c));
 
       const metrics = response.metrics
       expect(metrics).to.not.be.undefined
-      expect(metrics.status).eq('Modified')
+      expect(metrics.status).eq('modified')
       expect(metrics.instrumentedPropagation).eq(1)
       expect(metrics.propagationDebug).to.be.undefined
     })
@@ -188,7 +188,7 @@ _ddiast.plus("b" + c, "b", c));
 
       const metrics = response.metrics
       expect(metrics).to.not.be.undefined
-      expect(metrics.status).eq('Modified')
+      expect(metrics.status).eq('modified')
       expect(metrics.instrumentedPropagation).eq(1)
       expect(metrics.propagationDebug.size).eq(1)
       expect(metrics.propagationDebug.get('+')).eq(1)
@@ -202,7 +202,7 @@ _ddiast.plus("b" + c, "b", c));
 
       const metrics = response.metrics
       expect(metrics).to.not.be.undefined
-      expect(metrics.status).eq('Modified')
+      expect(metrics.status).eq('modified')
       expect(metrics.instrumentedPropagation).eq(1)
     })
 
@@ -214,7 +214,7 @@ _ddiast.plus("b" + c, "b", c));
 
       const metrics = response.metrics
       expect(metrics).to.not.be.undefined
-      expect(metrics.status).eq('Modified')
+      expect(metrics.status).eq('modified')
       expect(metrics.instrumentedPropagation).eq(1)
       expect(metrics.propagationDebug).to.be.undefined
     })

@@ -31,7 +31,16 @@ class CacheRewriter {
 
   rewrite (code, file) {
     const response = this.nativeRewriter.rewrite(code, file)
-    cacheRewrittenSourceMap(file, response.content)
+
+    try {
+      const { metrics, content } = response
+      if (metrics?.status === 'modified') {
+        cacheRewrittenSourceMap(file, content)
+      }
+    } catch (e) {
+      this.logError(e)
+    }
+
     return response
   }
 
@@ -41,16 +50,18 @@ class CacheRewriter {
 
   setLogger (config) {
     if (config && (config.logger || config.logLevel)) {
-      const logger = config.logger || console
+      this.logger = config.logger || console
       const logLevel = config.logLevel || 'ERROR'
       try {
-        this.nativeRewriter.setLogger(logger, logLevel)
+        this.nativeRewriter.setLogger(this.logger, logLevel)
       } catch (e) {
-        if (logger && logger.error) {
-          logger.error(e)
-        }
+        this.logError(e)
       }
     }
+  }
+
+  logError (e) {
+    this.logger?.error?.(e)
   }
 }
 
