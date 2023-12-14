@@ -902,7 +902,7 @@ dependencies = [
 
 [[package]]
 name = "native-iast-rewriter"
-version = "2.2.1"
+version = "2.2.2"
 dependencies = [
  "anyhow",
  "base64",
