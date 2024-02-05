@@ -70,6 +70,14 @@ class WrappedCallSite {
   isConstructor () {
     return this.callSite.isConstructor()
   }
+
+  toString () {
+    return this.callSite.toString()
+  }
+
+  toLocaleString () {
+    return this.callSite.toLocaleString()
+  }
 }
 
 function getPrepareStackTrace (originalPrepareStackTrace) {

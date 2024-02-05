@@ -34,6 +34,14 @@ class CallSiteMock {
   isNative () {
     return false
   }
+
+  toString () {
+    return `at ${this.filename}:${this.lineNumber}:${this.columnNumber}`
+  }
+
+  toLocaleString () {
+    return `[LOCALE] at ${this.filename}:${this.lineNumber}:${this.columnNumber}`
+  }
 }
 
 describe('V8 prepareStackTrace', () => {
@@ -227,5 +235,24 @@ describe('getOriginalPathAndLineFromSourceMapFromSourceMap', () => {
     expect(setLRU).to.be.calledOnceWith(originalPathAndLine.path)
     expect(pathAndLine.path).to.be.equals(path.join(sourceMapResourcesPath, 'test-min.js'))
     expect(pathAndLine.line).to.be.equals(2)
+  })
+})
+
+describe('WrappedCallSite', () => {
+  const TEST_PATH = ['test', 'packages', 'dist', 'server', 'app.js'].join(path.sep)
+  const TEST_LINE = 99
+  const TEST_COLUMN = 15
+
+  it('toString() methods are maintained', () => {
+    const originalStackTrace = sinon.spy()
+    const prepareStackTrace = getPrepareStackTrace(originalStackTrace)
+    const callsites = []
+    const callSite = new CallSiteMock(TEST_PATH, TEST_LINE, TEST_COLUMN)
+    callsites.push(callSite)
+    prepareStackTrace(null, callsites)
+
+    expect(originalStackTrace.firstCall.args[1][0].toString()).to.be.equals(callSite.toString())
+
+    expect(originalStackTrace.firstCall.args[1][0].toLocaleString()).to.be.equals(callSite.toLocaleString())
   })
 })
