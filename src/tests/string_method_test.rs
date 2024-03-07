@@ -14,7 +14,7 @@ mod tests {
         },
         visitor::csi_methods::CsiMethods,
     };
-    use spectral::{assert_that, string::StrAssertions};
+    use speculoos::{assert_that, string::StrAssertions};
 
     #[test]
     fn test_ident_substring() -> Result<(), String> {
