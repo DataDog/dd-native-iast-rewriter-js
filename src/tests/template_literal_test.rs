@@ -7,7 +7,7 @@
 mod tests {
 
     use crate::tests::rewrite_js;
-    use spectral::{assert_that, string::StrAssertions};
+    use speculoos::{assert_that, string::StrAssertions};
 
     #[test]
     fn test_template_literal() -> Result<(), String> {

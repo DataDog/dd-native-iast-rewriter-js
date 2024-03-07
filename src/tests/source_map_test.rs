@@ -5,7 +5,7 @@
 
 #[cfg(test)]
 mod tests {
-    use spectral::{assert_that, string::StrAssertions};
+    use speculoos::{assert_that, string::StrAssertions};
     use std::fs;
 
     use swc::sourcemap::{decode_data_url, DecodedMap};

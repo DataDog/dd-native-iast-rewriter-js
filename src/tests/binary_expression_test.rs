@@ -6,7 +6,7 @@
 #[cfg(test)]
 mod tests {
 
-    use spectral::{assert_that, prelude::ContainingIntoIterAssertions, string::StrAssertions};
+    use speculoos::{assert_that, prelude::ContainingIntoIterAssertions, string::StrAssertions};
 
     use anyhow::Error;
 

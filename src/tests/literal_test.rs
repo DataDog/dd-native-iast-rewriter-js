@@ -5,7 +5,7 @@
 
 #[cfg(test)]
 mod tests {
-    use spectral::assert_that;
+    use speculoos::assert_that;
 
     use crate::tests::{get_literals_config, rewrite_js_with_config};
 

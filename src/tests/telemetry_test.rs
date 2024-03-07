@@ -5,7 +5,7 @@
 
 #[cfg(test)]
 mod tests {
-    use spectral::{assert_that, option::OptionAssertions, prelude::HashMapAssertions};
+    use speculoos::{assert_that, hashmap::KeyHashMapAssertions, option::OptionAssertions};
 
     use crate::{
         telemetry::{Telemetry, TelemetryVerbosity},
