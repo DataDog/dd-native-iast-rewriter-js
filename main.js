@@ -3,7 +3,7 @@
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
 'use strict'
-const { getPrepareStackTrace } = require('./js/stack-trace/')
+const { getPrepareStackTrace, kSymbolPrepareStackTrace } = require('./js/stack-trace/')
 const { cacheRewrittenSourceMap, getOriginalPathAndLineFromSourceMap } = require('./js/source-map')
 
 class DummyRewriter {
@@ -80,5 +80,6 @@ module.exports = {
   Rewriter: getRewriter(),
   DummyRewriter,
   getPrepareStackTrace,
-  getOriginalPathAndLineFromSourceMap
+  getOriginalPathAndLineFromSourceMap,
+  kSymbolPrepareStackTrace
 }
