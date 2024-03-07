@@ -82,7 +82,7 @@ impl FunctionPrototypeTransform {
 }
 
 fn filter_call_args(
-    args: &Vec<ExprOrSpread>,
+    args: &[ExprOrSpread],
     is_apply: bool,
     filtered_args: &mut Vec<ExprOrSpread>,
 ) -> bool {

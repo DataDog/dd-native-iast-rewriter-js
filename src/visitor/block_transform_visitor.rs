@@ -107,7 +107,7 @@ fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>, prefix:
     variable_decl.iter().any(|var| var.sym.starts_with(&prefix))
 }
 
-fn insert_variable_declaration(ident_expressions: &Vec<Ident>, expr: &mut BlockStmt) {
+fn insert_variable_declaration(ident_expressions: &[Ident], expr: &mut BlockStmt) {
     if !ident_expressions.is_empty() {
         let span = expr.span;
         let mut vec = Vec::new();
@@ -134,7 +134,7 @@ fn insert_variable_declaration(ident_expressions: &Vec<Ident>, expr: &mut BlockS
     }
 }
 
-fn get_variable_insertion_index(stmts: &Vec<Stmt>) -> usize {
+fn get_variable_insertion_index(stmts: &[Stmt]) -> usize {
     if !stmts.is_empty() {
         match &stmts[0] {
             Stmt::Expr(expr) => match &*expr.expr {
