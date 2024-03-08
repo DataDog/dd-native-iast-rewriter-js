@@ -87,9 +87,15 @@ function getPrepareStackTrace (originalPrepareStackTrace) {
 
   const wrappedPrepareStackTrace = (error, structuredStackTrace) => {
     if (originalPrepareStackTrace) {
-      const parsedCallSites = structuredStackTrace.map((callSite) => new WrappedCallSite(callSite))
+      let parsedCallSites
+      try {
+        parsedCallSites = structuredStackTrace.map((callSite) => new WrappedCallSite(callSite))
+      } catch (e) {
+        parsedCallSites = structuredStackTrace
+      }
       return originalPrepareStackTrace(error, parsedCallSites)
     }
+
     const stackLines = error.stack.split('\n')
     let firstIndex = -1
     for (let i = 0; i < stackLines.length; i++) {
@@ -138,5 +144,6 @@ function getPrepareStackTrace (originalPrepareStackTrace) {
 }
 
 module.exports = {
-  getPrepareStackTrace
+  getPrepareStackTrace,
+  kSymbolPrepareStackTrace
 }
