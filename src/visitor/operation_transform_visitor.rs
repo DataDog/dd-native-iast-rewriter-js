@@ -10,6 +10,7 @@ use crate::{
     transform::{
         assign_add_transform::AssignAddTransform,
         binary_add_transform::BinaryAddTransform,
+        call_expr_transform::CallExprTransform,
         template_transform::TemplateTransform,
         transform_status::{Status, TransformStatus},
     },
@@ -18,7 +19,6 @@ use crate::{
 use super::{
     csi_methods::CsiMethods,
     ident_provider::IdentProvider,
-    no_plus_operator_visitor::NoPlusOperatorVisitor,
     visitor_with_context::{Ctx, VisitorWithContext},
 };
 
@@ -62,8 +62,10 @@ impl Visit for OperationTransformVisitor<'_> {}
 
 impl VisitMut for OperationTransformVisitor<'_> {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
+        let plus_operator_enabled = self.csi_methods.plus_operator_is_enabled();
+
         match expr {
-            Expr::Bin(binary) => {
+            Expr::Bin(binary) if plus_operator_enabled => {
                 // check WithCtx::drop. It calls reset_ctx() method when it is destructed
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 binary.visit_mut_children_with(opv_with_child_ctx);
@@ -81,7 +83,7 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 }
             }
 
-            Expr::Assign(assign) => {
+            Expr::Assign(assign) if plus_operator_enabled => {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 assign.visit_mut_children_with(opv_with_child_ctx);
 
@@ -96,7 +98,7 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 }
             }
 
-            Expr::Tpl(tpl) => {
+            Expr::Tpl(tpl) if plus_operator_enabled => {
                 if !tpl.exprs.is_empty() {
                     // transform tpl into binary and act as if it were a binary expr
                     let mut binary = TemplateTransform::get_binary_from_tpl(tpl);
@@ -119,15 +121,16 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 call.visit_mut_children_with(opv_with_child_ctx);
 
-                let result = NoPlusOperatorVisitor::get_dd_call_expr(
-                    call,
-                    opv_with_child_ctx.csi_methods,
-                    opv_with_child_ctx.ident_provider,
-                );
-
-                if result.is_modified() {
-                    expr.map_with_mut(|e| result.expr.unwrap_or(e));
-                    opv_with_child_ctx.update_status(result.status, result.tag);
+                if call.callee.is_expr() {
+                    let result = CallExprTransform::to_dd_call_expr(
+                        call,
+                        opv_with_child_ctx.csi_methods,
+                        opv_with_child_ctx.ident_provider,
+                    );
+                    if result.is_modified() {
+                        expr.map_with_mut(|e| result.expr.unwrap_or(e));
+                        opv_with_child_ctx.update_status(result.status, result.tag);
+                    }
                 }
             }
 

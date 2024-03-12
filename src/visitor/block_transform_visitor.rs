@@ -14,12 +14,7 @@ use std::collections::HashSet;
 use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
-use super::{
-    csi_methods::CsiMethods,
-    ident_provider::{DefaultIdentProvider, IdentProvider},
-    no_plus_operator_visitor::NoPlusOperatorVisitor,
-    visitor_with_context::Ctx,
-};
+use super::{ident_provider::DefaultIdentProvider, visitor_with_context::Ctx};
 
 pub struct BlockTransformVisitor<'a> {
     pub transform_status: &'a mut TransformStatus,
@@ -61,11 +56,14 @@ impl VisitMut for BlockTransformVisitor<'_> {
         }
 
         let mut ident_provider = DefaultIdentProvider::new(&self.config.local_var_prefix);
-        expr.visit_mut_children_with(&mut get_visitor(
-            &mut ident_provider,
-            &self.config.csi_methods,
-            self.transform_status,
-        ));
+        let mut operation_visitor = OperationTransformVisitor {
+            ident_provider: &mut ident_provider,
+            csi_methods: &self.config.csi_methods,
+            transform_status: self.transform_status,
+            ctx: Ctx::root(),
+        };
+
+        expr.visit_mut_children_with(&mut operation_visitor);
 
         if variables_contains_possible_duplicate(
             &ident_provider.variable_decl,
@@ -77,28 +75,6 @@ impl VisitMut for BlockTransformVisitor<'_> {
         }
 
         expr.visit_mut_children_with(self);
-    }
-}
-
-fn get_visitor<'a>(
-    ident_provider: &'a mut dyn IdentProvider,
-    csi_methods: &'a CsiMethods,
-    transform_status: &'a mut TransformStatus,
-) -> Box<dyn VisitMut + 'a> {
-    if csi_methods.plus_operator_is_enabled() {
-        Box::new(OperationTransformVisitor {
-            ident_provider,
-            csi_methods,
-            transform_status,
-            ctx: Ctx::root(),
-        })
-    } else {
-        Box::new(NoPlusOperatorVisitor {
-            ident_provider,
-            csi_methods,
-            transform_status,
-            ctx: Ctx::root(),
-        })
     }
 }
 
