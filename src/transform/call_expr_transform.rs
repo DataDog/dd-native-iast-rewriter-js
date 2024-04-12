@@ -50,6 +50,7 @@ impl CallExprTransform {
                             None
                         }
                     }
+
                     (Expr::Ident(obj), MemberProp::Ident(ident)) => {
                         replace_call_expr_if_csi_method(
                             &Expr::Ident(obj),
@@ -59,6 +60,7 @@ impl CallExprTransform {
                             ident_provider,
                         )
                     }
+
                     (Expr::Call(callee_call), MemberProp::Ident(ident)) => {
                         replace_call_expr_if_csi_method(
                             &Expr::Call(callee_call),
@@ -72,6 +74,16 @@ impl CallExprTransform {
                     (Expr::Paren(paren), MemberProp::Ident(ident)) => {
                         replace_call_expr_if_csi_method(
                             &Expr::Paren(paren),
+                            ident,
+                            call,
+                            csi_methods,
+                            ident_provider,
+                        )
+                    }
+
+                    (Expr::Array(paren), MemberProp::Ident(ident)) => {
+                        replace_call_expr_if_csi_method(
+                            &Expr::Array(paren),
                             ident,
                             call,
                             csi_methods,
