@@ -185,6 +185,22 @@ mod tests {
     }
 
     #[test]
+    fn test_array_and_join() -> Result<(), String> {
+        let original_code = "{[str, str].join();}".to_string();
+        let js_file = "test.js".to_string();
+        let mut methods = vec![csi_from_str("join", None)];
+        let rewritten =
+            rewrite_js_with_csi_methods(original_code, js_file, &CsiMethods::new(&mut methods))
+                .map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
+    (__datadog_test_0 = [
+        str,
+        str
+    ], __datadog_test_1 = __datadog_test_0.join, _ddiast.join(__datadog_test_1.call(__datadog_test_0), __datadog_test_1, __datadog_test_0));");
+        Ok(())
+    }
+
+    #[test]
     fn test_replace_with_sourcemapping() -> Result<(), String> {
         let original_code =
             "{const a = { __html: b.replace(/\\/\\*# sourceMappingURL=.*\\*\\//g, '') + 'other' }}"
