@@ -28,6 +28,7 @@ pub struct CsiMethod {
     pub src: String,
     pub dst: Option<String>,
     pub operator: Option<bool>,
+    pub allowed_without_callee: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -80,6 +81,7 @@ impl RewriterConfig {
                             m.src.clone(),
                             m.dst.clone(),
                             m.operator.unwrap_or(false),
+                            m.allowed_without_callee.unwrap_or(false),
                         )
                     })
                     .collect::<Vec<visitor::csi_methods::CsiMethod>>(),
@@ -167,7 +169,7 @@ impl Rewriter {
 
         let rewriter_config = serde_wasm_bindgen::from_value::<RewriterConfig>(config_js);
         let config: Config = rewriter_config
-            .unwrap_or(RewriterConfig::default())
+            .unwrap_or_else(|_| RewriterConfig::default())
             .to_config();
 
         Self { config }

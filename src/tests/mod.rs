@@ -129,7 +129,7 @@ fn csi_from_str(src: &str, dst: Option<&str>) -> CsiMethod {
         Some(str) => Some(String::from(str)),
         None => None,
     };
-    CsiMethod::new(String::from(src), dst_string, false)
+    CsiMethod::new(String::from(src), dst_string, false, false)
 }
 
 fn csi_op_from_str(src: &str, dst: Option<&str>) -> CsiMethod {
@@ -137,5 +137,5 @@ fn csi_op_from_str(src: &str, dst: Option<&str>) -> CsiMethod {
         Some(str) => Some(String::from(str)),
         None => None,
     };
-    CsiMethod::new(String::from(src), dst_string, true)
+    CsiMethod::new(String::from(src), dst_string, true, false)
 }

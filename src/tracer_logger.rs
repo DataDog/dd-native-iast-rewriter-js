@@ -72,6 +72,6 @@ pub fn set_logger(logger: &JsValue, level: &str) -> anyhow::Result<JsValue, JsVa
 }
 
 fn set_logger_and_level(logger: &JsValue, level: &str) -> anyhow::Result<JsValue, JsValue> {
-    log::set_max_level(LevelFilter::from_str(level).unwrap_or(log::max_level()));
+    log::set_max_level(LevelFilter::from_str(level).unwrap_or_else(|_| log::max_level()));
     setLogger(logger)
 }
