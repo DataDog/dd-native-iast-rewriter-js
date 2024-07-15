@@ -193,244 +193,132 @@ fn replace_call_expr_if_csi_method_with_member(
 
             let mut call_replacement = call.clone();
 
-            let expr = match expr_opt {
-                Some(expr) => expr.clone(),
-                None => {
-                    let undefined = Ident {
-                        sym: "undefined".into(),
-                        span,
-                        optional: false,
-                    };
-                    Expr::Ident(undefined)
-                }
-            };
-            let ident_replacement = ident_provider.get_temporal_ident_used_in_assignation(
-                &expr,
-                &mut assignations,
-                &span,
-            );
+            if let Some(expr_orig) = expr_opt {
+                let expr = expr_orig.clone();
+                let ident_replacement = ident_provider.get_temporal_ident_used_in_assignation(
+                    &expr,
+                    &mut assignations,
+                    &span,
+                );
 
-            let ident_callee = match expr_opt {
-                Some(_) => {
-                    match member_expr_opt {
-                        Some(member_expr) => {
-                            // __datadog_token_$i2 = member
-                            ident_provider.get_ident_used_in_assignation(
-                                &Expr::Member(member_expr.clone()),
-                                &mut assignations,
-                                &mut arguments,
-                                &span,
-                            )
-                        }
-                        None => {
-                            // __datadog_token_$i.substring
-                            let member_expr = MemberExpr {
-                                span,
-                                obj: Box::new(Expr::Ident(ident_replacement.clone())),
-                                prop: MemberProp::Ident(ident.clone()),
-                            };
+                let ident_callee = match expr_opt {
+                    Some(_) => {
+                        match member_expr_opt {
+                            Some(member_expr) => {
+                                // __datadog_token_$i2 = member
+                                ident_provider.get_ident_used_in_assignation(
+                                    &Expr::Member(member_expr.clone()),
+                                    &mut assignations,
+                                    &mut arguments,
+                                    &span,
+                                )
+                            }
+                            None => {
+                                // __datadog_token_$i.substring
+                                let member_expr = MemberExpr {
+                                    span,
+                                    obj: Box::new(Expr::Ident(ident_replacement.clone())),
+                                    prop: MemberProp::Ident(ident.clone()),
+                                };
 
-                            // __datadog_token_$i2 = __datadog_token_$i.substring
-                            ident_provider.get_ident_used_in_assignation(
-                                &Expr::Member(member_expr),
-                                &mut assignations,
-                                &mut arguments,
-                                &span,
-                            )
+                                // __datadog_token_$i2 = __datadog_token_$i.substring
+                                ident_provider.get_ident_used_in_assignation(
+                                    &Expr::Member(member_expr),
+                                    &mut assignations,
+                                    &mut arguments,
+                                    &span,
+                                )
+                            }
                         }
                     }
-                }
-                None => ident_provider.get_ident_used_in_assignation(
-                    &Expr::Ident(ident.clone()),
-                    &mut assignations,
-                    &mut arguments,
-                    &span,
-                ),
-            };
+                    None => ident_provider.get_ident_used_in_assignation(
+                        &Expr::Ident(ident.clone()),
+                        &mut assignations,
+                        &mut arguments,
+                        &span,
+                    ),
+                };
 
-            arguments.push(Expr::Ident(ident_replacement.clone()));
+                arguments.push(Expr::Ident(ident_replacement.clone()));
 
-            // change callee to __datadog_token_$i2.call
-            call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
-                span,
-                obj: Box::new(Expr::Ident(ident_callee)),
-                prop: MemberProp::Ident(Ident {
+                // change callee to __datadog_token_$i2.call
+                call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
                     span,
-                    sym: JsWord::from("call"),
+                    obj: Box::new(Expr::Ident(ident_callee)),
+                    prop: MemberProp::Ident(Ident {
+                        span,
+                        sym: JsWord::from("call"),
+                        optional: false,
+                    }),
+                })));
+
+                call_replacement.args.iter_mut().for_each(|expr_or_spread| {
+                    DefaultOperandHandler::replace_expressions_in_operand(
+                        &mut expr_or_spread.expr,
+                        IdentMode::Replace,
+                        &mut assignations,
+                        &mut arguments,
+                        &span,
+                        ident_provider,
+                    )
+                });
+
+                // insert .call(this) argument
+                call_replacement.args.insert(
+                    0,
+                    ExprOrSpread {
+                        spread: None,
+                        expr: Box::new(Expr::Ident(ident_replacement)),
+                    },
+                );
+
+                return Some(ResultExpr {
+                    tag: method_name.clone(),
+                    expr: get_dd_paren_expr(
+                        &Expr::Call(call_replacement),
+                        &arguments,
+                        &mut assignations,
+                        csi_method.dst.as_str(),
+                        &span,
+                    ),
+                });
+            } else {
+                /*
+                        let __datadog_test_0;
+                (__datadog_test_0 = arg0, _ddiast.aloneMethod
+                (aloneMethod(__datadog_test_0), aloneMethod, global, __datadog_test_0));
+                         */
+                arguments.push(Expr::Ident(ident.clone()));
+                let global = Ident {
+                    span,
+                    sym: JsWord::from("global"),
                     optional: false,
-                }),
-            })));
+                };
+                arguments.push(Expr::Ident(global));
 
-            call_replacement.args.iter_mut().for_each(|expr_or_spread| {
-                DefaultOperandHandler::replace_expressions_in_operand(
-                    &mut expr_or_spread.expr,
-                    IdentMode::Replace,
-                    &mut assignations,
-                    &mut arguments,
-                    &span,
-                    ident_provider,
-                )
-            });
+                let mut call_replacement = call.clone();
+                call_replacement.args.iter_mut().for_each(|expr_or_spread| {
+                    DefaultOperandHandler::replace_expressions_in_operand(
+                        &mut expr_or_spread.expr,
+                        IdentMode::Replace,
+                        &mut assignations,
+                        &mut arguments,
+                        &span,
+                        ident_provider,
+                    )
+                });
 
-            // insert .call(this) argument
-            call_replacement.args.insert(
-                0,
-                ExprOrSpread {
-                    spread: None,
-                    expr: Box::new(Expr::Ident(ident_replacement)),
-                },
-            );
-
-            return Some(ResultExpr {
-                tag: method_name.clone(),
-                expr: get_dd_paren_expr(
-                    &Expr::Call(call_replacement),
-                    &arguments,
-                    &mut assignations,
-                    csi_method.dst.as_str(),
-                    &span,
-                ),
-            });
-
-            // TODO remove code after this
-
-            // if let Some(expr) = expr_opt {
-            //     // replace original call expression with a parent expression splitting every component and finally invoking .call
-            //     //  a) a.substring() -> __datadog_token_$i = a, __datadog_token_$i2 = __datadog_token_$i.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
-            //     //  b) String.prototype.substring.[call|apply](a) -> __datadog_token_$i = a, __datadog_token_$i2 = String.prototype.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
-            //
-            //     // __datadog_token_$i = a
-            //     let ident_replacement =
-            //         ident_provider.get_temporal_ident_used_in_assignation(expr, &mut assignations, &span);
-            //
-            //     let ident_callee = match member_expr_opt {
-            //         Some(member_expr) => {
-            //             // __datadog_token_$i2 = member
-            //             ident_provider.get_ident_used_in_assignation(
-            //                 &Expr::Member(member_expr.clone()),
-            //                 &mut assignations,
-            //                 &mut arguments,
-            //                 &span,
-            //             )
-            //         }
-            //         None => {
-            //             // __datadog_token_$i.substring
-            //             let member_expr = MemberExpr {
-            //                 span,
-            //                 obj: Box::new(Expr::Ident(ident_replacement.clone())),
-            //                 prop: MemberProp::Ident(ident.clone()),
-            //             };
-            //
-            //             // __datadog_token_$i2 = __datadog_token_$i.substring
-            //             ident_provider.get_ident_used_in_assignation(
-            //                 &Expr::Member(member_expr),
-            //                 &mut assignations,
-            //                 &mut arguments,
-            //                 &span,
-            //             )
-            //         }
-            //     };
-            //     info!("assignations in obj.method(arg0, arg1) {:?}", assignations);
-            //
-            //     arguments.push(Expr::Ident(ident_replacement.clone()));
-            //
-            //     // change callee to __datadog_token_$i2.call
-            //     call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
-            //         span,
-            //         obj: Box::new(Expr::Ident(ident_callee)),
-            //         prop: MemberProp::Ident(Ident {
-            //             span,
-            //             sym: JsWord::from("call"),
-            //             optional: false,
-            //         }),
-            //     })));
-            //
-            //     call_replacement.args.iter_mut().for_each(|expr_or_spread| {
-            //         DefaultOperandHandler::replace_expressions_in_operand(
-            //             &mut expr_or_spread.expr,
-            //             IdentMode::Replace,
-            //             &mut assignations,
-            //             &mut arguments,
-            //             &span,
-            //             ident_provider,
-            //         )
-            //     });
-            //
-            //     // insert .call(this) argument
-            //     call_replacement.args.insert(
-            //         0,
-            //         ExprOrSpread {
-            //             spread: None,
-            //             expr: Box::new(Expr::Ident(ident_replacement)),
-            //         },
-            //     );
-            // } else if csi_method.allowed_without_callee {
-            //     // method(arg1, arg2)
-            //     // replace original call expression with a parent expression splitting every component and finally invoking .call
-            //
-            //     // __datadog_token_0 = undefined
-            //     let undefined = Ident {
-            //         sym: "undefined".into(),
-            //         span: span,
-            //         optional: false
-            //     };
-            //     let undefined_expr = Expr::Ident(undefined);
-            //     let ident_replacement =
-            //         ident_provider.get_temporal_ident_used_in_assignation(&undefined_expr, &mut assignations, &span);
-            //
-            //
-            //     let ident_callee = ident_provider.get_ident_used_in_assignation(
-            //         &Expr::Ident(ident.clone()),
-            //         &mut assignations,
-            //         &mut arguments,
-            //         &span,
-            //     );
-            //     info!("assignations in method(arg0, arg1) {:?}", assignations);
-            //
-            //     arguments.push(Expr::Ident(callee_replacement.clone()));
-            //
-            //
-            //     // change callee to __datadog_token_$i2.call
-            //     call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
-            //         span,
-            //         obj: Box::new(Expr::Ident(ident_callee)),
-            //         prop: MemberProp::Ident(Ident {
-            //             span,
-            //             sym: JsWord::from("call"),
-            //             optional: false,
-            //         }),
-            //     })));
-            //
-            //     call_replacement.args.iter_mut().for_each(|expr_or_spread| {
-            //         DefaultOperandHandler::replace_expressions_in_operand(
-            //             &mut expr_or_spread.expr,
-            //             IdentMode::Replace,
-            //             &mut assignations,
-            //             &mut arguments,
-            //             &span,
-            //             ident_provider,
-            //         )
-            //     });
-            //
-            //     // insert .call(undefined) argument
-            //     call_replacement.args.insert(
-            //         0,
-            //         ExprOrSpread {
-            //             spread: None,
-            //             expr: Box::new(Expr::Ident(ident_replacement)),
-            //         },
-            //     );
-            // }
-            // return Some(ResultExpr {
-            //     tag: method_name.clone(),
-            //     expr: get_dd_paren_expr(
-            //         &Expr::Call(call_replacement),
-            //         &arguments,
-            //         &mut assignations,
-            //         csi_method.dst.as_str(),
-            //         &span,
-            //     ),
-            // });
+                return Some(ResultExpr {
+                    tag: method_name.clone(),
+                    expr: get_dd_paren_expr(
+                        &Expr::Call(call_replacement),
+                        &arguments,
+                        &mut assignations,
+                        csi_method.dst.as_str(),
+                        &span,
+                    ),
+                });
+            }
         }
     }
     None

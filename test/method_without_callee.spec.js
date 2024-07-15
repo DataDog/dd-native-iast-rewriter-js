@@ -8,9 +8,30 @@ describe('Method without callee', () => {
     rewriteAndExpect(
       js,
       `{
-let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-(__datadog_test_0 = undefined, __datadog_test_1 = aloneMethod, __datadog_test_2 = arg0, _ddiast.aloneMethod\
-(__datadog_test_1.call(__datadog_test_0, __datadog_test_2), __datadog_test_1, __datadog_test_0, __datadog_test_2));
+let __datadog_test_0;
+(__datadog_test_0 = arg0, _ddiast.aloneMethod\
+(aloneMethod(__datadog_test_0), aloneMethod, global, __datadog_test_0));
+}`
+    )
+  })
+
+  it('should rewrite aloneMethod with 2 args', () => {
+    const js = 'aloneMethod(arg0, obj.arg1)'
+    rewriteAndExpect(
+      js,
+      `{
+let __datadog_test_0, __datadog_test_1;
+(__datadog_test_0 = arg0, __datadog_test_1 = obj.arg1, _ddiast.aloneMethod\
+(aloneMethod(__datadog_test_0, __datadog_test_1), aloneMethod, global, __datadog_test_0, __datadog_test_1));
+}`
+    )
+  })
+  it('should rewrite aloneMethod without args', () => {
+    const js = 'aloneMethod()'
+    rewriteAndExpect(
+      js,
+      `{
+_ddiast.aloneMethod(aloneMethod(), aloneMethod, global);
 }`
     )
   })
