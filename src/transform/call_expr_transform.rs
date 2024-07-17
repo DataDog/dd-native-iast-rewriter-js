@@ -194,6 +194,9 @@ fn replace_call_expr_if_csi_method_with_member(
             let mut call_replacement = call.clone();
 
             if let Some(expr_orig) = expr_opt {
+                // replace original call expression with a parent expression splitting every component and finally invoking .call
+                //  a) a.substring() -> __datadog_token_$i = a, __datadog_token_$i2 = __datadog_token_$i.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
+                //  b) String.prototype.substring.[call|apply](a) -> __datadog_token_$i = a, __datadog_token_$i2 = String.prototype.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
                 let expr = expr_orig.clone();
                 let ident_replacement = ident_provider.get_temporal_ident_used_in_assignation(
                     &expr,
@@ -283,11 +286,9 @@ fn replace_call_expr_if_csi_method_with_member(
                     ),
                 });
             } else {
-                /*
-                        let __datadog_test_0;
-                (__datadog_test_0 = arg0, _ddiast.aloneMethod
-                (aloneMethod(__datadog_test_0), aloneMethod, global, __datadog_test_0));
-                         */
+                // let __datadog_test_0;
+                // (__datadog_test_0 = arg0, _ddiast.aloneMethod
+                // (aloneMethod(__datadog_test_0), aloneMethod, global, __datadog_test_0));
                 arguments.push(Expr::Ident(ident.clone()));
                 let global = Ident {
                     span,
