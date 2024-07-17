@@ -40,7 +40,7 @@ impl CallExprTransform {
                     (Expr::Lit(literal), MemberProp::Ident(ident)) => {
                         if csi_methods.method_allows_literal_callers(&ident.sym) {
                             replace_call_expr_if_csi_method(
-                                Some(&Expr::Lit(literal)),
+                                &Expr::Lit(literal),
                                 ident,
                                 call,
                                 csi_methods,
@@ -53,7 +53,7 @@ impl CallExprTransform {
 
                     (Expr::Ident(obj), MemberProp::Ident(ident)) => {
                         replace_call_expr_if_csi_method(
-                            Some(&Expr::Ident(obj)),
+                            &Expr::Ident(obj),
                             ident,
                             call,
                             csi_methods,
@@ -63,7 +63,7 @@ impl CallExprTransform {
 
                     (Expr::Call(callee_call), MemberProp::Ident(ident)) => {
                         replace_call_expr_if_csi_method(
-                            Some(&Expr::Call(callee_call)),
+                            &Expr::Call(callee_call),
                             ident,
                             call,
                             csi_methods,
@@ -73,7 +73,7 @@ impl CallExprTransform {
 
                     (Expr::Paren(paren), MemberProp::Ident(ident)) => {
                         replace_call_expr_if_csi_method(
-                            Some(&Expr::Paren(paren)),
+                            &Expr::Paren(paren),
                             ident,
                             call,
                             csi_methods,
@@ -83,7 +83,7 @@ impl CallExprTransform {
 
                     (Expr::Array(paren), MemberProp::Ident(ident)) => {
                         replace_call_expr_if_csi_method(
-                            Some(&Expr::Array(paren)),
+                            &Expr::Array(paren),
                             ident,
                             call,
                             csi_methods,
@@ -106,7 +106,7 @@ impl CallExprTransform {
                         } else if !FunctionPrototypeTransform::member_prop_is_prototype(&member_obj)
                         {
                             replace_call_expr_if_csi_method(
-                                Some(&Expr::Member(member_obj)),
+                                &Expr::Member(member_obj),
                                 ident,
                                 call,
                                 csi_methods,
@@ -119,9 +119,12 @@ impl CallExprTransform {
                     _ => None,
                 },
 
-                Expr::Ident(obj) => {
-                    replace_call_expr_if_csi_method(None, &obj, call, csi_methods, ident_provider)
-                }
+                Expr::Ident(obj) => replace_call_expr_if_csi_method_without_callee(
+                    &obj,
+                    call,
+                    csi_methods,
+                    ident_provider,
+                ),
                 _ => None,
             },
             _ => None,
@@ -159,24 +162,20 @@ fn replace_prototype_call_or_apply(
 }
 
 fn replace_call_expr_if_csi_method(
-    expr_op: Option<&Expr>,
+    expr: &Expr,
     ident: &Ident,
     call: &mut CallExpr,
     csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
-    if let Some(expr) = expr_op {
-        replace_call_expr_if_csi_method_with_member(
-            expr,
-            ident,
-            call,
-            csi_methods,
-            None,
-            ident_provider,
-        )
-    } else {
-        replace_call_expr_if_csi_method_without_callee(ident, call, csi_methods, ident_provider)
-    }
+    replace_call_expr_if_csi_method_with_member(
+        expr,
+        ident,
+        call,
+        csi_methods,
+        None,
+        ident_provider,
+    )
 }
 
 fn replace_call_expr_if_csi_method_without_callee(
