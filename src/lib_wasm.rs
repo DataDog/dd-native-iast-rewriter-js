@@ -169,7 +169,7 @@ impl Rewriter {
 
         let rewriter_config = serde_wasm_bindgen::from_value::<RewriterConfig>(config_js);
         let config: Config = rewriter_config
-            .unwrap_or_else(|_| RewriterConfig::default())
+            .unwrap_or(RewriterConfig::default())
             .to_config();
 
         Self { config }

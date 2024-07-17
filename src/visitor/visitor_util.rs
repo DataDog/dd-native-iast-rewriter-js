@@ -37,7 +37,6 @@ pub fn get_dd_call_expr(expr: &Expr, arguments: &[Expr], method_name: &str, span
         expr: Box::new(expr.clone()),
         spread: None,
     }];
-    print!("{:?}", arguments);
     args.append(
         &mut arguments
             .iter()
