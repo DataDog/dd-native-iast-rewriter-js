@@ -194,11 +194,11 @@ fn replace_call_expr_if_csi_method_without_callee(
 
             // let __datadog_test_0;
             // (__datadog_test_0 = arg0, _ddiast.aloneMethod
-            // (aloneMethod(__datadog_test_0), aloneMethod, global, __datadog_test_0));
+            // (aloneMethod(__datadog_test_0), aloneMethod, undefined, __datadog_test_0));
             arguments.push(Expr::Ident(ident.clone()));
             let global = Ident {
                 span,
-                sym: JsWord::from("global"),
+                sym: JsWord::from("undefined"),
                 optional: false,
             };
             arguments.push(Expr::Ident(global));

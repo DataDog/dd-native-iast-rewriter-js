@@ -10,7 +10,7 @@ describe('Method without callee', () => {
       `{
 let __datadog_test_0;
 (__datadog_test_0 = arg0, _ddiast.aloneMethod\
-(aloneMethod(__datadog_test_0), aloneMethod, global, __datadog_test_0));
+(aloneMethod(__datadog_test_0), aloneMethod, undefined, __datadog_test_0));
 }`
     )
   })
@@ -22,7 +22,7 @@ let __datadog_test_0;
       `{
 let __datadog_test_0, __datadog_test_1;
 (__datadog_test_0 = arg0, __datadog_test_1 = obj.arg1, _ddiast.aloneMethod\
-(aloneMethod(__datadog_test_0, __datadog_test_1), aloneMethod, global, __datadog_test_0, __datadog_test_1));
+(aloneMethod(__datadog_test_0, __datadog_test_1), aloneMethod, undefined, __datadog_test_0, __datadog_test_1));
 }`
     )
   })
@@ -31,7 +31,7 @@ let __datadog_test_0, __datadog_test_1;
     rewriteAndExpect(
       js,
       `{
-_ddiast.aloneMethod(aloneMethod(), aloneMethod, global);
+_ddiast.aloneMethod(aloneMethod(), aloneMethod, undefined);
 }`
     )
   })
