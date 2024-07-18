@@ -7,6 +7,7 @@ export interface CsiMethod {
   src: string
   dst?: string
   operator?: boolean
+  allowedWithoutCallee?: boolean
 }
 export interface RewriterConfig {
   chainSourceMap?: boolean

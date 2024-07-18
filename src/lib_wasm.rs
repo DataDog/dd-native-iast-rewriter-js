@@ -28,6 +28,7 @@ pub struct CsiMethod {
     pub src: String,
     pub dst: Option<String>,
     pub operator: Option<bool>,
+    pub allowed_without_callee: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -80,6 +81,7 @@ impl RewriterConfig {
                             m.src.clone(),
                             m.dst.clone(),
                             m.operator.unwrap_or(false),
+                            m.allowed_without_callee.unwrap_or(false),
                         )
                     })
                     .collect::<Vec<visitor::csi_methods::CsiMethod>>(),

@@ -32,7 +32,9 @@ const csiMethods = [
   { src: 'replace' },
   { src: 'replaceAll' },
   { src: 'slice' },
-  { src: 'concat' }
+  { src: 'concat' },
+  { src: 'aloneMethod', allowedWithoutCallee: true },
+  { src: 'cantAloneMethod' }
 ]
 
 const rewriteWithOpts = (code, opts) => {
