@@ -1,7 +1,9 @@
+use swc_common::SyntaxContext;
 /**
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
+use swc_ecma_ast::IdentName;
 use swc_ecma_visit::swc_ecma_ast::{
     CallExpr, Callee, Expr, ExprOrSpread, Ident, MemberExpr, MemberProp,
 };
@@ -13,13 +15,13 @@ pub const APPLY_METHOD_NAME: &str = "apply";
 pub struct FunctionPrototypeTransform {}
 
 impl FunctionPrototypeTransform {
-    pub fn is_call_or_apply(ident: &Ident) -> bool {
+    pub fn is_call_or_apply(ident: &IdentName) -> bool {
         let method_name = ident.sym.to_string();
         method_name == CALL_METHOD_NAME || method_name == APPLY_METHOD_NAME
     }
 
     pub fn member_prop_is_prototype(member: &MemberExpr) -> bool {
-        member.prop.is_ident() && member.prop.as_ident().unwrap().sym.to_string() == PROTOTYPE
+        member.prop.is_ident() && member.prop.as_ident().unwrap().sym == PROTOTYPE
     }
 
     /// inspects call expression searching for $class_name.prototype.$method_name.[call|apply]($this_expr, $arguments) and if there is a match
@@ -32,7 +34,7 @@ impl FunctionPrototypeTransform {
     pub fn get_expression_parts_from_call_or_apply(
         call: &CallExpr,
         member: &MemberExpr,
-        ident: &Ident,
+        ident: &IdentName,
     ) -> Option<(Expr, Ident, CallExpr)> {
         if !Self::is_call_or_apply(ident) {
             return None;
@@ -63,7 +65,10 @@ impl FunctionPrototypeTransform {
 
             let new_callee = MemberExpr {
                 obj: this_expr.clone(),
-                prop: MemberProp::Ident(method_ident.clone()),
+                prop: MemberProp::Ident(IdentName::new(
+                    method_ident.sym.clone(),
+                    method_ident.span,
+                )),
                 span: call.span,
             };
 
@@ -72,6 +77,7 @@ impl FunctionPrototypeTransform {
                 callee: Callee::Expr(Box::new(Expr::Member(new_callee))),
                 span: call.span,
                 type_args: None,
+                ctxt: SyntaxContext::empty(),
             };
 
             return Some((*this_expr.clone(), method_ident, new_call));
@@ -113,7 +119,7 @@ fn filter_call_args(
 fn get_prototype_member_path(member: &MemberExpr, parts: &mut Vec<Ident>) -> bool {
     if member.prop.is_ident() {
         let member_prop_ident = member.prop.as_ident().unwrap();
-        parts.push(member_prop_ident.clone());
+        parts.push(Ident::from(member_prop_ident.clone()));
         if member.obj.is_member() {
             let member_obj_member = member.obj.as_member();
             return get_prototype_member_path(member_obj_member.unwrap(), parts);

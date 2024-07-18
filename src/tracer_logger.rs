@@ -22,25 +22,17 @@ extern "C" {
 
 pub struct TracerLogger<'a> {
     pub logger: LoggerFn<'a>,
-    pub level_filter: LevelFilter,
 }
 
 impl<'a> TracerLogger<'a> {
-    pub fn new(level: &str, logger: LoggerFn<'a>) -> Self {
-        TracerLogger {
-            logger,
-            level_filter: LevelFilter::from_str(level).unwrap_or(LevelFilter::Off),
-        }
-    }
-
-    pub fn with_level(level: &str) -> Self {
-        Self::new(level, &|level, msg| {
-            log(&level.into(), &msg.into()).ok();
-        })
+    pub fn new(logger: LoggerFn<'a>) -> Self {
+        TracerLogger { logger }
     }
 
     pub fn default() -> Self {
-        Self::with_level("ERROR")
+        Self::new(&|level, msg| {
+            log(&level.into(), &msg.into()).ok();
+        })
     }
 }
 
