@@ -3,6 +3,7 @@
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
 use swc::atoms::JsWord;
+use swc_common::SyntaxContext;
 use swc_ecma_ast::*;
 
 use crate::{
@@ -199,6 +200,7 @@ fn replace_call_expr_if_csi_method_without_callee(
                 span,
                 sym: JsWord::from("undefined"),
                 optional: false,
+                ctxt: SyntaxContext::empty(),
             };
             arguments.push(Expr::Ident(global));
 
