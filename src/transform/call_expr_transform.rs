@@ -132,12 +132,13 @@ impl CallExprTransform {
 fn replace_prototype_call_or_apply(
     call: &CallExpr,
     member: &MemberExpr,
-    ident: &IdentName,
+    ident_name: &IdentName,
     csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
-    let prototype_call_option =
-        FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(call, member, ident);
+    let prototype_call_option = FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(
+        call, member, ident_name,
+    );
 
     match prototype_call_option {
         Some(mut prototype_call) => replace_call_expr_if_csi_method_with_member(
@@ -154,14 +155,14 @@ fn replace_prototype_call_or_apply(
 
 fn replace_call_expr_if_csi_method(
     expr: &Expr,
-    ident: &IdentName,
+    ident_name: &IdentName,
     call: &mut CallExpr,
     csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
     replace_call_expr_if_csi_method_with_member(
         expr,
-        ident,
+        ident_name,
         call,
         csi_methods,
         None,
@@ -171,13 +172,13 @@ fn replace_call_expr_if_csi_method(
 
 fn replace_call_expr_if_csi_method_with_member(
     expr: &Expr,
-    ident: &IdentName,
+    ident_name: &IdentName,
     call: &mut CallExpr,
     csi_methods: &CsiMethods,
     member_expr_opt: Option<&MemberExpr>,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
-    let method_name = &ident.sym.to_string();
+    let method_name = &ident_name.sym.to_string();
 
     if let Some(csi_method) = csi_methods.get(method_name) {
         let mut assignations = Vec::new();
@@ -208,7 +209,7 @@ fn replace_call_expr_if_csi_method_with_member(
                 let member_expr = MemberExpr {
                     span,
                     obj: Box::new(Expr::Ident(ident_replacement.clone())),
-                    prop: MemberProp::Ident(IdentName::new(ident.sym.clone(), ident.span)),
+                    prop: MemberProp::Ident(ident_name.clone()),
                 };
 
                 // __datadog_token_$i2 = __datadog_token_$i.substring

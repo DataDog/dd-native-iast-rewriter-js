@@ -15,8 +15,8 @@ pub const APPLY_METHOD_NAME: &str = "apply";
 pub struct FunctionPrototypeTransform {}
 
 impl FunctionPrototypeTransform {
-    pub fn is_call_or_apply(ident: &IdentName) -> bool {
-        let method_name = ident.sym.to_string();
+    pub fn is_call_or_apply(ident_name: &IdentName) -> bool {
+        let method_name = ident_name.sym.to_string();
         method_name == CALL_METHOD_NAME || method_name == APPLY_METHOD_NAME
     }
 
@@ -34,13 +34,13 @@ impl FunctionPrototypeTransform {
     pub fn get_expression_parts_from_call_or_apply(
         call: &CallExpr,
         member: &MemberExpr,
-        ident: &IdentName,
+        ident_name: &IdentName,
     ) -> Option<(Expr, Ident, CallExpr)> {
-        if !Self::is_call_or_apply(ident) {
+        if !Self::is_call_or_apply(ident_name) {
             return None;
         }
 
-        let method_name = ident.sym.to_string();
+        let method_name = ident_name.sym.to_string();
         let mut path_parts = vec![];
         if get_prototype_member_path(member, &mut path_parts) {
             if call.args.is_empty() {
