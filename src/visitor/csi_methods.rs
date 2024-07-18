@@ -9,12 +9,23 @@ pub struct CsiMethod {
     pub src: String,
     pub dst: String,
     pub operator: bool,
+    pub allowed_without_callee: bool,
 }
 
 impl CsiMethod {
-    pub fn new(src: String, dst: Option<String>, operator: bool) -> Self {
+    pub fn new(
+        src: String,
+        dst: Option<String>,
+        operator: bool,
+        allowed_without_callee: bool,
+    ) -> Self {
         let dst = dst.unwrap_or_else(|| src.clone());
-        CsiMethod { src, dst, operator }
+        CsiMethod {
+            src,
+            dst,
+            operator,
+            allowed_without_callee,
+        }
     }
 }
 

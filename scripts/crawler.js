@@ -34,7 +34,8 @@ const CSI_METHODS = [
   { src: 'toLocaleLowerCase' },
   { src: 'toLocaleUpperCase' },
   { src: 'toLowerCase' },
-  { src: 'toUpperCase' }
+  { src: 'toUpperCase' },
+  { src: 'eval', allowedWithoutCallee: true }
 ]
 
 const GLOBAL_METHODS_TEMPLATE = `;(function(globals){

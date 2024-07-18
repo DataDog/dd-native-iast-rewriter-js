@@ -116,6 +116,13 @@ impl CallExprTransform {
                     }
                     _ => None,
                 },
+
+                Expr::Ident(obj) => replace_call_expr_if_csi_method_without_callee(
+                    &obj,
+                    call,
+                    csi_methods,
+                    ident_provider,
+                ),
                 _ => None,
             },
             _ => None,
@@ -168,6 +175,58 @@ fn replace_call_expr_if_csi_method(
         None,
         ident_provider,
     )
+}
+
+fn replace_call_expr_if_csi_method_without_callee(
+    ident: &Ident,
+    call: &mut CallExpr,
+    csi_methods: &CsiMethods,
+    ident_provider: &mut dyn IdentProvider,
+) -> Option<ResultExpr> {
+    let method_name = &ident.sym.to_string();
+
+    if let Some(csi_method) = csi_methods.get(method_name) {
+        if csi_method.allowed_without_callee {
+            let mut assignations = Vec::new();
+            let mut arguments = Vec::new();
+            let span = call.span;
+
+            // let __datadog_test_0;
+            // (__datadog_test_0 = arg0, _ddiast.aloneMethod
+            // (aloneMethod(__datadog_test_0), aloneMethod, undefined, __datadog_test_0));
+            arguments.push(Expr::Ident(ident.clone()));
+            let global = Ident {
+                span,
+                sym: JsWord::from("undefined"),
+                optional: false,
+            };
+            arguments.push(Expr::Ident(global));
+
+            let mut call_replacement = call.clone();
+            call_replacement.args.iter_mut().for_each(|expr_or_spread| {
+                DefaultOperandHandler::replace_expressions_in_operand(
+                    &mut expr_or_spread.expr,
+                    IdentMode::Replace,
+                    &mut assignations,
+                    &mut arguments,
+                    &span,
+                    ident_provider,
+                )
+            });
+
+            return Some(ResultExpr {
+                tag: method_name.clone(),
+                expr: get_dd_paren_expr(
+                    &Expr::Call(call_replacement),
+                    &arguments,
+                    &mut assignations,
+                    csi_method.dst.as_str(),
+                    &span,
+                ),
+            });
+        }
+    }
+    None
 }
 
 fn replace_call_expr_if_csi_method_with_member(
