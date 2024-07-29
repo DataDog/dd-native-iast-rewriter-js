@@ -4,6 +4,7 @@
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
+const { inspect } = require('util')
 const { exit } = require('process')
 const { Rewriter } = require('../main')
 
@@ -16,7 +17,7 @@ const DD_IAST_GLOBAL_METHODS_FILE_ENV = 'DD_IAST_GLOBAL_METHODS_FILE'
 const V8_NATIVE_CALL_REGEX = /%(\w+\(\S*?|\s*\))/gm
 const V8_NATIVE_CALL_REPLACEMENT_PREFIX = '__v8_native_remainder'
 const V8_NATIVE_CALL_REPLACEMENT_REGEX = /__v8_native_remainder(\w+\(\S*?|\s*\))/gm
-const V8_NATIVE_CALL_FLAGS_COMMENT_REGEX = /\/\/\s*Flags:.*(--allow-natives-syntax)+/gm
+const V8_NATIVE_CALL_FLAGS_COMMENT_REGEX = /\/\/\s*Flags:.*(--allow-natives)+/gm
 
 const CSI_METHODS = [
   { src: 'concat' },
@@ -210,6 +211,8 @@ if (options.filePattern) {
 
 let time = 0
 
+const rewritingErrors = []
+
 crawl(options.rootPath, options, {
   visit (code, fileName, path) {
     if (options.rewrite) {
@@ -241,7 +244,7 @@ crawl(options.rootPath, options, {
 
         const literalsResult = response.literalsResult
         if (literalsResult?.literals?.length) {
-          red(`---------------- literals ${literalsResult.file}`)
+          blue(`---------------- literals ${literalsResult.file}`)
           literalsResult.literals.forEach((lit) => {
             log(lit)
           })
@@ -258,6 +261,10 @@ crawl(options.rootPath, options, {
         return this.addGlobalMethods(code, rewritten, options)
       } catch (e) {
         red(`     -> ${fileName}: ${e}`)
+        rewritingErrors.push({
+          fileName,
+          e
+        })
       }
     } else {
       cyan(`     -> ${fileName}`)
@@ -300,4 +307,30 @@ crawl(options.rootPath, options, {
   }
 })
 
-log(`TOTAL time: ${time}`)
+log(`TOTAL time: ${time}\n`)
+
+console.warn(`${rewritingErrors.length} rewriting errors`)
+
+const errors = [`# ⚠️ Found ${rewritingErrors.length} rewriting errors\n`]
+rewritingErrors.forEach((error) => {
+  console.warn(inspect(error))
+  console.warn('\n')
+
+  errors.push(`### 📄 ${error.fileName}`)
+  errors.push('\n')
+  errors.push('```')
+  errors.push(error.e.stack)
+  errors.push('```')
+  errors.push('\n')
+  errors.push('\n')
+})
+
+try {
+  if (!fs.existsSync('./out')) {
+    fs.mkdirSync('./out')
+  }
+
+  fs.writeFileSync('./out/rewritingErrors.log', errors.join('\n'))
+} catch (e) {
+  console.error(e)
+}
