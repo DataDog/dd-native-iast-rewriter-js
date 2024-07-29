@@ -310,22 +310,27 @@ crawl(options.rootPath, options, {
 log(`TOTAL time: ${time}\n`)
 
 console.warn(`${rewritingErrors.length} rewriting errors`)
-const errors = []
+
+const errors = [`#Found ${rewritingErrors.length} rewriting errors#\n`]
 rewritingErrors.forEach((error) => {
   console.warn(inspect(error))
   console.warn('\n')
 
-  errors.push(inspect(error))
+  errors.push(`###${error.fileName}###`)
+  errors.push('\n')
+  errors.push('```')
+  errors.push(error.e.stack)
+  errors.push('```')
+  errors.push('\n')
+  errors.push('\n')
 })
 
-if (errors.length) {
-  try {
-    if (!fs.existsSync('./out')) {
-      fs.mkdirSync('./out')
-    }
-
-    fs.writeFileSync('./out/rewritingErrors.log', errors.join('\n'))
-  } catch (e) {
-    console.error(e)
+try {
+  if (!fs.existsSync('./out')) {
+    fs.mkdirSync('./out')
   }
+
+  fs.writeFileSync('./out/rewritingErrors.log', errors.join('\n'))
+} catch (e) {
+  console.error(e)
 }
