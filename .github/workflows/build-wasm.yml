@@ -182,7 +182,7 @@ jobs:
 
       - name: Rewrite summary
         id: rewrite-summary
-        run: docker cp v8tester:/build/rewritingErrors.log ./rewritingErrors.log && cat ./rewritingErrors.log >> $GITHUB_STEP_SUMMARY
+        run: docker cp v8tester:/build/out/rewritingErrors.log ./rewritingErrors.log && cat ./rewritingErrors.log >> $GITHUB_STEP_SUMMARY
 
   all-good:
     needs: ['static-checks', 'test-native', 'test-native-js', 'test-docker', 'compile-v8-and-run-tests']

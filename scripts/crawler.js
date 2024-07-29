@@ -320,11 +320,11 @@ rewritingErrors.forEach((error) => {
 
 if (errors.length) {
   try {
-    if (!fs.existsSync('./build')) {
-      fs.mkdirSync('./build')
+    if (!fs.existsSync('./out')) {
+      fs.mkdirSync('./out')
     }
 
-    fs.writeFileSync('./build/rewritingErrors.log', errors.join('\n'))
+    fs.writeFileSync('./out/rewritingErrors.log', errors.join('\n'))
   } catch (e) {
     console.error(e)
   }
