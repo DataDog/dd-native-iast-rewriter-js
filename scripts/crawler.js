@@ -4,6 +4,7 @@
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
+const { inspect } = require('util')
 const { exit } = require('process')
 const { Rewriter } = require('../main')
 
@@ -210,6 +211,8 @@ if (options.filePattern) {
 
 let time = 0
 
+const rewritingErrors = []
+
 crawl(options.rootPath, options, {
   visit (code, fileName, path) {
     if (options.rewrite) {
@@ -241,7 +244,7 @@ crawl(options.rootPath, options, {
 
         const literalsResult = response.literalsResult
         if (literalsResult?.literals?.length) {
-          red(`---------------- literals ${literalsResult.file}`)
+          blue(`---------------- literals ${literalsResult.file}`)
           literalsResult.literals.forEach((lit) => {
             log(lit)
           })
@@ -258,6 +261,10 @@ crawl(options.rootPath, options, {
         return this.addGlobalMethods(code, rewritten, options)
       } catch (e) {
         red(`     -> ${fileName}: ${e}`)
+        rewritingErrors.push({
+          fileName,
+          e
+        })
       }
     } else {
       cyan(`     -> ${fileName}`)
@@ -300,4 +307,25 @@ crawl(options.rootPath, options, {
   }
 })
 
-log(`TOTAL time: ${time}`)
+log(`TOTAL time: ${time}\n`)
+
+console.warn(`${rewritingErrors.length} rewriting errors`)
+const errors = []
+rewritingErrors.forEach((error) => {
+  console.warn(inspect(error))
+  console.warn('\n')
+
+  errors.push(inspect(error))
+})
+
+if (errors.length) {
+  try {
+    if (!fs.existsSync('./build')) {
+      fs.mkdirSync('./build')
+    }
+
+    fs.writeFileSync('./build/rewritingErrors.log', errors.join('\n'))
+  } catch (e) {
+    console.error(e)
+  }
+}

@@ -180,6 +180,10 @@ jobs:
         id: run-tests
         run: docker build -t v8tester:${{ env.V8_BRANCH }} --build-arg V8_BRANCH=${{ env.V8_BRANCH }} -f ./docker/v8test.Dockerfile . && docker run --name v8tester v8tester:${{ env.V8_BRANCH }}
 
+      - name: Rewrite summary
+        id: rewrite-summary
+        run: docker cp v8tester:/build/rewritingErrors.log ./rewritingErrors.log && cat ./rewritingErrors.log >> $GITHUB_STEP_SUMMARY
+
   all-good:
     needs: ['static-checks', 'test-native', 'test-native-js', 'test-docker', 'compile-v8-and-run-tests']
     runs-on: ubuntu-latest
