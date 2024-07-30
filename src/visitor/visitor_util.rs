@@ -2,7 +2,9 @@
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
-use swc::{atoms::JsWord, common::Span, ecmascript::ast::*};
+use swc::atoms::JsWord;
+use swc_common::{Span, SyntaxContext};
+use swc_ecma_ast::*;
 
 const DATADOG_VAR_PREFIX: &str = "__datadog";
 const DD_GLOBAL_NAMESPACE: &str = "_ddiast";
@@ -19,15 +21,12 @@ pub fn get_dd_local_variable_prefix(prefix: &String) -> String {
 pub fn dd_global_method_invocation(method_name: &str, span: &Span) -> Callee {
     Callee::Expr(Box::new(Expr::Member(MemberExpr {
         span: *span,
-        prop: MemberProp::Ident(Ident {
-            span: *span,
-            sym: JsWord::from(method_name),
-            optional: false,
-        }),
+        prop: MemberProp::Ident(IdentName::new(JsWord::from(method_name), *span)),
         obj: Box::new(Expr::Ident(Ident {
             span: *span,
             sym: JsWord::from(DD_GLOBAL_NAMESPACE),
             optional: false,
+            ctxt: SyntaxContext::empty(),
         })),
     })))
 }
@@ -53,6 +52,7 @@ pub fn get_dd_call_expr(expr: &Expr, arguments: &[Expr], method_name: &str, span
         callee: dd_global_method_invocation(method_name, span),
         args,
         type_args: None,
+        ctxt: SyntaxContext::empty(),
     })
 }
 

@@ -11,7 +11,8 @@ use crate::{
     },
 };
 use std::collections::HashSet;
-use swc::ecmascript::ast::{Stmt::Decl as DeclEnumOption, *};
+use swc_common::SyntaxContext;
+use swc_ecma_ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
 use super::{ident_provider::DefaultIdentProvider, visitor_with_context::Ctx};
@@ -98,12 +99,13 @@ fn insert_variable_declaration(ident_expressions: &[Ident], expr: &mut BlockStmt
                 init: None,
             });
         });
-        let declaration = DeclEnumOption(Decl::Var(VarDecl {
+        let declaration = DeclEnumOption(Decl::Var(Box::new(VarDecl {
             span,
             decls: vec,
             declare: false,
             kind: VarDeclKind::Let,
-        }));
+            ctxt: SyntaxContext::empty(),
+        })));
 
         let index = get_variable_insertion_index(&expr.stmts);
         expr.stmts.insert(index, declaration);

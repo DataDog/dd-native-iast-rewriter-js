@@ -3,12 +3,10 @@
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
 use std::collections::HashSet;
-use swc::{
-    atoms::JsWord,
-    common::{Span, DUMMY_SP},
-};
-use swc_ecma_visit::swc_ecma_ast::{
-    AssignExpr, AssignOp, BindingIdent, Expr, Ident, Pat, PatOrExpr,
+use swc::atoms::JsWord;
+use swc_common::{Span, SyntaxContext, DUMMY_SP};
+use swc_ecma_ast::{
+    AssignExpr, AssignOp, AssignTarget, BindingIdent, Expr, Ident, SimpleAssignTarget,
 };
 
 use super::visitor_util::get_dd_local_variable_name;
@@ -59,14 +57,15 @@ pub trait IdentProvider {
                 &self.get_local_var_prefix(),
             )),
             optional: false,
+            ctxt: SyntaxContext::empty(),
         };
         (
             AssignExpr {
                 span: *span,
-                left: PatOrExpr::Pat(Box::new(Pat::Ident(BindingIdent {
+                left: AssignTarget::Simple(SimpleAssignTarget::Ident(BindingIdent {
                     id: id.clone(),
                     type_ann: None,
-                }))),
+                })),
                 right: Box::new(expr.clone()),
                 op: AssignOp::Assign,
             },

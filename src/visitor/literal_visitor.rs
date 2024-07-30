@@ -5,11 +5,9 @@ use log::debug;
  **/
 use serde::Serialize;
 use std::collections::{HashMap, HashSet};
-use swc::{
-    common::Span,
-    ecmascript::ast::{Callee, Expr, ObjectLit, Program, Prop, Str, VarDeclarator},
-    Compiler,
-};
+use swc::Compiler;
+use swc_common::Span;
+use swc_ecma_ast::{Callee, Expr, ObjectLit, Program, Prop, Str, VarDeclarator};
 use swc_ecma_visit::{swc_ecma_ast::Lit, Visit, VisitWith};
 
 #[derive(Serialize)]
@@ -148,7 +146,7 @@ impl Visit for LiteralVisitor {
             Expr::Call(call) => {
                 if let Callee::Expr(callee_expr) = &call.callee {
                     if let Expr::Ident(ident) = &**callee_expr {
-                        if ident.sym.to_string() == "require"
+                        if ident.sym == "require"
                             && !call.args.is_empty()
                             && call.args[0].spread.is_none()
                             && call.args[0].expr.is_lit()
@@ -162,7 +160,7 @@ impl Visit for LiteralVisitor {
 
             Expr::New(new_exp) => {
                 if let Expr::Ident(ident) = &*new_exp.callee {
-                    if ident.sym.to_string() == "RegExp"
+                    if ident.sym == "RegExp"
                         && new_exp
                             .args
                             .as_ref()

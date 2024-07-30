@@ -10,14 +10,15 @@ crate-type = ["cdylib"]
 # Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
 napi = { version = "2.2.0", default-features = false, features = ["napi4"] }
 napi-derive = "2.2.0"
-swc = "0.205.0"
-swc_ecma_visit = "0.70.0"
-swc_visit_macros = "0.5.3"
-swc_ecma_parser = "0.111.0"
-anyhow = "1.0.56"
-fastrand = "1.8.0"
+swc = "0.282.1"
+swc_common = "0.36.0"
+swc_ecma_ast = "0.117.0"
+swc_ecma_visit = "0.103.0"
+swc_ecma_parser = "0.148.0"
+anyhow = "1.0.81"
+fastrand = { version = "2.1.0", features = ["js"] }
 instant = "0.1"
-base64 = "0.13.0"
+base64 = "0.21.0"
 wasm-bindgen = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 serde-wasm-bindgen = "0.4"
