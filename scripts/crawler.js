@@ -316,13 +316,10 @@ rewritingErrors.forEach((error) => {
   console.warn(inspect(error))
   console.warn('\n')
 
-  errors.push(`### 📄 ${error.fileName}`)
-  errors.push('\n')
+  errors.push(`### 📄 ${error.fileName}\n`)
   errors.push('```')
   errors.push(error.e.stack)
-  errors.push('```')
-  errors.push('\n')
-  errors.push('\n')
+  errors.push('```\n\n')
 })
 
 try {
