@@ -9,7 +9,6 @@ pub struct TemplateTransform {}
 impl TemplateTransform {
     pub fn get_binary_from_tpl(tpl: &Tpl) -> Expr {
         let arguments = get_reversed_arguments(tpl);
-
         // with `${expression}` first quasi is filtered
         let left: Expr = if arguments.len() == 1 {
             Expr::Lit(Lit::Str(Str {
@@ -36,7 +35,6 @@ impl TemplateTransform {
                 right: Box::new(Expr::Bin(binary_expr.clone())),
             }
         });
-
         Expr::Bin(binary_expr)
     }
 }
@@ -45,6 +43,7 @@ fn get_reversed_arguments(tpl: &Tpl) -> Vec<Expr> {
     let mut arguments = Vec::new();
     let mut index = 0;
     let empty_quasi = JsWord::from("");
+    let mut last_skippeds = 0;
     for quasi in &tpl.quasis {
         let value = quasi.cooked.clone();
         if value.is_none() || value.unwrap() == empty_quasi {
@@ -52,9 +51,13 @@ fn get_reversed_arguments(tpl: &Tpl) -> Vec<Expr> {
                 let expr = &*tpl.exprs[index];
                 arguments.push(expr.clone());
                 index += 1;
+                last_skippeds += 1;
             }
-            continue;
+            if !quasi.tail || last_skippeds == 0 {
+                continue;
+            }
         }
+        last_skippeds = 0;
 
         let str = Expr::Lit(Lit::Str(Str {
             span: quasi.span,
