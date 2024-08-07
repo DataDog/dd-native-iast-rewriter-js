@@ -43,7 +43,7 @@ fn get_reversed_arguments(tpl: &Tpl) -> Vec<Expr> {
     let mut arguments = Vec::new();
     let mut index = 0;
     let empty_quasi = JsWord::from("");
-    let mut last_skippeds = 0;
+    let mut last_skipped = false;
     for quasi in &tpl.quasis {
         let value = quasi.cooked.clone();
         if value.is_none() || value.unwrap() == empty_quasi {
@@ -51,13 +51,13 @@ fn get_reversed_arguments(tpl: &Tpl) -> Vec<Expr> {
                 let expr = &*tpl.exprs[index];
                 arguments.push(expr.clone());
                 index += 1;
-                last_skippeds += 1;
+                last_skipped = true;
             }
-            if !quasi.tail || last_skippeds == 0 {
+            if !quasi.tail || !last_skipped {
                 continue;
             }
         }
-        last_skippeds = 0;
+        last_skipped = false;
 
         let str = Expr::Lit(Lit::Str(Str {
             span: quasi.span,
