@@ -13,6 +13,7 @@ use crate::{
     },
 };
 use anyhow::{Error, Result};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use log::debug;
 use std::{
     collections::HashMap,
@@ -22,19 +23,18 @@ use std::{
     sync::Arc,
 };
 use swc::{
-    common,
-    common::{
-        comments::Comments,
-        errors::{ColorConfig, Handler},
-        FileName, FilePathMapping, SourceFile,
-    },
     config::{IsModule, SourceMapsConfig},
-    ecmascript::ast::*,
     sourcemap::{decode, decode_data_url, DecodedMap, SourceMap, SourceMapBuilder},
-    try_with_handler, Compiler, HandlerOpts, SwcComments, TransformOutput,
+    try_with_handler, Compiler, HandlerOpts, PrintArgs, SwcComments, TransformOutput,
 };
+use swc_common::{
+    comments::Comments,
+    errors::{ColorConfig, Handler},
+    FileName, FilePathMapping, SourceFile,
+};
+use swc_ecma_ast::{EsVersion, Program};
 
-use swc_ecma_parser::{EsConfig, Syntax};
+use swc_ecma_parser::{EsSyntax, Syntax};
 use swc_ecma_visit::VisitMutWith;
 
 const SOURCE_MAP_URL: &str = "# sourceMappingURL=";
@@ -76,11 +76,13 @@ pub fn rewrite_js<R: Read>(
 ) -> Result<RewrittenOutput> {
     debug!("Rewriting js file: {file} with config: {config:?}");
 
-    let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
+    let compiler = Compiler::new(Arc::new(swc_common::SourceMap::new(
+        FilePathMapping::empty(),
+    )));
     try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let source_file = compiler
             .cm
-            .new_source_file(FileName::Real(PathBuf::from(file)), code);
+            .new_source_file(Arc::new(FileName::Real(PathBuf::from(file))), code);
 
         let program = parse_js(&source_file, handler, &compiler)?;
 
@@ -130,7 +132,7 @@ pub fn print_js(output: &RewrittenOutput, config: &Config) -> String {
             "{}\n//{}data:application/json;base64,{}",
             final_code,
             SOURCE_MAP_URL,
-            base64::encode(final_source_map)
+            STANDARD.encode(final_source_map)
         )
     }
 }
@@ -147,23 +149,24 @@ fn parse_js(
     handler: &Handler,
     compiler: &Compiler,
 ) -> Result<Program> {
-    let es_config = EsConfig {
+    let es_syntax = EsSyntax {
         jsx: false,
         fn_bind: false,
         decorators: false,
         decorators_before_export: false,
         export_default_from: false,
-        import_assertions: false,
-        private_in_object: false,
+        import_attributes: true,
         allow_super_outside_method: false,
         allow_return_outside_function: true,
+        auto_accessors: true,
+        ..Default::default()
     };
 
     compiler.parse_js(
         source_file.to_owned(),
         handler,
         EsVersion::latest(),
-        Syntax::Es(es_config),
+        Syntax::Es(es_syntax),
         IsModule::Unknown,
         Some(&compiler.comments() as &dyn Comments),
     )
@@ -182,35 +185,32 @@ fn transform_js(
     program.visit_mut_with(&mut block_transform_visitor);
 
     let literals_result = get_literals(config.literals, file, &mut program, compiler);
+    let comments = &compiler.comments().clone() as &dyn Comments;
+
+    let print_args = PrintArgs {
+        source_file_name: file_name(file),
+        source_map: SourceMapsConfig::Bool(true),
+        comments: config.print_comments.then_some(comments),
+        emit_source_map_columns: true,
+        ..Default::default()
+    };
 
     match transform_status.status {
-        Status::Modified => compiler
-            .print(
-                &program,
-                file_name(file),
-                None,
-                false,
-                EsVersion::latest(),
-                SourceMapsConfig::Bool(true),
-                &Default::default(),
-                None,
-                false,
-                config
-                    .print_comments
-                    .then_some(&compiler.comments().clone() as &dyn Comments),
-                true,
-                false,
-            )
-            .map(|output| TransformOutputWithStatus {
-                output,
-                status: transform_status,
-                literals_result,
-            }),
+        Status::Modified => {
+            compiler
+                .print(&program, print_args)
+                .map(|output| TransformOutputWithStatus {
+                    output,
+                    status: transform_status,
+                    literals_result,
+                })
+        }
 
         Status::NotModified => Ok(TransformOutputWithStatus {
             output: TransformOutput {
                 code: source_file.src.to_string(),
                 map: None,
+                output: None,
             },
             status: transform_status,
             literals_result,
@@ -267,6 +267,7 @@ fn chain_source_maps(
                             original.get_src_col(),
                             source_idx,
                             name_idx,
+                            false,
                         );
                     }
                 }
@@ -301,7 +302,7 @@ fn extract_source_map<R: Read>(
         for comment in trailing.iter() {
             let trim_comment = comment.text.trim();
             if trim_comment.starts_with(SOURCE_MAP_URL) {
-                source_map_comment = Some(comment.text.clone());
+                source_map_comment = Some(String::from(comment.text.as_str()));
                 let url = trim_comment.get(SOURCE_MAP_URL.len()..).unwrap();
                 source = decode_data_url(url)
                     .map_err(Error::new)
@@ -333,14 +334,19 @@ fn extract_source_map<R: Read>(
 
 #[cfg(test)]
 pub fn debug_js(code: String) -> Result<RewrittenOutput> {
+    use swc::PrintArgs;
+
     use crate::util::DefaultFileReader;
 
-    let compiler = Compiler::new(Arc::new(common::SourceMap::new(FilePathMapping::empty())));
+    let compiler = Compiler::new(Arc::new(swc_common::SourceMap::new(
+        FilePathMapping::empty(),
+    )));
     return try_with_handler(compiler.cm.clone(), default_handler_opts(), |handler| {
         let js_file = "debug.js".to_string();
-        let source_file = compiler
-            .cm
-            .new_source_file(FileName::Real(PathBuf::from(js_file.clone())), code);
+        let source_file = compiler.cm.new_source_file(
+            Arc::new(FileName::Real(PathBuf::from(js_file.clone()))),
+            code,
+        );
 
         let program = parse_js(&source_file, handler, &compiler)?;
 
@@ -350,20 +356,15 @@ pub fn debug_js(code: String) -> Result<RewrittenOutput> {
         let original_map =
             extract_source_map(js_file.as_str(), &compiler.comments(), &source_map_reader);
 
-        let print_result = compiler.print(
-            &program,
-            file_name(&js_file),
-            None,
-            false,
-            EsVersion::latest(),
-            SourceMapsConfig::Bool(true),
-            &Default::default(),
-            None,
-            false,
-            Some(compiler.comments() as &dyn Comments),
-            true,
-            false,
-        );
+        let print_args = PrintArgs {
+            source_file_name: file_name(&js_file),
+            source_map: SourceMapsConfig::Bool(true),
+            comments: Some(compiler.comments() as &dyn Comments),
+            emit_source_map_columns: true,
+            ..Default::default()
+        };
+
+        let print_result = compiler.print(&program, print_args);
 
         print_result.map(|printed| RewrittenOutput {
             code: printed.code,

@@ -2,7 +2,7 @@
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
-use swc::ecmascript::ast::*;
+use swc_ecma_ast::*;
 use swc_ecma_visit::VisitMutWith;
 
 use crate::{
@@ -22,16 +22,16 @@ impl AssignAddTransform {
         let span = assign.span;
 
         match &assign.left {
-            PatOrExpr::Pat(_) => {
+            AssignTarget::Pat(_) => {
                 assign.visit_mut_children_with(opv);
                 TransformResult::not_modified()
             }
 
-            PatOrExpr::Expr(left_expr) => {
+            AssignTarget::Simple(left_expr) => {
                 let binary = Expr::Bin(BinExpr {
                     span,
                     op: BinaryOp::Add,
-                    left: left_expr.clone(),
+                    left: left_expr.clone().into(),
                     right: assign.right.clone(),
                 });
 

@@ -3,9 +3,8 @@
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
 use swc::atoms::JsWord;
-use swc_ecma_visit::swc_ecma_ast::{
-    CallExpr, Callee, Expr, ExprOrSpread, Ident, MemberExpr, MemberProp,
-};
+use swc_common::SyntaxContext;
+use swc_ecma_ast::*;
 
 use crate::{
     transform::{
@@ -141,17 +140,18 @@ impl CallExprTransform {
 fn replace_prototype_call_or_apply(
     call: &CallExpr,
     member: &MemberExpr,
-    ident: &Ident,
+    ident_name: &IdentName,
     csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
-    let prototype_call_option =
-        FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(call, member, ident);
+    let prototype_call_option = FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(
+        call, member, ident_name,
+    );
 
     match prototype_call_option {
         Some(mut prototype_call) => replace_call_expr_if_csi_method_with_member(
             &prototype_call.0,
-            &prototype_call.1,
+            &prototype_call.1.into(),
             &mut prototype_call.2,
             csi_methods,
             Some(member),
@@ -163,14 +163,14 @@ fn replace_prototype_call_or_apply(
 
 fn replace_call_expr_if_csi_method(
     expr: &Expr,
-    ident: &Ident,
+    ident_name: &IdentName,
     call: &mut CallExpr,
     csi_methods: &CsiMethods,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
     replace_call_expr_if_csi_method_with_member(
         expr,
-        ident,
+        ident_name,
         call,
         csi_methods,
         None,
@@ -200,6 +200,7 @@ fn replace_call_expr_if_csi_method_without_callee(
                 span,
                 sym: JsWord::from("undefined"),
                 optional: false,
+                ctxt: SyntaxContext::empty(),
             };
             arguments.push(Expr::Ident(global));
 
@@ -232,13 +233,13 @@ fn replace_call_expr_if_csi_method_without_callee(
 
 fn replace_call_expr_if_csi_method_with_member(
     expr: &Expr,
-    ident: &Ident,
+    ident_name: &IdentName,
     call: &mut CallExpr,
     csi_methods: &CsiMethods,
     member_expr_opt: Option<&MemberExpr>,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
-    let method_name = &ident.sym.to_string();
+    let method_name = &ident_name.sym.to_string();
 
     if let Some(csi_method) = csi_methods.get(method_name) {
         let mut assignations = Vec::new();
@@ -269,7 +270,7 @@ fn replace_call_expr_if_csi_method_with_member(
                 let member_expr = MemberExpr {
                     span,
                     obj: Box::new(Expr::Ident(ident_replacement.clone())),
-                    prop: MemberProp::Ident(ident.clone()),
+                    prop: MemberProp::Ident(ident_name.clone()),
                 };
 
                 // __datadog_token_$i2 = __datadog_token_$i.substring
@@ -288,11 +289,7 @@ fn replace_call_expr_if_csi_method_with_member(
         call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
             span,
             obj: Box::new(Expr::Ident(ident_callee)),
-            prop: MemberProp::Ident(Ident {
-                span,
-                sym: JsWord::from("call"),
-                optional: false,
-            }),
+            prop: MemberProp::Ident(IdentName::new(JsWord::from("call"), span)),
         })));
 
         call_replacement.args.iter_mut().for_each(|expr_or_spread| {

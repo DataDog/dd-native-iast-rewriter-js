@@ -13,9 +13,10 @@ require,node-gyp-build,MIT,Copyright 2017 Mathias Buus
 require,serde,MIT OR Apache-2.0,Copyright (c) Erick Tryzelaar and David Tolnay
 require,serde-wasm-bindgen,MIT,Copyright (c) 2019 Cloudflare Inc.
 require,swc,Apache-2.0,Copyright 강동윤
+require,swc_common,Apache-2.0,Copyright 강동윤
+require,swc_ecma_ast,Apache-2.0,Copyright 강동윤
 require,swc_ecma_parser,Apache-2.0,Copyright 강동윤
 require,swc_ecma_visit,Apache-2.0,Copyright 강동윤
-require,swc_visit_macros,Apache-2.0,Copyright 강동윤
 require,wasm-bindgen,Apache-2.0 OR MIT,Copyright (c) 2014 Alex Crichton
 dev,@babel/core,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 dev,@babel/parser,MIT,Copyright (c) Copyright (C) 2012-2014 by various contributors
