@@ -98,6 +98,8 @@ jobs:
             architecture: x64
 
     runs-on: ${{ matrix.target.os }}
+    permissions:
+      checks: write
     env:
       NPM_REWRITER: true
     steps:
@@ -125,13 +127,13 @@ jobs:
   test-docker:
     needs: ['wasm-pack']
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
     strategy:
       matrix:
         target:
           - name: alpine 64 bits
             dockerfile: test.alpine.Dockerfile
-    permissions:
-      checks: write
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
