@@ -145,7 +145,10 @@ fn replace_prototype_call_or_apply(
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
     let prototype_call_option = FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(
-        call, member, ident_name,
+        call,
+        member,
+        ident_name,
+        csi_methods,
     );
 
     match prototype_call_option {

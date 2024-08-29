@@ -8,6 +8,8 @@ use swc_ecma_visit::swc_ecma_ast::{
     CallExpr, Callee, Expr, ExprOrSpread, Ident, MemberExpr, MemberProp,
 };
 
+use crate::visitor::csi_methods::CsiMethods;
+
 pub const PROTOTYPE: &str = "prototype";
 pub const CALL_METHOD_NAME: &str = "call";
 pub const APPLY_METHOD_NAME: &str = "apply";
@@ -35,6 +37,7 @@ impl FunctionPrototypeTransform {
         call: &CallExpr,
         member: &MemberExpr,
         ident_name: &IdentName,
+        csi_methods: &CsiMethods,
     ) -> Option<(Expr, Ident, CallExpr)> {
         if !Self::is_call_or_apply(ident_name) {
             return None;
@@ -47,10 +50,8 @@ impl FunctionPrototypeTransform {
                 return None;
             }
 
+            let method_ident = path_parts[0].clone();
             let this_expr = &call.args[0].expr;
-            if this_expr.is_lit() {
-                return None;
-            }
 
             let mut filtered_args = vec![];
             if !filter_call_args(
@@ -61,7 +62,12 @@ impl FunctionPrototypeTransform {
                 return None;
             }
 
-            let method_ident = path_parts[0].clone();
+            if this_expr.is_lit()
+                && (!csi_methods.method_allows_literal_callers(&method_ident.sym)
+                    || all_args_are_literal(&filtered_args))
+            {
+                return None;
+            }
 
             let new_callee = MemberExpr {
                 obj: this_expr.clone(),
@@ -129,4 +135,8 @@ fn get_prototype_member_path(member: &MemberExpr, parts: &mut Vec<Ident>) -> boo
         }
     }
     !parts.is_empty()
+}
+
+fn all_args_are_literal(args: &[ExprOrSpread]) -> bool {
+    args.iter().all(|elem| elem.expr.is_lit())
 }
