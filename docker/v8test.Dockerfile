@@ -14,7 +14,7 @@ COPY ./scripts/crawler.js /build/package/scripts/crawler.js
 RUN npm i --prefix package
 
 # rewrite v8 mjsunit test files
-RUN node package/scripts/crawler.js --override v8/test/mjsunit/ '^(str|arr|arg|num|rege|mod|glob|obj|val|whit|this|throw|try|unbox|pro|call|code|comp|func|for|field).*'
+RUN node package/scripts/crawler.js --override v8/test/mjsunit/ '^(str|arr|arg|num|rege|mod|glob|obj|val|whit|this|throw|try|unbox|pro|call|code|comp|func|for|field|substr|unicode).*'
 
 # launch mjsunit tests
 CMD ["/build/v8/tools/run-tests.py", "--outdir=out/x64.release", "mjsunit"]
