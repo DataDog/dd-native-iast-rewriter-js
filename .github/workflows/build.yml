@@ -134,6 +134,8 @@ jobs:
             artifact: darwin-x64
 
     runs-on: ${{ matrix.target.os }}
+    permissions:
+      checks: write
     env:
       NPM_REWRITER: true
     steps:
@@ -160,6 +162,8 @@ jobs:
   test-docker:
     needs: ['pack']
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
     strategy:
       matrix:
         target:
