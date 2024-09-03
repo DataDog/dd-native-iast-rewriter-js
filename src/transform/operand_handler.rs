@@ -27,12 +27,14 @@ pub trait OperandHandler {
             Expr::Ident(_) => {
                 if ident_mode == IdentMode::Replace {
                     operand.map_with_mut(|op| {
-                        Expr::Ident(ident_provider.get_ident_used_in_assignation(
+                        let ident = ident_provider.get_ident_used_in_assignation(
                             &op,
                             assignations,
                             arguments,
                             span,
-                        ))
+                        );
+
+                        ident.map_or(op, Expr::Ident)
                     })
                 } else {
                     arguments.push(operand.clone())
@@ -70,12 +72,10 @@ pub trait OperandHandler {
         ident_provider: &mut dyn IdentProvider,
     ) {
         operand.map_with_mut(|op| {
-            Expr::Ident(ident_provider.get_ident_used_in_assignation(
-                &op,
-                assignations,
-                arguments,
-                span,
-            ))
+            let ident =
+                ident_provider.get_ident_used_in_assignation(&op, assignations, arguments, span);
+
+            ident.map_or(op, Expr::Ident)
         })
     }
 
