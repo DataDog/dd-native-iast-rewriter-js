@@ -50,9 +50,6 @@ impl FunctionPrototypeTransform {
                 return None;
             }
 
-            let method_ident = path_parts[0].clone();
-            let this_expr = &call.args[0].expr;
-
             let mut filtered_args = vec![];
             if !filter_call_args(
                 &call.args,
@@ -61,6 +58,9 @@ impl FunctionPrototypeTransform {
             ) {
                 return None;
             }
+
+            let method_ident = path_parts[0].clone();
+            let this_expr = &call.args[0].expr;
 
             if this_expr.is_lit()
                 && (!csi_methods.method_allows_literal_callers(&method_ident.sym)
