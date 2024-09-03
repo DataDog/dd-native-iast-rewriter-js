@@ -24,7 +24,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains(
-            "a = (__datadog_test_0 = a, __datadog_test_1 = _ddiast.plusOperator(b + c, b, c), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));");
+            "a = (__datadog_test_0 = _ddiast.plusOperator(b + c, b, c), _ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));");
         Ok(())
     }
 
@@ -38,8 +38,8 @@ mod tests {
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
             .contains("for(let i = 0; i < buf.length; i++){
-    let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5;
-    res1 = (__datadog_test_4 = res1, __datadog_test_5 = s.write((__datadog_test_0 = buf, __datadog_test_1 = __datadog_test_0.slice, __datadog_test_2 = i, __datadog_test_3 = _ddiast.plusOperator(i + 1, i, 1), _ddiast.slice(__datadog_test_1.call(__datadog_test_0, __datadog_test_2, __datadog_test_3), __datadog_test_1, __datadog_test_0, __datadog_test_2, __datadog_test_3))), _ddiast.plusOperator(__datadog_test_4 + __datadog_test_5, __datadog_test_4, __datadog_test_5));\n}");
+    let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+    res1 = (__datadog_test_2 = s.write((__datadog_test_0 = buf.slice, __datadog_test_1 = _ddiast.plusOperator(i + 1, i, 1), _ddiast.slice(__datadog_test_0.call(buf, i, __datadog_test_1), __datadog_test_0, buf, i, __datadog_test_1))), _ddiast.plusOperator(res1 + __datadog_test_2, res1, __datadog_test_2));\n}");
         Ok(())
     }
 
@@ -49,8 +49,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1;
-    a = (__datadog_test_0 = a, __datadog_test_1 = b ? c : d, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
+            .contains("let __datadog_test_0;
+    a = (__datadog_test_0 = b ? c : d, _ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));");
         Ok(())
     }
 
@@ -60,8 +60,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1;
-    a = (__datadog_test_0 = a, __datadog_test_1 = b ? c() : d, _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
+            .contains("let __datadog_test_0;
+    a = (__datadog_test_0 = b ? c() : d, _ddiast.plusOperator(a + __datadog_test_0, a, __datadog_test_0));");
         Ok(())
     }
 
@@ -71,8 +71,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-    a = (__datadog_test_1 = a, __datadog_test_2 = b ? c((__datadog_test_0 = e(), _ddiast.plusOperator(__datadog_test_0 + f, __datadog_test_0, f))) : d, _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, __datadog_test_1, __datadog_test_2));");
+            .contains("let __datadog_test_0, __datadog_test_1;
+    a = (__datadog_test_1 = b ? c((__datadog_test_0 = e(), _ddiast.plusOperator(__datadog_test_0 + f, __datadog_test_0, f))) : d, _ddiast.plusOperator(a + __datadog_test_1, a, __datadog_test_1));");
         Ok(())
     }
 
@@ -83,9 +83,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5;
-    x = (__datadog_test_4 = x, __datadog_test_5 = ((__datadog_test_2 = x, __datadog_test_3 = ((__datadog_test_0 = (tmp = -3, tmp), __datadog_test_1 = ((tmp = -3, tmp) * (tmp = 6, tmp)), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))), _ddiast.plusOperator(__datadog_test_2 + __datadog_test_3, __datadog_test_2, __datadog_test_3))), _ddiast.plusOperator(__datadog_test_4 + __datadog_test_5, __datadog_test_4, __datadog_test_5));");
-
+            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;
+    x = (__datadog_test_3 = ((__datadog_test_2 = ((__datadog_test_0 = (tmp = -3, tmp), __datadog_test_1 = ((tmp = -3, tmp) * (tmp = 6, tmp)), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))), _ddiast.plusOperator(x + __datadog_test_2, x, __datadog_test_2))), _ddiast.plusOperator(x + __datadog_test_3, x, __datadog_test_3));");
         Ok(())
     }
 }

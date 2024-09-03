@@ -22,8 +22,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1;
-    const a = (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 1), __datadog_test_1, __datadog_test_0, 1));");
+            .contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = b.substring, _ddiast.stringSubstring(__datadog_test_0.call(b, 1), __datadog_test_0, b, 1));");
         Ok(())
     }
 
@@ -44,8 +44,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-    const a = (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.substring, __datadog_test_2 = c(), _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, __datadog_test_2), __datadog_test_1, __datadog_test_0, __datadog_test_2));");
+            .contains("let __datadog_test_0, __datadog_test_1;
+    const a = (__datadog_test_0 = b.substring, __datadog_test_1 = c(), _ddiast.stringSubstring(__datadog_test_0.call(b, __datadog_test_1), __datadog_test_0, b, __datadog_test_1));");
         Ok(())
     }
 
@@ -84,8 +84,8 @@ mod tests {
         let original_code = "{const a = String.prototype.substring.call(b, 2);}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
-    const a = (__datadog_test_0 = b, __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));");
+        assert_that(&rewritten.code).contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_0.call(b, 2), __datadog_test_0, b, 2));");
         Ok(())
     }
 
@@ -94,8 +94,8 @@ mod tests {
         let original_code = "{const a = String.prototype.substring.apply(b, [2]);}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
-    const a = (__datadog_test_0 = b, __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));");
+        assert_that(&rewritten.code).contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_0.call(b, 2), __datadog_test_0, b, 2));");
         Ok(())
     }
 
@@ -115,8 +115,8 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-    const a = (__datadog_test_0 = 1, __datadog_test_1 = String.prototype.concat, __datadog_test_2 = a(), _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, __datadog_test_2, 3), __datadog_test_1, __datadog_test_0, __datadog_test_2, 3));");
+            .contains("let __datadog_test_0, __datadog_test_1;
+    const a = (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a(), _ddiast.stringConcat(__datadog_test_0.call(1, __datadog_test_1, 3), __datadog_test_0, 1, __datadog_test_1, 3));");
         Ok(())
     }
 
@@ -130,13 +130,23 @@ mod tests {
     }
 
     #[test]
+    fn test_prototype_concat_with_literal_and_ident_arg() -> Result<(), String> {
+        let original_code = "{const a = String.prototype.concat.call('hello', b);}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = String.prototype.concat, _ddiast.stringConcat(__datadog_test_0.call('hello', b), __datadog_test_0, 'hello', b));");
+        Ok(())
+    }
+
+    #[test]
     fn test_ident_trim() -> Result<(), String> {
         let original_code = "{const a = b.trim();}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code)
-            .contains("let __datadog_test_0, __datadog_test_1;
-    const a = (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.trim, _ddiast.stringTrim(__datadog_test_1.call(__datadog_test_0), __datadog_test_1, __datadog_test_0));");
+            .contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = b.trim, _ddiast.stringTrim(__datadog_test_0.call(b), __datadog_test_0, b));");
         Ok(())
     }
 
@@ -154,8 +164,8 @@ mod tests {
         let original_code = "{const a = b.concat('a').substring(2).trim();}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4, __datadog_test_5;
-    const a = (__datadog_test_4 = (__datadog_test_2 = (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.concat, _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, 'a'), __datadog_test_1, __datadog_test_0, 'a')), __datadog_test_3 = __datadog_test_2.substring, _ddiast.stringSubstring(__datadog_test_3.call(__datadog_test_2, 2), __datadog_test_3, __datadog_test_2, 2)), __datadog_test_5 = __datadog_test_4.trim, _ddiast.stringTrim(__datadog_test_5.call(__datadog_test_4), __datadog_test_5, __datadog_test_4));");
+        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4;
+    const a = (__datadog_test_3 = (__datadog_test_1 = (__datadog_test_0 = b.concat, _ddiast.stringConcat(__datadog_test_0.call(b, 'a'), __datadog_test_0, b, 'a')), __datadog_test_2 = __datadog_test_1.substring, _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 2), __datadog_test_2, __datadog_test_1, 2)), __datadog_test_4 = __datadog_test_3.trim, _ddiast.stringTrim(__datadog_test_4.call(__datadog_test_3), __datadog_test_4, __datadog_test_3));");
         Ok(())
     }
 
@@ -167,8 +177,8 @@ mod tests {
         let rewritten =
             rewrite_js_with_csi_methods(original_code, js_file, &CsiMethods::new(&mut methods))
                 .map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
-    const a = (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.concat, _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, 'a'), __datadog_test_1, __datadog_test_0, 'a')).substring(2).trim();");
+        assert_that(&rewritten.code).contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = b.concat, _ddiast.stringConcat(__datadog_test_0.call(b, 'a'), __datadog_test_0, b, 'a')).substring(2).trim();");
         Ok(())
     }
 
@@ -199,8 +209,8 @@ mod tests {
         let rewritten =
             rewrite_js_with_csi_methods(original_code, js_file, &CsiMethods::new(&mut methods))
                 .map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
-    const a = (__datadog_test_0 = b, __datadog_test_1 = __datadog_test_0.plusOperator, _ddiast.plusOperator(__datadog_test_1.call(__datadog_test_0, c + d), __datadog_test_1, __datadog_test_0));");
+        assert_that(&rewritten.code).contains("let __datadog_test_0;
+    const a = (__datadog_test_0 = b.plusOperator, _ddiast.plusOperator(__datadog_test_0.call(b, c + d), __datadog_test_0, b));");
         Ok(())
     }
 
@@ -230,9 +240,8 @@ mod tests {
             .map_err(|e| e.to_string())
             .map(|rewrite_output| print_js(&rewrite_output, &get_default_config(false)))?;
 
-        assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
-    __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
-    __datadog_test_1, __datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, '')), _ddiast.plusOperator(__datadog_test_2 + 'other', __datadog_test_2, 'other'))
+        assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_1 = (__datadog_test_0 = b.replace, _ddiast.replace(__datadog_test_0.call(b, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
+    __datadog_test_0, b, /\\/\\*# sourceMappingURL=.*\\*\\//g, '')), _ddiast.plusOperator(__datadog_test_1 + 'other', __datadog_test_1, 'other'))
     }");
         Ok(())
     }
@@ -251,9 +260,8 @@ mod tests {
                 print_js(&rewrite_output, &get_chained_and_print_comments_config())
             })?;
 
-        assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
-    __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
-    __datadog_test_1, __datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, '')), _ddiast.plusOperator(__datadog_test_2 + 'other', __datadog_test_2, 'other'))
+        assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_1 = (__datadog_test_0 = b.replace, _ddiast.replace(__datadog_test_0.call(b, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
+    __datadog_test_0, b, /\\/\\*# sourceMappingURL=.*\\*\\//g, '')), _ddiast.plusOperator(__datadog_test_1 + 'other', __datadog_test_1, 'other'))
     }");
         Ok(())
     }
@@ -268,9 +276,8 @@ mod tests {
             .map_err(|e| e.to_string())
             .map(|rewrite_output| print_js(&rewrite_output, &get_default_config(false)))?;
 
-        assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
-    __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
-    __datadog_test_1, __datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, '')), _ddiast.plusOperator(__datadog_test_2 + 'other', __datadog_test_2, 'other'))
+        assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_1 = (__datadog_test_0 = b.replace, _ddiast.replace(__datadog_test_0.call(b, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
+    __datadog_test_0, b, /\\/\\*# sourceMappingURL=.*\\*\\//g, '')), _ddiast.plusOperator(__datadog_test_1 + 'other', __datadog_test_1, 'other'))
     }");
         Ok(())
     }

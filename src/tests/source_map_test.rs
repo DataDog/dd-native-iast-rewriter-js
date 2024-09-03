@@ -31,7 +31,7 @@ mod tests {
             dst_line: 9,
             dst_col: 75,
             src_line: 8,
-            src_col: 29,
+            src_col: 11,
         },
         TokenChecking {
             dst_line: 12,
@@ -52,7 +52,7 @@ mod tests {
             dst_line: 9,
             dst_col: 75,
             src_line: 5,
-            src_col: 15,
+            src_col: 9,
         },
         TokenChecking {
             dst_line: 12,

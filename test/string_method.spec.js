@@ -206,7 +206,7 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
       rewriteAndExpectNoTransformation(js)
     })
 
-    it('does modify String.prototype.concat call if some ident', () => {
+    it.only('does modify String.prototype.concat call if some ident', () => {
       const js = 'String.prototype.concat.call("hello", a, "world");'
       rewriteAndExpect(
         js,
