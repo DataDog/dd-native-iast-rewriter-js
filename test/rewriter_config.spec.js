@@ -42,9 +42,9 @@ describe('rewriter configuration', () => {
       rewriteAndExpectWithCsiMethods(
         js,
         `{
-      let __datadog_test_0, __datadog_test_1;
-const result = (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(\
-__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2)).concat("b");
+      let __datadog_test_0;
+const result = (__datadog_test_0 = a.substring, _ddiast.string_substring(__datadog_test_0.call(a, 2)\
+, __datadog_test_0, a, 2)).concat("b");
       }`,
         onlySubstringCsiMethod
       )
@@ -80,10 +80,9 @@ __datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 
       rewriteAndExpectWithCsiMethods(
         js,
         `{
-      let __datadog_test_0, __datadog_test_1;
-const result = (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.substring, _ddiast.string_substring(\
-__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2)).concat(\
-_ddiast.plus("b" + c, "b", c));
+      let __datadog_test_0;
+const result = (__datadog_test_0 = a.substring, _ddiast.string_substring(__datadog_test_0.call(a, 2), \
+__datadog_test_0, a, 2)).concat(_ddiast.plus("b" + c, "b", c));
       }`,
         plusOperatorAndOthersCsiMethods
       )
@@ -94,10 +93,9 @@ _ddiast.plus("b" + c, "b", c));
       rewriteAndExpectWithCsiMethods(
         js,
         `{
-      let __datadog_test_0, __datadog_test_1;
-const result = (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.custom_method, _ddiast.custom_method(\
-__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2)).concat(\
-_ddiast.plus("b" + c, "b", c));
+      let __datadog_test_0;
+const result = (__datadog_test_0 = a.custom_method, _ddiast.custom_method(__datadog_test_0.call(a, 2), \
+__datadog_test_0, a, 2)).concat(_ddiast.plus("b" + c, "b", c));
       }`,
         plusOperatorAndOthersCsiMethods
       )
@@ -108,10 +106,9 @@ _ddiast.plus("b" + c, "b", c));
       rewriteAndExpectWithCsiMethods(
         js,
         `{
-      let __datadog_test_0, __datadog_test_1;
-const result = (__datadog_test_0 = a, __datadog_test_1 = Whatever.prototype.custom_method, _ddiast.custom_method(\
-__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2)).concat(\
-_ddiast.plus("b" + c, "b", c));
+      let __datadog_test_0;
+const result = (__datadog_test_0 = Whatever.prototype.custom_method, _ddiast.custom_method(\
+__datadog_test_0.call(a, 2), __datadog_test_0, a, 2)).concat(_ddiast.plus("b" + c, "b", c));
       }`,
         plusOperatorAndOthersCsiMethods
       )

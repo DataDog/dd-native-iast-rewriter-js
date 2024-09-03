@@ -8,9 +8,7 @@ describe('Method without callee', () => {
     rewriteAndExpect(
       js,
       `{
-let __datadog_test_0;
-(__datadog_test_0 = arg0, _ddiast.aloneMethod\
-(aloneMethod(__datadog_test_0), aloneMethod, undefined, __datadog_test_0));
+_ddiast.aloneMethod(aloneMethod(arg0), aloneMethod, undefined, arg0);
 }`
     )
   })
@@ -20,9 +18,9 @@ let __datadog_test_0;
     rewriteAndExpect(
       js,
       `{
-let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = arg0, __datadog_test_1 = obj.arg1, _ddiast.aloneMethod\
-(aloneMethod(__datadog_test_0, __datadog_test_1), aloneMethod, undefined, __datadog_test_0, __datadog_test_1));
+let __datadog_test_0;
+(__datadog_test_0 = obj.arg1, _ddiast.aloneMethod(aloneMethod(arg0, __datadog_test_0), aloneMethod, undefined, \
+arg0, __datadog_test_0));
 }`
     )
   })
@@ -41,9 +39,9 @@ _ddiast.aloneMethod(aloneMethod(), aloneMethod, undefined);
     rewriteAndExpect(
       js,
       `{
-let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-(__datadog_test_0 = obj, __datadog_test_1 = __datadog_test_0.aloneMethod, __datadog_test_2 = arg0, _ddiast.aloneMethod\
-(__datadog_test_1.call(__datadog_test_0, __datadog_test_2), __datadog_test_1, __datadog_test_0, __datadog_test_2));
+let __datadog_test_0;
+(__datadog_test_0 = obj.aloneMethod, _ddiast.aloneMethod(__datadog_test_0.call(obj, arg0), __datadog_test_0, \
+obj, arg0));
 }`
     )
   })
