@@ -138,5 +138,15 @@ fn get_prototype_member_path(member: &MemberExpr, parts: &mut Vec<Ident>) -> boo
 }
 
 fn all_args_are_literal(args: &[ExprOrSpread]) -> bool {
-    args.iter().all(|elem| elem.expr.is_lit())
+    args.iter()
+        .all(|elem| elem.expr.is_lit() || is_undefined_or_null(&elem.expr))
+}
+
+fn is_undefined_or_null(expr: &Expr) -> bool {
+    if expr.is_ident() {
+        let ident = expr.as_ident().unwrap();
+        return ident.sym == "undefined" || ident.sym == "null";
+    }
+
+    false
 }

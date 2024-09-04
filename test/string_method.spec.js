@@ -163,6 +163,11 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
       rewriteAndExpectNoTransformation(js)
     })
 
+    it('does not modify String.prototype.substring direct call', () => {
+      const js = 'String.prototype.substring.call("abc", 0, a);'
+      rewriteAndExpectNoTransformation(js)
+    })
+
     it('does modify member.prop.substring call', () => {
       const js = 'a.b.c.substring(1);'
       rewriteAndExpect(
@@ -203,6 +208,11 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
   describe('concat (method that allows literals)', () => {
     it('does not modify String.prototype.concat call if all args are literals', () => {
       const js = 'String.prototype.concat.call("hello", "world");'
+      rewriteAndExpectNoTransformation(js)
+    })
+
+    it('does modify String.prototype.concat call if args are literals and null', () => {
+      const js = 'String.prototype.concat.call("hello", 2, undefined, null);'
       rewriteAndExpectNoTransformation(js)
     })
 
