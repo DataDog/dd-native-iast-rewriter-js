@@ -143,10 +143,5 @@ fn all_args_are_literal(args: &[ExprOrSpread]) -> bool {
 }
 
 fn is_undefined_or_null(expr: &Expr) -> bool {
-    if expr.is_ident() {
-        let ident = expr.as_ident().unwrap();
-        return ident.sym == "undefined" || ident.sym == "null";
-    }
-
-    false
+    expr.is_ident_ref_to("undefined") || expr.is_ident_ref_to("null")
 }
