@@ -163,6 +163,11 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
       rewriteAndExpectNoTransformation(js)
     })
 
+    it('does not modify String.prototype.substring direct call', () => {
+      const js = 'String.prototype.substring.call("abc", 0, a);'
+      rewriteAndExpectNoTransformation(js)
+    })
+
     it('does modify member.prop.substring call', () => {
       const js = 'a.b.c.substring(1);'
       rewriteAndExpect(
@@ -195,6 +200,61 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
   let __datadog_test_0, __datadog_test_1;
 (__datadog_test_0 = a.b.c(), __datadog_test_1 = __datadog_test_0.substring, _ddiast.stringSubstring(__datadog_test_1\
 .call(__datadog_test_0, 1), __datadog_test_1, __datadog_test_0, 1));
+      }`
+      )
+    })
+  })
+
+  describe('concat (method that allows literals)', () => {
+    it('does not modify String.prototype.concat call if all args are literals', () => {
+      const js = 'String.prototype.concat.call("hello", "world");'
+      rewriteAndExpectNoTransformation(js)
+    })
+
+    it('does modify String.prototype.concat call if args are literals and null', () => {
+      const js = 'String.prototype.concat.call("hello", 2, undefined, null);'
+      rewriteAndExpectNoTransformation(js)
+    })
+
+    it('does modify String.prototype.concat call if some ident', () => {
+      const js = 'String.prototype.concat.call("hello", a, "world");'
+      rewriteAndExpect(
+        js,
+        `{
+  let __datadog_test_0, __datadog_test_1;
+(__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, _ddiast.concat(\
+__datadog_test_0.call("hello", __datadog_test_1, "world"), __datadog_test_0, "hello", \
+__datadog_test_1, "world"));
+      }`
+      )
+    })
+
+    it('does not modify String.prototype.concat apply if all args are literals', () => {
+      const js = 'String.prototype.concat.apply("hello", ["world", null, "moon"]);'
+      rewriteAndExpectNoTransformation(js)
+    })
+
+    it('does modify String.prototype.concat apply if this is not a literal', () => {
+      const js = 'String.prototype.concat.apply(a, ["world", null]);'
+      rewriteAndExpect(
+        js,
+        `{
+  let __datadog_test_0, __datadog_test_1;
+(__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, _ddiast.concat(__datadog_test_1.call(\
+__datadog_test_0, "world", null), __datadog_test_1, __datadog_test_0, "world", null));
+      }`
+      )
+    })
+
+    it('does modify String.prototype.concat apply if an argument is not a literal', () => {
+      const js = 'String.prototype.concat.apply("hello", ["world", a]);'
+      rewriteAndExpect(
+        js,
+        `{
+  let __datadog_test_0, __datadog_test_1;
+(__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, \
+_ddiast.concat(__datadog_test_0.call("hello", "world", __datadog_test_1), __datadog_test_0, \
+"hello", "world", __datadog_test_1));
       }`
       )
     })
@@ -239,9 +299,9 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
             const js = builder.build(`return 'a'.${method}(${args});`)
             rewriteAndExpectAndExpectEval(
               js,
-              builder.build(`let __datadog_test_0, __datadog_test_1;
-        return (__datadog_test_0 = 'a', __datadog_test_1 = __datadog_test_0.${method}, _ddiast.${method}(\
-__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
+              builder.build(`let __datadog_test_0;
+        return (__datadog_test_0 = 'a'.${method}, _ddiast.${method}(\
+__datadog_test_0.call('a'${argsWithComma}), __datadog_test_0, 'a'${argsWithComma}));`)
             )
           })
         } else {
@@ -284,10 +344,23 @@ __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __dat
           )
         })
 
-        it(`does not modify literal String.prototype.${value}.call`, () => {
-          const js = `String.prototype.${method}.call("hello"${argsWithComma});`
-          rewriteAndExpectNoTransformation(js)
-        })
+        if (methodAllowingLiterals.indexOf(method) !== -1) {
+          it(`does modify literal String.prototype.${value}.call`, () => {
+            const builder = fn().args({ a: 'heLLo' })
+            const js = builder.build(`String.prototype.${method}.call(a${argsWithComma});`)
+            rewriteAndExpectAndExpectEval(
+              js,
+              builder.build(`let __datadog_test_0, __datadog_test_1;
+        (__datadog_test_0 = a, __datadog_test_1 = String.prototype.${method}, _ddiast.${method}(\
+__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
+            )
+          })
+        } else {
+          it(`does not modify literal String.prototype.${value}.call`, () => {
+            const js = `String.prototype.${method}.call("hello"${argsWithComma});`
+            rewriteAndExpectNoTransformation(js)
+          })
+        }
 
         it(`does modify String.prototype.${method}.call`, () => {
           const builder = fn().args('heLLo')

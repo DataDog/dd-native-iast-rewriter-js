@@ -18,11 +18,14 @@ pub trait IdentProvider {
         assignations: &mut Vec<Expr>,
         arguments: &mut Vec<Expr>,
         span: &Span,
-    ) -> Ident {
+    ) -> Option<Ident> {
         let id = self.get_temporal_ident_used_in_assignation(operand, assignations, span);
 
         // store ident as argument
-        arguments.push(Expr::Ident(id.clone()));
+        arguments.push(
+            id.as_ref()
+                .map_or_else(|| operand.clone(), |ident| Expr::Ident(ident.clone())),
+        );
 
         id
     }
@@ -32,7 +35,11 @@ pub trait IdentProvider {
         operand: &Expr,
         assignations: &mut Vec<Expr>,
         span: &Span,
-    ) -> Ident {
+    ) -> Option<Ident> {
+        if operand.is_lit() {
+            return None;
+        }
+
         let next_ident = self.next_ident();
         let (assign, id) = self.create_assign_expression(next_ident, operand, span);
 
@@ -41,7 +48,7 @@ pub trait IdentProvider {
 
         assignations.push(Expr::Assign(assign));
 
-        id
+        Some(id)
     }
 
     fn create_assign_expression(

@@ -145,7 +145,10 @@ fn replace_prototype_call_or_apply(
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
     let prototype_call_option = FunctionPrototypeTransform::get_expression_parts_from_call_or_apply(
-        call, member, ident_name,
+        call,
+        member,
+        ident_name,
+        csi_methods,
     );
 
     match prototype_call_option {
@@ -252,8 +255,10 @@ fn replace_call_expr_if_csi_method_with_member(
         let mut call_replacement = call.clone();
 
         // __datadog_token_$i = a
-        let ident_replacement =
+        let ident_replacement_option =
             ident_provider.get_temporal_ident_used_in_assignation(expr, &mut assignations, &span);
+
+        let ident_replacement = ident_replacement_option.map_or_else(|| expr.clone(), Expr::Ident);
 
         let ident_callee = match member_expr_opt {
             Some(member_expr) => {
@@ -269,7 +274,7 @@ fn replace_call_expr_if_csi_method_with_member(
                 // __datadog_token_$i.substring
                 let member_expr = MemberExpr {
                     span,
-                    obj: Box::new(Expr::Ident(ident_replacement.clone())),
+                    obj: Box::new(ident_replacement.clone()),
                     prop: MemberProp::Ident(ident_name.clone()),
                 };
 
@@ -283,12 +288,12 @@ fn replace_call_expr_if_csi_method_with_member(
             }
         };
 
-        arguments.push(Expr::Ident(ident_replacement.clone()));
+        arguments.push(ident_replacement.clone());
 
         // change callee to __datadog_token_$i2.call
         call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
             span,
-            obj: Box::new(Expr::Ident(ident_callee)),
+            obj: Box::new(ident_callee.map_or_else(|| expr.clone(), Expr::Ident)),
             prop: MemberProp::Ident(IdentName::new(JsWord::from("call"), span)),
         })));
 
@@ -308,7 +313,7 @@ fn replace_call_expr_if_csi_method_with_member(
             0,
             ExprOrSpread {
                 spread: None,
-                expr: Box::new(Expr::Ident(ident_replacement)),
+                expr: Box::new(ident_replacement),
             },
         );
 

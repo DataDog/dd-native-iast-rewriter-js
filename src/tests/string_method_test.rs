@@ -110,6 +110,26 @@ mod tests {
     }
 
     #[test]
+    fn test_prototype_concat_call() -> Result<(), String> {
+        let original_code = "{const a = String.prototype.concat.call(1,a(),3)}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code)
+            .contains("let __datadog_test_0, __datadog_test_1;
+    const a = (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a(), _ddiast.stringConcat(__datadog_test_0.call(1, __datadog_test_1, 3), __datadog_test_0, 1, __datadog_test_1, 3));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_prototype_concat_call_literals() -> Result<(), String> {
+        let original_code = "{const a = String.prototype.concat.call(1,2,3)}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const a = String.prototype.concat.call(1,2,3)");
+        Ok(())
+    }
+
+    #[test]
     fn test_ident_trim() -> Result<(), String> {
         let original_code = "{const a = b.trim();}".to_string();
         let js_file = "test.js".to_string();
