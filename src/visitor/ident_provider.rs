@@ -6,7 +6,7 @@ use std::collections::HashSet;
 use swc::atoms::JsWord;
 use swc_common::{Span, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{
-    AssignExpr, AssignOp, AssignTarget, BindingIdent, Expr, Ident, SimpleAssignTarget,
+    AssignExpr, AssignOp, AssignTarget, BindingIdent, Expr, ExprOrSpread, Ident, SimpleAssignTarget,
 };
 
 use super::visitor_util::get_dd_local_variable_name;
@@ -16,16 +16,23 @@ pub trait IdentProvider {
         &mut self,
         operand: &Expr,
         assignations: &mut Vec<Expr>,
-        arguments: &mut Vec<Expr>,
+        arguments: &mut Vec<ExprOrSpread>,
         span: &Span,
+        is_spread: bool,
     ) -> Option<Ident> {
         let id = self.get_temporal_ident_used_in_assignation(operand, assignations, span);
 
+        let id_expr = id
+            .as_ref()
+            .map_or_else(|| operand.clone(), |ident| Expr::Ident(ident.clone()));
+
         // store ident as argument
-        arguments.push(
-            id.as_ref()
-                .map_or_else(|| operand.clone(), |ident| Expr::Ident(ident.clone())),
-        );
+        let spread = if is_spread { Some(DUMMY_SP) } else { None };
+
+        arguments.push(ExprOrSpread {
+            spread,
+            expr: Box::new(id_expr.clone()),
+        });
 
         id
     }

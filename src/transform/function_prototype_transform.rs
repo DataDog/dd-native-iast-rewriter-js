@@ -60,7 +60,8 @@ impl FunctionPrototypeTransform {
             }
 
             let method_ident = path_parts[0].clone();
-            let this_expr = &call.args[0].expr;
+            let this_expr_or_spread = &call.args[0];
+            let this_expr = &this_expr_or_spread.expr;
 
             if this_expr.is_lit()
                 && (!csi_methods.method_allows_literal_callers(&method_ident.sym)

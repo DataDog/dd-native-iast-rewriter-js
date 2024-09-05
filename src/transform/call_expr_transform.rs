@@ -198,19 +198,19 @@ fn replace_call_expr_if_csi_method_without_callee(
             // let __datadog_test_0;
             // (__datadog_test_0 = arg0, _ddiast.aloneMethod
             // (aloneMethod(__datadog_test_0), aloneMethod, undefined, __datadog_test_0));
-            arguments.push(Expr::Ident(ident.clone()));
+            arguments.push(ExprOrSpread::from(Expr::Ident(ident.clone())));
             let global = Ident {
                 span,
                 sym: JsWord::from("undefined"),
                 optional: false,
                 ctxt: SyntaxContext::empty(),
             };
-            arguments.push(Expr::Ident(global));
+            arguments.push(ExprOrSpread::from(Expr::Ident(global)));
 
             let mut call_replacement = call.clone();
             call_replacement.args.iter_mut().for_each(|expr_or_spread| {
-                DefaultOperandHandler::replace_expressions_in_operand(
-                    &mut expr_or_spread.expr,
+                DefaultOperandHandler::replace_expressions_in_expr_or_spread(
+                    expr_or_spread,
                     IdentMode::Replace,
                     &mut assignations,
                     &mut arguments,
@@ -268,6 +268,7 @@ fn replace_call_expr_if_csi_method_with_member(
                     &mut assignations,
                     &mut arguments,
                     &span,
+                    false,
                 )
             }
             None => {
@@ -284,11 +285,12 @@ fn replace_call_expr_if_csi_method_with_member(
                     &mut assignations,
                     &mut arguments,
                     &span,
+                    false,
                 )
             }
         };
 
-        arguments.push(ident_replacement.clone());
+        arguments.push(ExprOrSpread::from(ident_replacement.clone()));
 
         // change callee to __datadog_token_$i2.call
         call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
@@ -298,8 +300,8 @@ fn replace_call_expr_if_csi_method_with_member(
         })));
 
         call_replacement.args.iter_mut().for_each(|expr_or_spread| {
-            DefaultOperandHandler::replace_expressions_in_operand(
-                &mut expr_or_spread.expr,
+            DefaultOperandHandler::replace_expressions_in_expr_or_spread(
+                expr_or_spread,
                 IdentMode::Replace,
                 &mut assignations,
                 &mut arguments,
