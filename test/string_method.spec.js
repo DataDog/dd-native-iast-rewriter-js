@@ -221,10 +221,10 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
       rewriteAndExpect(
         js,
         `{
-  let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-(__datadog_test_0 = "hello", __datadog_test_1 = String.prototype.concat, __datadog_test_2 = a, _ddiast.concat(\
-__datadog_test_1.call(__datadog_test_0, __datadog_test_2, "world"), __datadog_test_1, __datadog_test_0, \
-__datadog_test_2, "world"));
+  let __datadog_test_0, __datadog_test_1;
+(__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, _ddiast.concat(\
+__datadog_test_0.call("hello", __datadog_test_1, "world"), __datadog_test_0, "hello", \
+__datadog_test_1, "world"));
       }`
       )
     })
@@ -251,10 +251,10 @@ __datadog_test_0, "world", null), __datadog_test_1, __datadog_test_0, "world", n
       rewriteAndExpect(
         js,
         `{
-  let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-(__datadog_test_0 = "hello", __datadog_test_1 = String.prototype.concat, __datadog_test_2 = a, \
-_ddiast.concat(__datadog_test_1.call(__datadog_test_0, "world", __datadog_test_2), __datadog_test_1, \
-__datadog_test_0, "world", __datadog_test_2));
+  let __datadog_test_0, __datadog_test_1;
+(__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, \
+_ddiast.concat(__datadog_test_0.call("hello", "world", __datadog_test_1), __datadog_test_0, \
+"hello", "world", __datadog_test_1));
       }`
       )
     })
@@ -299,9 +299,9 @@ __datadog_test_0, "world", __datadog_test_2));
             const js = builder.build(`return 'a'.${method}(${args});`)
             rewriteAndExpectAndExpectEval(
               js,
-              builder.build(`let __datadog_test_0, __datadog_test_1;
-        return (__datadog_test_0 = 'a', __datadog_test_1 = __datadog_test_0.${method}, _ddiast.${method}(\
-__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
+              builder.build(`let __datadog_test_0;
+        return (__datadog_test_0 = 'a'.${method}, _ddiast.${method}(\
+__datadog_test_0.call('a'${argsWithComma}), __datadog_test_0, 'a'${argsWithComma}));`)
             )
           })
         } else {
