@@ -258,6 +258,43 @@ _ddiast.concat(__datadog_test_0.call("hello", "world", __datadog_test_1), __data
       }`
       )
     })
+
+    describe('spread arguments', () => {
+      it('does modify String.prototype.concat.call("hello", ...a)', () => {
+        const builder = fn().args([' ', 'heLLo', ' ', 'world'])
+        const js = builder.build('return String.prototype.concat.call("hello", ...a)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1;
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, _ddiast.concat(\
+__datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello", ...__datadog_test_1));`)
+        )
+      })
+
+      it('does modify String.prototype.concat.call("hello", ...a, ...b)', () => {
+        const builder = fn().args([' ', 'heLLo', ' ', 'world'], ['bye', 'world'])
+        const js = builder.build('return String.prototype.concat.call("hello", ...a, ...b)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, __datadog_test_2 = b, \
+_ddiast.concat(__datadog_test_0.call("hello", ...__datadog_test_1, ...__datadog_test_2), __datadog_test_0\
+, "hello", ...__datadog_test_1, ...__datadog_test_2));`)
+        )
+      })
+
+      it('does modify a.concat("world", ...b)', () => {
+        const builder = fn().args('hello', [' ', 'bye', ' ', 'world'])
+        const js = builder.build('return a.concat("world", ...b)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+        return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = b, _ddiast.concat(\
+__datadog_test_1.call(__datadog_test_0, "world", ...__datadog_test_2), __datadog_test_1, __datadog_test_0\
+, "world", ...__datadog_test_2));`)
+        )
+      })
+    })
   })
 
   const methodAllowingLiterals = ['concat', 'replace']
