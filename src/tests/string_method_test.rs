@@ -134,7 +134,7 @@ mod tests {
         let original_code = "{const c = String.prototype.concat.call(...a)}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, _ddiast.stringConcat(__datadog_test_0.call(...__datadog_test_1), __datadog_test_0, ...__datadog_test_1));");
+        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], _ddiast.stringConcat(__datadog_test_0.call(...__datadog_test_1), __datadog_test_0, ...__datadog_test_1));");
         Ok(())
     }
 
@@ -143,7 +143,7 @@ mod tests {
         let original_code = "{const c = String.prototype.concat.call(a, ...b)}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, __datadog_test_2 = b, _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0, ...__datadog_test_2));");
+        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, __datadog_test_2 = [\n        ...b\n    ], _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0, ...__datadog_test_2));");
         Ok(())
     }
 
@@ -152,7 +152,7 @@ mod tests {
         let original_code = "{const c = String.prototype.concat.apply(a, ...b)}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, __datadog_test_2 = b, _ddiast.stringConcat(__datadog_test_1.apply(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0, ...__datadog_test_2));");
+        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, __datadog_test_2 = [\n        ...b\n    ], _ddiast.stringConcat(__datadog_test_1.apply(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0, ...__datadog_test_2));");
         Ok(())
     }
 
@@ -161,7 +161,7 @@ mod tests {
         let original_code = "{const c = a.concat(...b)}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = b, _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0, ...__datadog_test_2));");
+        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = [\n        ...b\n    ], _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0, ...__datadog_test_2));");
         Ok(())
     }
 
@@ -170,7 +170,7 @@ mod tests {
         let original_code = "{const c = String.prototype.concat.call(a, ...b, ...c)}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, __datadog_test_2 = b, __datadog_test_3 = c, _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2, ...__datadog_test_3), __datadog_test_1, __datadog_test_0, ...__datadog_test_2, ...__datadog_test_3));");
+        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, __datadog_test_2 = [\n        ...b\n    ], __datadog_test_3 = [\n        ...c\n    ], _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2, ...__datadog_test_3), __datadog_test_1, __datadog_test_0, ...__datadog_test_2, ...__datadog_test_3));");
         Ok(())
     }
 

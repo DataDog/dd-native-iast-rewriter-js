@@ -278,7 +278,7 @@ _ddiast.concat(__datadog_test_0.apply("hello", [\n"world",\n__datadog_test_1\n])
         rewriteAndExpectAndExpectEval(
           js,
           builder.build(`let __datadog_test_0, __datadog_test_1;
-        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, _ddiast.concat(\
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], _ddiast.concat(\
 __datadog_test_0.call(...__datadog_test_1), __datadog_test_0, ...__datadog_test_1));`)
         )
       })
@@ -289,9 +289,9 @@ __datadog_test_0.call(...__datadog_test_1), __datadog_test_0, ...__datadog_test_
         rewriteAndExpectAndExpectEval(
           js,
           builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, __datadog_test_2 = b, _ddiast.concat(\
-__datadog_test_0.call(...__datadog_test_1, ...__datadog_test_2), __datadog_test_0, ...__datadog_test_1, \
-...__datadog_test_2));`)
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], \
+__datadog_test_2 = [\n        ...b\n    ], _ddiast.concat(__datadog_test_0.call(...__datadog_test_1, \
+...__datadog_test_2), __datadog_test_0, ...__datadog_test_1, ...__datadog_test_2));`)
         )
       })
 
@@ -301,7 +301,7 @@ __datadog_test_0.call(...__datadog_test_1, ...__datadog_test_2), __datadog_test_
         rewriteAndExpectAndExpectEval(
           js,
           builder.build(`let __datadog_test_0, __datadog_test_1;
-        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, _ddiast.concat(\
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], _ddiast.concat(\
 __datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello", ...__datadog_test_1));`)
         )
       })
@@ -312,9 +312,9 @@ __datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello", 
         rewriteAndExpectAndExpectEval(
           js,
           builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, __datadog_test_2 = b, \
-_ddiast.concat(__datadog_test_0.call("hello", ...__datadog_test_1, ...__datadog_test_2), __datadog_test_0\
-, "hello", ...__datadog_test_1, ...__datadog_test_2));`)
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = \
+[\n        ...a\n    ], __datadog_test_2 = [\n        ...b\n    ], _ddiast.concat(__datadog_test_0.call("hello", \
+...__datadog_test_1, ...__datadog_test_2), __datadog_test_0, "hello", ...__datadog_test_1, ...__datadog_test_2));`)
         )
       })
 
@@ -324,7 +324,7 @@ _ddiast.concat(__datadog_test_0.call("hello", ...__datadog_test_1, ...__datadog_
         rewriteAndExpectAndExpectEval(
           js,
           builder.build(`let __datadog_test_0, __datadog_test_1;
-        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, _ddiast.concat(\
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], _ddiast.concat(\
 __datadog_test_0.apply("hello", ...__datadog_test_1), __datadog_test_0, "hello", ...__datadog_test_1));`)
         )
       })
@@ -335,7 +335,7 @@ __datadog_test_0.apply("hello", ...__datadog_test_1), __datadog_test_0, "hello",
         rewriteAndExpectAndExpectEval(
           js,
           builder.build(`let __datadog_test_0, __datadog_test_1;
-        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, _ddiast.concat(\
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], _ddiast.concat(\
 __datadog_test_0.apply(...__datadog_test_1), __datadog_test_0, ...__datadog_test_1));`)
         )
       })
@@ -346,9 +346,9 @@ __datadog_test_0.apply(...__datadog_test_1), __datadog_test_0, ...__datadog_test
         rewriteAndExpectAndExpectEval(
           js,
           builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-        return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = b, _ddiast.concat(\
-__datadog_test_1.call(__datadog_test_0, "world", ...__datadog_test_2), __datadog_test_1, __datadog_test_0\
-, "world", ...__datadog_test_2));`)
+        return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = \
+[\n        ...b\n    ], _ddiast.concat(__datadog_test_1.call(__datadog_test_0, "world", ...__datadog_test_2)\
+, __datadog_test_1, __datadog_test_0, "world", ...__datadog_test_2));`)
         )
       })
 
@@ -358,9 +358,9 @@ __datadog_test_1.call(__datadog_test_0, "world", ...__datadog_test_2), __datadog
         rewriteAndExpectAndExpectEval(
           js,
           builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
-        return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = b, _ddiast.concat(\
-__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0\
-, ...__datadog_test_2));`)
+        return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = \
+[\n        ...b\n    ], _ddiast.concat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), \
+__datadog_test_1, __datadog_test_0, ...__datadog_test_2));`)
         )
       })
 
@@ -370,7 +370,7 @@ __datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, 
         rewriteAndExpectAndExpectEval(
           js,
           builder.build(`let __datadog_test_0, __datadog_test_1;
-        return (__datadog_test_0 = "hello".concat, __datadog_test_1 = a, _ddiast.concat(\
+        return (__datadog_test_0 = "hello".concat, __datadog_test_1 = [\n...a\n], _ddiast.concat(\
 __datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello"\
 , ...__datadog_test_1));`)
         )

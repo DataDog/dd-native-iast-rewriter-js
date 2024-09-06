@@ -6,7 +6,8 @@ use std::collections::HashSet;
 use swc::atoms::JsWord;
 use swc_common::{Span, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{
-    AssignExpr, AssignOp, AssignTarget, BindingIdent, Expr, ExprOrSpread, Ident, SimpleAssignTarget,
+    ArrayLit, AssignExpr, AssignOp, AssignTarget, BindingIdent, Expr, ExprOrSpread, Ident,
+    SimpleAssignTarget,
 };
 
 use super::visitor_util::get_dd_local_variable_name;
@@ -20,7 +21,8 @@ pub trait IdentProvider {
         span: &Span,
         is_spread: bool,
     ) -> Option<Ident> {
-        let id = self.get_temporal_ident_used_in_assignation(operand, assignations, span);
+        let id =
+            self.get_temporal_ident_used_in_assignation(operand, assignations, span, is_spread);
 
         let id_expr = id
             .as_ref()
@@ -42,13 +44,14 @@ pub trait IdentProvider {
         operand: &Expr,
         assignations: &mut Vec<Expr>,
         span: &Span,
+        is_spread: bool,
     ) -> Option<Ident> {
         if operand.is_lit() {
             return None;
         }
 
         let next_ident = self.next_ident();
-        let (assign, id) = self.create_assign_expression(next_ident, operand, span);
+        let (assign, id) = self.create_assign_expression(next_ident, operand, span, is_spread);
 
         // store ident and assignation expression
         self.register_ident(id.clone());
@@ -63,6 +66,7 @@ pub trait IdentProvider {
         index: usize,
         expr: &Expr,
         span: &Span,
+        is_spread: bool,
     ) -> (AssignExpr, Ident) {
         let id = Ident {
             span: DUMMY_SP,
@@ -80,11 +84,34 @@ pub trait IdentProvider {
                     id: id.clone(),
                     type_ann: None,
                 })),
-                right: Box::new(expr.clone()),
+                right: self.create_assign_right_operand_expression(expr, is_spread),
                 op: AssignOp::Assign,
             },
             id,
         )
+    }
+
+    fn create_assign_right_operand_expression(
+        &mut self,
+        expr: &Expr,
+        is_spread: bool,
+    ) -> Box<Expr> {
+        // when is_spread, create a new array with the spread expression [...a] to avoid spreading it twice.
+        // 'a' could be a Proxy which intercepts the get and does some operation on every call
+        // (__datadog_test_0 = "hello".concat, __datadog_test_1 = [...a], _ddiast.concat(__datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello", ...__datadog_test_1))
+        let right_ep = if is_spread {
+            Expr::Array(ArrayLit {
+                span: DUMMY_SP,
+                elems: vec![Some(ExprOrSpread {
+                    spread: Some(DUMMY_SP),
+                    expr: Box::new(expr.clone()),
+                })],
+            })
+        } else {
+            expr.clone()
+        };
+
+        Box::new(right_ep)
     }
 
     fn register_ident(&mut self, ident: Ident);

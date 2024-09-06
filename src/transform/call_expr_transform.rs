@@ -254,8 +254,12 @@ fn replace_call_expr_if_csi_method_with_member(
         //  b) String.prototype.substring.[call|apply](a) -> __datadog_token_$i = a, __datadog_token_$i2 = String.prototype.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
 
         // __datadog_token_$i = a
-        let ident_replacement_option =
-            ident_provider.get_temporal_ident_used_in_assignation(expr, &mut assignations, &span);
+        let ident_replacement_option = ident_provider.get_temporal_ident_used_in_assignation(
+            expr,
+            &mut assignations,
+            &span,
+            false,
+        );
 
         let ident_replacement = ident_replacement_option.map_or_else(|| expr.clone(), Expr::Ident);
 
