@@ -8,7 +8,7 @@ use swc_ecma_visit::swc_ecma_ast::{BinaryOp, Expr};
 
 use crate::visitor::ident_provider::IdentProvider;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum IdentMode {
     Replace,
     Keep,
@@ -22,6 +22,7 @@ pub trait OperandHandler {
         arguments: &mut Vec<ExprOrSpread>,
         span: &Span,
         ident_provider: &mut dyn IdentProvider,
+        expand_arrays: bool,
     ) {
         let is_spread = operand.spread.is_some();
         let operand_expr = &mut *operand.expr;
@@ -34,9 +35,11 @@ pub trait OperandHandler {
             span,
             ident_provider,
             is_spread,
+            expand_arrays,
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn replace_expressions_in_expr(
         expr: &mut Expr,
         ident_mode: IdentMode,
@@ -45,6 +48,7 @@ pub trait OperandHandler {
         span: &Span,
         ident_provider: &mut dyn IdentProvider,
         is_spread: bool,
+        expand_arrays: bool,
     ) {
         match expr {
             Expr::Lit(_) => Self::replace_literals(expr, arguments),
@@ -74,6 +78,20 @@ pub trait OperandHandler {
                 ident_provider,
                 is_spread,
             ),
+            Expr::Array(array) if expand_arrays => array.elems.iter_mut().for_each(|elem_opt| {
+                if elem_opt.is_some() {
+                    let elem = elem_opt.as_mut().unwrap();
+                    Self::replace_expressions_in_expr_or_spread(
+                        elem,
+                        ident_mode,
+                        assignations,
+                        arguments,
+                        span,
+                        ident_provider,
+                        false,
+                    )
+                }
+            }),
             _ => Self::replace_default(
                 expr,
                 assignations,

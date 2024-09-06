@@ -75,6 +75,7 @@ fn prepare_replace_expressions_in_binary(
         &binary.span,
         ident_provider,
         false,
+        false,
     );
 
     let right_ident_mode = DefaultOperandHandler::get_ident_mode(&mut binary.left);
@@ -85,6 +86,7 @@ fn prepare_replace_expressions_in_binary(
         arguments,
         &binary.span,
         ident_provider,
+        false,
         false,
     );
 
