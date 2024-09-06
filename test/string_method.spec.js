@@ -246,6 +246,18 @@ __datadog_test_0, [\n"world",\nnull\n]), __datadog_test_1, __datadog_test_0, "wo
       )
     })
 
+    it('does modify String.prototype.concat apply if this is null and there is a no literal arg', () => {
+      const js = 'String.prototype.concat.apply(null, ["world", a]);'
+      rewriteAndExpect(
+        js,
+        `{
+  let __datadog_test_0, __datadog_test_1;
+(__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, _ddiast.concat(__datadog_test_0.apply(\
+null, [\n"world",\n__datadog_test_1\n]), __datadog_test_0, null, "world", __datadog_test_1));
+      }`
+      )
+    })
+
     it('does modify String.prototype.concat apply if an argument is not a literal', () => {
       const js = 'String.prototype.concat.apply("hello", ["world", a]);'
       rewriteAndExpect(
@@ -349,6 +361,18 @@ __datadog_test_1.call(__datadog_test_0, "world", ...__datadog_test_2), __datadog
         return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = b, _ddiast.concat(\
 __datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0\
 , ...__datadog_test_2));`)
+        )
+      })
+
+      it('does modify "hello".concat(...a)', () => {
+        const builder = fn().args('world')
+        const js = builder.build('return "hello".concat(...a)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1;
+        return (__datadog_test_0 = "hello".concat, __datadog_test_1 = a, _ddiast.concat(\
+__datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello"\
+, ...__datadog_test_1));`)
         )
       })
     })
@@ -467,7 +491,7 @@ __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __dat
           )
         })
 
-        const formatArgs = function (args) {
+        const formatArgs = (args) => {
           if (!args) return ''
           return '\n' + args.replace(',', ',\n') + '\n'
         }
