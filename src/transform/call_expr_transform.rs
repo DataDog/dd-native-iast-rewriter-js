@@ -11,12 +11,18 @@ use crate::{
         function_prototype_transform::FunctionPrototypeTransform,
         operand_handler::{DefaultOperandHandler, OperandHandler},
     },
-    visitor::{csi_methods::CsiMethods, ident_provider::IdentProvider},
+    visitor::{
+        csi_methods::CsiMethods,
+        ident_provider::{IdentKind, IdentProvider},
+    },
 };
 
 use crate::visitor::visitor_util::get_dd_paren_expr;
 
-use super::{operand_handler::IdentMode, transform_status::TransformResult};
+use super::{
+    operand_handler::{ExpandArrays, IdentMode},
+    transform_status::TransformResult,
+};
 
 pub struct ResultExpr {
     pub expr: Expr,
@@ -258,7 +264,7 @@ fn replace_call_expr_if_csi_method_with_member(
             expr,
             &mut assignations,
             &span,
-            false,
+            IdentKind::Expr,
         );
 
         let ident_replacement = ident_replacement_option.map_or_else(|| expr.clone(), Expr::Ident);
@@ -271,7 +277,7 @@ fn replace_call_expr_if_csi_method_with_member(
                     &mut assignations,
                     &mut arguments,
                     &span,
-                    false,
+                    IdentKind::Expr,
                 )
             }
             None => {
@@ -288,7 +294,7 @@ fn replace_call_expr_if_csi_method_with_member(
                     &mut assignations,
                     &mut arguments,
                     &span,
-                    false,
+                    IdentKind::Expr,
                 )
             }
         };
@@ -381,7 +387,7 @@ fn replace_call_spread_if_csi_method_with_member(
             &mut assignations,
             &mut arguments,
             &span,
-            false,
+            IdentKind::Expr,
         );
 
         // return if there is no ident_callee
@@ -433,6 +439,11 @@ fn replace_call_callee_and_args(
         })));
     }
 
+    let expand_arrays = if prop_name == "apply" {
+        ExpandArrays::Yes
+    } else {
+        ExpandArrays::No
+    };
     call_replacement.args.iter_mut().for_each(|expr_or_spread| {
         DefaultOperandHandler::replace_expressions_in_expr_or_spread(
             expr_or_spread,
@@ -441,7 +452,7 @@ fn replace_call_callee_and_args(
             arguments,
             &span,
             ident_provider,
-            prop_name == "apply",
+            expand_arrays,
         )
     });
 

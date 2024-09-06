@@ -6,12 +6,18 @@ use swc_common::{util::take::Take, Span};
 use swc_ecma_ast::ExprOrSpread;
 use swc_ecma_visit::swc_ecma_ast::{BinaryOp, Expr};
 
-use crate::visitor::ident_provider::IdentProvider;
+use crate::visitor::ident_provider::{IdentKind, IdentProvider};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub enum IdentMode {
     Replace,
     Keep,
+}
+
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum ExpandArrays {
+    Yes,
+    No,
 }
 
 pub trait OperandHandler {
@@ -22,9 +28,13 @@ pub trait OperandHandler {
         arguments: &mut Vec<ExprOrSpread>,
         span: &Span,
         ident_provider: &mut dyn IdentProvider,
-        expand_arrays: bool,
+        expand_arrays: ExpandArrays,
     ) {
-        let is_spread = operand.spread.is_some();
+        let ident_kind = if operand.spread.is_some() {
+            IdentKind::Spread
+        } else {
+            IdentKind::Expr
+        };
         let operand_expr = &mut *operand.expr;
 
         Self::replace_expressions_in_expr(
@@ -34,7 +44,7 @@ pub trait OperandHandler {
             arguments,
             span,
             ident_provider,
-            is_spread,
+            ident_kind,
             expand_arrays,
         )
     }
@@ -47,8 +57,8 @@ pub trait OperandHandler {
         arguments: &mut Vec<ExprOrSpread>,
         span: &Span,
         ident_provider: &mut dyn IdentProvider,
-        is_spread: bool,
-        expand_arrays: bool,
+        ident_kind: IdentKind,
+        expand_arrays: ExpandArrays,
     ) {
         match expr {
             Expr::Lit(_) => Self::replace_literals(expr, arguments),
@@ -61,7 +71,7 @@ pub trait OperandHandler {
                                 assignations,
                                 arguments,
                                 span,
-                                is_spread,
+                                ident_kind,
                             )
                             .map_or(op, Expr::Ident)
                     })
@@ -76,29 +86,31 @@ pub trait OperandHandler {
                 arguments,
                 span,
                 ident_provider,
-                is_spread,
+                ident_kind,
             ),
-            Expr::Array(array) if expand_arrays => array.elems.iter_mut().for_each(|elem_opt| {
-                if elem_opt.is_some() {
-                    let elem = elem_opt.as_mut().unwrap();
-                    Self::replace_expressions_in_expr_or_spread(
-                        elem,
-                        ident_mode,
-                        assignations,
-                        arguments,
-                        span,
-                        ident_provider,
-                        false,
-                    )
-                }
-            }),
+            Expr::Array(array) if expand_arrays == ExpandArrays::Yes => {
+                array.elems.iter_mut().for_each(|elem_opt| {
+                    if elem_opt.is_some() {
+                        let elem = elem_opt.as_mut().unwrap();
+                        Self::replace_expressions_in_expr_or_spread(
+                            elem,
+                            ident_mode,
+                            assignations,
+                            arguments,
+                            span,
+                            ident_provider,
+                            ExpandArrays::No,
+                        )
+                    }
+                })
+            }
             _ => Self::replace_default(
                 expr,
                 assignations,
                 arguments,
                 span,
                 ident_provider,
-                is_spread,
+                ident_kind,
             ),
         }
     }
@@ -121,11 +133,11 @@ pub trait OperandHandler {
         arguments: &mut Vec<ExprOrSpread>,
         span: &Span,
         ident_provider: &mut dyn IdentProvider,
-        is_spread: bool,
+        ident_kind: IdentKind,
     ) {
         operand.map_with_mut(|op| {
             ident_provider
-                .get_ident_used_in_assignation(&op, assignations, arguments, span, is_spread)
+                .get_ident_used_in_assignation(&op, assignations, arguments, span, ident_kind)
                 .map_or(op, Expr::Ident)
         })
     }
@@ -137,7 +149,7 @@ pub trait OperandHandler {
         arguments: &mut Vec<ExprOrSpread>,
         span: &Span,
         ident_provider: &mut dyn IdentProvider,
-        is_spread: bool,
+        ident_kind: IdentKind,
     ) {
         if binary_op != BinaryOp::Add {
             Self::replace_default(
@@ -146,7 +158,7 @@ pub trait OperandHandler {
                 arguments,
                 span,
                 ident_provider,
-                is_spread,
+                ident_kind,
             );
         }
     }

@@ -7,11 +7,13 @@ use swc_ecma_ast::*;
 use crate::{
     transform::operand_handler::{DefaultOperandHandler, OperandHandler},
     visitor::{
-        csi_methods::CsiMethods, ident_provider::IdentProvider, visitor_util::get_dd_paren_expr,
+        csi_methods::CsiMethods,
+        ident_provider::{IdentKind, IdentProvider},
+        visitor_util::get_dd_paren_expr,
     },
 };
 
-use super::transform_status::TransformResult;
+use super::{operand_handler::ExpandArrays, transform_status::TransformResult};
 
 pub struct BinaryAddTransform {}
 
@@ -74,8 +76,8 @@ fn prepare_replace_expressions_in_binary(
         arguments,
         &binary.span,
         ident_provider,
-        false,
-        false,
+        IdentKind::Expr,
+        ExpandArrays::No,
     );
 
     let right_ident_mode = DefaultOperandHandler::get_ident_mode(&mut binary.left);
@@ -86,8 +88,8 @@ fn prepare_replace_expressions_in_binary(
         arguments,
         &binary.span,
         ident_provider,
-        false,
-        false,
+        IdentKind::Expr,
+        ExpandArrays::No,
     );
 
     // if all arguments are literals we can skip expression replacement
