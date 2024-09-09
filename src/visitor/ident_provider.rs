@@ -18,14 +18,6 @@ pub enum IdentKind {
     Spread,
 }
 
-impl From<ExprOrSpread> for IdentKind {
-    fn from(expr_or_spread: ExprOrSpread) -> Self {
-        expr_or_spread
-            .spread
-            .map_or_else(|| IdentKind::Expr, |_| IdentKind::Spread)
-    }
-}
-
 pub trait IdentProvider {
     fn get_ident_used_in_assignation(
         &mut self,
@@ -105,7 +97,7 @@ pub trait IdentProvider {
         expr: &Expr,
         ident_kind: IdentKind,
     ) -> Box<Expr> {
-        // when is_spread, create a new array with the spread expression [...a] to avoid spreading it twice.
+        // when IdentKind::Spread, create a new array with the spread expression [...a] to avoid spreading it twice.
         // 'a' could be a Proxy which intercepts the get and does some operation on every call
         // (__datadog_test_0 = "hello".concat, __datadog_test_1 = [...a], _ddiast.concat(__datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello", ...__datadog_test_1))
         let right_ep = if ident_kind == IdentKind::Spread {
