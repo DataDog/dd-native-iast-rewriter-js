@@ -76,7 +76,7 @@ pub trait OperandHandler {
                             .map_or(op, Expr::Ident)
                     })
                 } else {
-                    arguments.push(ExprOrSpread::from(expr.clone()))
+                    arguments.push(ident_provider.get_expr_or_spread(expr, ident_kind))
                 }
             }
             Expr::Bin(ref binary) => Self::replace_binary(

@@ -43,16 +43,7 @@ pub trait IdentProvider {
             .map_or_else(|| operand.clone(), |ident| Expr::Ident(ident.clone()));
 
         // store ident as argument
-        let spread = if ident_kind == IdentKind::Spread {
-            Some(DUMMY_SP)
-        } else {
-            None
-        };
-
-        arguments.push(ExprOrSpread {
-            spread,
-            expr: Box::new(id_expr.clone()),
-        });
+        arguments.push(self.get_expr_or_spread(&id_expr, ident_kind));
 
         id
     }
@@ -130,6 +121,19 @@ pub trait IdentProvider {
         };
 
         Box::new(right_ep)
+    }
+
+    fn get_expr_or_spread(&mut self, expr: &Expr, ident_kind: IdentKind) -> ExprOrSpread {
+        let spread = if ident_kind == IdentKind::Spread {
+            Some(DUMMY_SP)
+        } else {
+            None
+        };
+
+        ExprOrSpread {
+            spread,
+            expr: Box::new(expr.clone()),
+        }
     }
 
     fn register_ident(&mut self, ident: Ident);
