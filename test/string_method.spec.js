@@ -375,6 +375,18 @@ __datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello"\
 , ...__datadog_test_1));`)
         )
       })
+
+      it('does modify "hello".concat(...a, ...(b ? [c] : []))', () => {
+        const builder = fn().args('world', true, 'bye')
+        const js = builder.build('return "hello".concat(...a, ...(b ? [c] : []))')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+        return (__datadog_test_0 = "hello".concat, __datadog_test_1 = [\n...a\n], __datadog_test_2 = \
+[\n...(b ? [\nc\n] : [])\n], _ddiast.concat(__datadog_test_0.call("hello", ...__datadog_test_1, ...__datadog_test_2), \
+__datadog_test_0, "hello", ...__datadog_test_1, ...__datadog_test_2));`)
+        )
+      })
     })
   })
 
