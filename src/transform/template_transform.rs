@@ -20,7 +20,9 @@ impl TemplateTransform {
             ctxt: SyntaxContext::empty(),
             type_args: None,
             callee: Callee::Expr(Box::new(Expr::Member(
-                FunctionPrototypeTransform::get_prototype_concat_member_expr(),
+                FunctionPrototypeTransform::get_member_expr_from_path(
+                    "String.prototype.concat.call",
+                ),
             ))),
         }
     }

@@ -2,7 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
-use swc_common::{SyntaxContext, DUMMY_SP};
+use swc_common::{util::take::Take, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::IdentName;
 use swc_ecma_visit::swc_ecma_ast::{
     CallExpr, Callee, Expr, ExprOrSpread, Ident, MemberExpr, MemberProp,
@@ -104,20 +104,31 @@ impl FunctionPrototypeTransform {
         None
     }
 
-    pub fn get_prototype_concat_member_expr() -> MemberExpr {
-        MemberExpr {
-            obj: Box::new(Expr::Member(MemberExpr {
-                obj: Box::new(Expr::Member(MemberExpr {
-                    obj: Box::new(Expr::Ident(Ident::from("String"))),
-                    prop: MemberProp::Ident(IdentName::new("prototype".into(), DUMMY_SP)),
-                    span: DUMMY_SP,
-                })),
-                prop: MemberProp::Ident(IdentName::new("concat".into(), DUMMY_SP)),
-                span: DUMMY_SP,
-            })),
-            prop: MemberProp::Ident(IdentName::new("call".into(), DUMMY_SP)),
-            span: DUMMY_SP,
+    pub fn get_member_expr_from_path(path: &str) -> MemberExpr {
+        let parts: Vec<&str> = path.split('.').collect();
+        if parts.len() < 2 {
+            return MemberExpr::dummy();
         }
+
+        let mut member_expr = MemberExpr {
+            obj: Box::new(Expr::Ident(Ident::from(parts[0]))),
+            prop: MemberProp::Ident(IdentName::new(parts[1].into(), DUMMY_SP)),
+            span: DUMMY_SP,
+        };
+
+        parts.iter().skip(2).for_each(|part| {
+            if part.is_empty() {
+                return;
+            }
+
+            member_expr = MemberExpr {
+                obj: Box::new(Expr::Member(member_expr.clone())),
+                prop: MemberProp::Ident(IdentName::new(String::from(*part).into(), DUMMY_SP)),
+                span: DUMMY_SP,
+            };
+        });
+
+        member_expr
     }
 }
 
