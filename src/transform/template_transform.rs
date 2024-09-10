@@ -3,78 +3,57 @@
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 **/
 use swc::atoms::JsWord;
-use swc_common::DUMMY_SP;
+use swc_common::{SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::*;
+
+use super::function_prototype_transform::FunctionPrototypeTransform;
 
 pub struct TemplateTransform {}
 
 impl TemplateTransform {
-    pub fn get_binary_from_tpl(tpl: &Tpl) -> Expr {
-        let arguments = get_reversed_arguments(tpl);
-        // with `${expression}` first quasi is filtered
-        let left: Expr = if arguments.len() == 1 {
-            Expr::Lit(Lit::Str(Str {
-                span: tpl.span,
-                raw: None,
-                value: JsWord::from(""),
-            }))
-        } else {
-            arguments[1].clone()
-        };
+    pub fn get_concat_from_tpl(tpl: &Tpl) -> CallExpr {
+        let args = get_arguments(tpl);
 
-        let mut binary_expr = BinExpr {
+        CallExpr {
             span: DUMMY_SP,
-            op: BinaryOp::Add,
-            left: Box::new(left),
-            right: Box::new(arguments[0].clone()),
-        };
-
-        arguments.iter().skip(2).for_each(|arg| {
-            binary_expr = BinExpr {
-                span: DUMMY_SP,
-                op: BinaryOp::Add,
-                left: Box::new(arg.clone()),
-                right: Box::new(Expr::Bin(binary_expr.clone())),
-            }
-        });
-        Expr::Bin(binary_expr)
+            args,
+            ctxt: SyntaxContext::empty(),
+            type_args: None,
+            callee: Callee::Expr(Box::new(Expr::Member(
+                FunctionPrototypeTransform::get_prototype_concat_member_expr(),
+            ))),
+        }
     }
 }
 
-fn get_reversed_arguments(tpl: &Tpl) -> Vec<Expr> {
+fn get_arguments(tpl: &Tpl) -> Vec<ExprOrSpread> {
     let mut arguments = Vec::new();
     let mut index = 0;
     let empty_quasi = JsWord::from("");
-    let mut last_skipped = false;
     for quasi in &tpl.quasis {
         let value = quasi.cooked.clone();
         if value.is_none() || value.unwrap() == empty_quasi {
             if !quasi.tail {
                 let expr = &*tpl.exprs[index];
-                arguments.push(expr.clone());
+                arguments.push(ExprOrSpread::from(expr.clone()));
                 index += 1;
-                last_skipped = true;
             }
-            if !quasi.tail || !last_skipped {
-                continue;
-            }
+            continue;
         }
-        last_skipped = false;
 
         let str = Expr::Lit(Lit::Str(Str {
             span: quasi.span,
             raw: None,
             value: quasi.cooked.clone().unwrap_or_else(|| empty_quasi.clone()),
         }));
-        arguments.push(str);
+        arguments.push(ExprOrSpread::from(str));
 
         if !quasi.tail {
             let expr = &*tpl.exprs[index];
-            arguments.push(expr.clone());
+            arguments.push(ExprOrSpread::from(expr.clone()));
         }
 
         index += 1;
     }
-    arguments.reverse();
     arguments
 }

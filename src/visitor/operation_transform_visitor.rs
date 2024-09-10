@@ -101,20 +101,19 @@ impl VisitMut for OperationTransformVisitor<'_> {
 
             Expr::Tpl(tpl) if plus_operator_enabled => {
                 if !tpl.exprs.is_empty() {
-                    // transform tpl into binary and act as if it were a binary expr
-                    let mut binary = TemplateTransform::get_binary_from_tpl(tpl);
+                    // transform tpl into String.prototype.concat.call and act as if it were a call expr
                     let opv_with_child_ctx = &mut *self.with_child_ctx();
-                    binary.visit_mut_children_with(opv_with_child_ctx);
-
-                    expr.map_with_mut(|tpl| {
-                        let result = BinaryAddTransform::to_dd_binary_expr(
-                            &binary,
-                            opv_with_child_ctx.csi_methods,
-                            opv_with_child_ctx.ident_provider,
-                        );
+                    let mut call = TemplateTransform::get_concat_from_tpl(tpl);
+                    call.visit_mut_children_with(opv_with_child_ctx);
+                    let result = CallExprTransform::to_dd_call_expr(
+                        &mut call,
+                        opv_with_child_ctx.csi_methods,
+                        opv_with_child_ctx.ident_provider,
+                    );
+                    if result.is_modified() {
+                        expr.map_with_mut(|e| result.expr.unwrap_or(e));
                         opv_with_child_ctx.update_status(result.status, Some(TPL_TAG.to_string()));
-                        result.expr.unwrap_or(tpl)
-                    });
+                    }
                 }
             }
 
