@@ -21,6 +21,7 @@ const removeSourceMap = (code) => {
 
 const csiMethods = [
   { src: 'plusOperator', operator: true },
+  { src: 'tplOperator', operator: true },
   { src: 'substring', dst: 'stringSubstring' },
   { src: 'trim' },
   { src: 'trimStart' },

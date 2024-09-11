@@ -73,6 +73,7 @@ fn rewrite_js_with_config(code: String, config: &Config) -> Result<RewrittenOutp
 fn get_default_csi_methods() -> CsiMethods {
     let mut methods = vec![
         csi_op_from_str("plusOperator", None),
+        csi_op_from_str("tplOperator", None),
         csi_from_str("substring", Some("stringSubstring")),
         csi_from_str("trim", Some("stringTrim")),
         csi_from_str("trimStart", Some("stringTrim")),

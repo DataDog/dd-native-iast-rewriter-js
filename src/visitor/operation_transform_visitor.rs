@@ -64,6 +64,7 @@ impl Visit for OperationTransformVisitor<'_> {}
 impl VisitMut for OperationTransformVisitor<'_> {
     fn visit_mut_expr(&mut self, expr: &mut Expr) {
         let plus_operator_enabled = self.csi_methods.plus_operator_is_enabled();
+        let tpl_operator_enabled = self.csi_methods.tpl_operator_is_enabled();
 
         match expr {
             Expr::Bin(binary) if plus_operator_enabled => {
@@ -99,16 +100,14 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 }
             }
 
-            Expr::Tpl(tpl) if plus_operator_enabled => {
-                if !tpl.exprs.is_empty() {
-                    // transform tpl into binary and act as if it were a binary expr
-                    let mut binary = TemplateTransform::get_binary_from_tpl(tpl);
+            Expr::Tpl(tpl) if tpl_operator_enabled => {
+                if !tpl.exprs.is_empty() && tpl.exprs.iter().all(|tpl_expr| !tpl_expr.is_lit()) {
                     let opv_with_child_ctx = &mut *self.with_child_ctx();
-                    binary.visit_mut_children_with(opv_with_child_ctx);
+                    tpl.visit_mut_children_with(opv_with_child_ctx);
 
-                    expr.map_with_mut(|tpl| {
-                        let result = BinaryAddTransform::to_dd_binary_expr(
-                            &binary,
+                    expr.map_with_mut(|mut tpl| {
+                        let result = TemplateTransform::to_dd_tpl_expr(
+                            &mut tpl,
                             opv_with_child_ctx.csi_methods,
                             opv_with_child_ctx.ident_provider,
                         );

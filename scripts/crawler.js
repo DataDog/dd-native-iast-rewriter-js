@@ -20,23 +20,24 @@ const V8_NATIVE_CALL_REPLACEMENT_REGEX = /__v8_native_remainder(\w+\(\S*?|\s*\))
 const V8_NATIVE_CALL_FLAGS_COMMENT_REGEX = /\/\/\s*Flags:.*(--allow-natives)+/gm
 
 const CSI_METHODS = [
+  { src: 'eval', allowedWithoutCallee: true },
+  { src: 'plusOperator', operator: true },
+  { src: 'tplOperator', operator: true },
   { src: 'concat' },
   { src: 'join' },
-  { src: 'plusOperator', operator: true },
   { src: 'replace' },
   { src: 'replaceAll' },
-  { src: 'substring' },
   { src: 'slice' },
-  { src: 'trim' },
-  { src: 'trimEnd' },
-  { src: 'trimLeft' },
-  { src: 'trimRight' },
-  { src: 'trimStart' },
+  { src: 'substring' },
   { src: 'toLocaleLowerCase' },
   { src: 'toLocaleUpperCase' },
   { src: 'toLowerCase' },
   { src: 'toUpperCase' },
-  { src: 'eval', allowedWithoutCallee: true }
+  { src: 'trim' },
+  { src: 'trimEnd' },
+  { src: 'trimLeft' },
+  { src: 'trimRight' },
+  { src: 'trimStart' }
 ]
 
 const GLOBAL_METHODS_TEMPLATE = `;(function(globals){

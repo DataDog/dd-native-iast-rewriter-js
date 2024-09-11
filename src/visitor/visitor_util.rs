@@ -9,6 +9,7 @@ use swc_ecma_ast::*;
 const DATADOG_VAR_PREFIX: &str = "__datadog";
 const DD_GLOBAL_NAMESPACE: &str = "_ddiast";
 pub const DD_PLUS_OPERATOR: &str = "plusOperator";
+pub const DD_TEMPLATE_LITERAL_OPERATOR: &str = "tplOperator";
 
 pub fn get_dd_local_variable_name(n: usize, prefix: &String) -> String {
     format!("{}{}", get_dd_local_variable_prefix(prefix), n)
