@@ -31,21 +31,18 @@ pub fn dd_global_method_invocation(method_name: &str, span: &Span) -> Callee {
     })))
 }
 
-pub fn get_dd_call_expr(expr: &Expr, arguments: &[Expr], method_name: &str, span: &Span) -> Expr {
+pub fn get_dd_call_expr(
+    expr: &Expr,
+    arguments: &[ExprOrSpread],
+    method_name: &str,
+    span: &Span,
+) -> Expr {
     let mut args: Vec<ExprOrSpread> = vec![ExprOrSpread {
         expr: Box::new(expr.clone()),
         spread: None,
     }];
 
-    args.append(
-        &mut arguments
-            .iter()
-            .map(|expr| ExprOrSpread {
-                expr: Box::new(expr.clone()),
-                spread: None,
-            })
-            .collect::<Vec<_>>(),
-    );
+    args.append(&mut arguments.to_vec());
 
     Expr::Call(CallExpr {
         span: *span,
@@ -58,7 +55,7 @@ pub fn get_dd_call_expr(expr: &Expr, arguments: &[Expr], method_name: &str, span
 
 pub fn get_dd_paren_expr(
     expr: &Expr,
-    arguments: &[Expr],
+    arguments: &[ExprOrSpread],
     assignations: &mut Vec<Expr>,
     method_name: &str,
     span: &Span,

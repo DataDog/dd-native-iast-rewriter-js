@@ -132,7 +132,7 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
         `{
   let __datadog_test_0, __datadog_test_1;
 (__datadog_test_0 = b, __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1\
-.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));\n}`
+.apply(__datadog_test_0, [\n2\n]), __datadog_test_1, __datadog_test_0, 2));\n}`
       )
     })
 
@@ -143,7 +143,7 @@ _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_te
         `{
   let __datadog_test_0, __datadog_test_1;
 (__datadog_test_0 = b, __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1\
-.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));
+.apply(__datadog_test_0, [\n2\n], 1), __datadog_test_1, __datadog_test_0, 2, 1));
       }`
       )
     })
@@ -240,8 +240,20 @@ __datadog_test_1, "world"));
         js,
         `{
   let __datadog_test_0, __datadog_test_1;
-(__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, _ddiast.concat(__datadog_test_1.call(\
-__datadog_test_0, "world", null), __datadog_test_1, __datadog_test_0, "world", null));
+(__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, _ddiast.concat(__datadog_test_1.apply(\
+__datadog_test_0, [\n"world",\nnull\n]), __datadog_test_1, __datadog_test_0, "world", null));
+      }`
+      )
+    })
+
+    it('does modify String.prototype.concat apply if this is null and there is a no literal arg', () => {
+      const js = 'String.prototype.concat.apply(null, ["world", a]);'
+      rewriteAndExpect(
+        js,
+        `{
+  let __datadog_test_0, __datadog_test_1;
+(__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, _ddiast.concat(__datadog_test_0.apply(\
+null, [\n"world",\n__datadog_test_1\n]), __datadog_test_0, null, "world", __datadog_test_1));
       }`
       )
     })
@@ -253,10 +265,128 @@ __datadog_test_0, "world", null), __datadog_test_1, __datadog_test_0, "world", n
         `{
   let __datadog_test_0, __datadog_test_1;
 (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = a, \
-_ddiast.concat(__datadog_test_0.call("hello", "world", __datadog_test_1), __datadog_test_0, \
+_ddiast.concat(__datadog_test_0.apply("hello", [\n"world",\n__datadog_test_1\n]), __datadog_test_0, \
 "hello", "world", __datadog_test_1));
       }`
       )
+    })
+
+    describe('spread arguments', () => {
+      it('does modify String.prototype.concat.call(...a)', () => {
+        const builder = fn().args(['heLLo', ' ', 'world'])
+        const js = builder.build('return String.prototype.concat.call(...a)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1;
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], _ddiast.concat(\
+__datadog_test_0.call(...__datadog_test_1), __datadog_test_0, ...__datadog_test_1));`)
+        )
+      })
+
+      it('does modify String.prototype.concat.call(...a, ...b)', () => {
+        const builder = fn().args(['heLLo', ' ', 'world'], [' ', 'bye'])
+        const js = builder.build('return String.prototype.concat.call(...a, ...b)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], \
+__datadog_test_2 = [\n        ...b\n    ], _ddiast.concat(__datadog_test_0.call(...__datadog_test_1, \
+...__datadog_test_2), __datadog_test_0, ...__datadog_test_1, ...__datadog_test_2));`)
+        )
+      })
+
+      it('does modify String.prototype.concat.call("hello", ...a)', () => {
+        const builder = fn().args([' ', 'heLLo', ' ', 'world'])
+        const js = builder.build('return String.prototype.concat.call("hello", ...a)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1;
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], _ddiast.concat(\
+__datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello", ...__datadog_test_1));`)
+        )
+      })
+
+      it('does modify String.prototype.concat.call("hello", ...a, ...b)', () => {
+        const builder = fn().args([' ', 'heLLo', ' ', 'world'], ['bye', 'world'])
+        const js = builder.build('return String.prototype.concat.call("hello", ...a, ...b)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = \
+[\n        ...a\n    ], __datadog_test_2 = [\n        ...b\n    ], _ddiast.concat(__datadog_test_0.call("hello", \
+...__datadog_test_1, ...__datadog_test_2), __datadog_test_0, "hello", ...__datadog_test_1, ...__datadog_test_2));`)
+        )
+      })
+
+      it('does modify String.prototype.concat.apply("hello", ...a)', () => {
+        const builder = fn().args([['heLLo'], ' ', 'world'])
+        const js = builder.build('return String.prototype.concat.apply("hello", ...a)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1;
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], _ddiast.concat(\
+__datadog_test_0.apply("hello", ...__datadog_test_1), __datadog_test_0, "hello", ...__datadog_test_1));`)
+        )
+      })
+
+      it('does modify String.prototype.concat.apply(...a)', () => {
+        const builder = fn().args(['heLLo', [' ', 'world']])
+        const js = builder.build('return String.prototype.concat.apply(...a)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1;
+        return (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], _ddiast.concat(\
+__datadog_test_0.apply(...__datadog_test_1), __datadog_test_0, ...__datadog_test_1));`)
+        )
+      })
+
+      it('does modify a.concat("world", ...b)', () => {
+        const builder = fn().args('hello', [' ', 'bye', ' ', 'world'])
+        const js = builder.build('return a.concat("world", ...b)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+        return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = \
+[\n        ...b\n    ], _ddiast.concat(__datadog_test_1.call(__datadog_test_0, "world", ...__datadog_test_2)\
+, __datadog_test_1, __datadog_test_0, "world", ...__datadog_test_2));`)
+        )
+      })
+
+      it('does modify a.concat(...b)', () => {
+        const builder = fn().args('hello', [' ', 'bye', ' ', 'world'])
+        const js = builder.build('return a.concat(...b)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+        return (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = \
+[\n        ...b\n    ], _ddiast.concat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), \
+__datadog_test_1, __datadog_test_0, ...__datadog_test_2));`)
+        )
+      })
+
+      it('does modify "hello".concat(...a)', () => {
+        const builder = fn().args('world')
+        const js = builder.build('return "hello".concat(...a)')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1;
+        return (__datadog_test_0 = "hello".concat, __datadog_test_1 = [\n...a\n], _ddiast.concat(\
+__datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello"\
+, ...__datadog_test_1));`)
+        )
+      })
+
+      it('does modify "hello".concat(...a, ...(b ? [c] : []))', () => {
+        const builder = fn().args('world', true, 'bye')
+        const js = builder.build('return "hello".concat(...a, ...(b ? [c] : []))')
+        rewriteAndExpectAndExpectEval(
+          js,
+          builder.build(`let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+        return (__datadog_test_0 = "hello".concat, __datadog_test_1 = [\n...a\n], __datadog_test_2 = \
+[\n...(b ? [\nc\n] : [])\n], _ddiast.concat(__datadog_test_0.call("hello", ...__datadog_test_1, ...__datadog_test_2), \
+__datadog_test_0, "hello", ...__datadog_test_1, ...__datadog_test_2));`)
+        )
+      })
     })
   })
 
@@ -373,6 +503,11 @@ __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __dat
           )
         })
 
+        const formatArgs = (args) => {
+          if (!args) return ''
+          return '\n' + args.replace(',', ',\n') + '\n'
+        }
+
         it(`does modify String.prototype.${value}.apply with variable argument`, () => {
           const builder = fn().args('heLLo')
           const js = builder.build(`String.prototype.${method}.apply(a, [${args}]);`)
@@ -380,7 +515,8 @@ __datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __dat
             js,
             builder.build(`let __datadog_test_0, __datadog_test_1;
     (__datadog_test_0 = a, __datadog_test_1 = String.prototype.${method}, _ddiast.${method}(\
-__datadog_test_1.call(__datadog_test_0${argsWithComma}), __datadog_test_1, __datadog_test_0${argsWithComma}));`)
+__datadog_test_1.apply(__datadog_test_0, [${formatArgs(args)}]), __datadog_test_1, \
+__datadog_test_0${argsWithComma}));`)
           )
         })
       })

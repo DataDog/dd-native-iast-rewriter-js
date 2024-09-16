@@ -7,11 +7,13 @@ use swc_ecma_ast::*;
 use crate::{
     transform::operand_handler::{DefaultOperandHandler, OperandHandler},
     visitor::{
-        csi_methods::CsiMethods, ident_provider::IdentProvider, visitor_util::get_dd_paren_expr,
+        csi_methods::CsiMethods,
+        ident_provider::{IdentKind, IdentProvider},
+        visitor_util::get_dd_paren_expr,
     },
 };
 
-use super::transform_status::TransformResult;
+use super::{operand_handler::ExpandArrays, transform_status::TransformResult};
 
 pub struct BinaryAddTransform {}
 
@@ -63,33 +65,37 @@ fn to_dd_binary_expr_binary(
 fn prepare_replace_expressions_in_binary(
     binary: &mut BinExpr,
     assignations: &mut Vec<Expr>,
-    arguments: &mut Vec<Expr>,
+    arguments: &mut Vec<ExprOrSpread>,
     ident_provider: &mut dyn IdentProvider,
 ) -> bool {
     let left_ident_mode = DefaultOperandHandler::get_ident_mode(&mut binary.right);
-    DefaultOperandHandler::replace_expressions_in_operand(
+    DefaultOperandHandler::replace_expressions_in_expr(
         &mut binary.left,
         left_ident_mode,
         assignations,
         arguments,
         &binary.span,
         ident_provider,
+        IdentKind::Expr,
+        ExpandArrays::No,
     );
 
     let right_ident_mode = DefaultOperandHandler::get_ident_mode(&mut binary.left);
-    DefaultOperandHandler::replace_expressions_in_operand(
+    DefaultOperandHandler::replace_expressions_in_expr(
         &mut binary.right,
         right_ident_mode,
         assignations,
         arguments,
         &binary.span,
         ident_provider,
+        IdentKind::Expr,
+        ExpandArrays::No,
     );
 
     // if all arguments are literals we can skip expression replacement
     must_replace_binary_expression(arguments)
 }
 
-fn must_replace_binary_expression(arguments: &[Expr]) -> bool {
-    arguments.iter().any(|arg| !matches!(arg, Expr::Lit(_)))
+fn must_replace_binary_expression(arguments: &[ExprOrSpread]) -> bool {
+    arguments.iter().any(|arg| !arg.expr.is_lit())
 }

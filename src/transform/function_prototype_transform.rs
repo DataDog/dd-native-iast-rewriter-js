@@ -28,9 +28,9 @@ impl FunctionPrototypeTransform {
 
     /// inspects call expression searching for $class_name.prototype.$method_name.[call|apply]($this_expr, $arguments) and if there is a match
     /// returns a tuple (
-    ///     Expr -> $this_expr,
+    ///     ExprOrSpread -> $this_expr,
     ///     Ident -> $method_name,
-    ///     CallExpr -> a expression equivalent to $this_expr.$method_name($arguments)
+    ///     CallExpr -> an expression equivalent to $this_expr.$method_name($arguments)
     /// )
     ///
     pub fn get_expression_parts_from_call_or_apply(
@@ -38,29 +38,37 @@ impl FunctionPrototypeTransform {
         member: &MemberExpr,
         ident_name: &IdentName,
         csi_methods: &CsiMethods,
-    ) -> Option<(Expr, Ident, CallExpr)> {
+    ) -> Option<(ExprOrSpread, Ident, CallExpr)> {
         if !Self::is_call_or_apply(ident_name) {
             return None;
         }
 
-        let method_name = ident_name.sym.to_string();
         let mut path_parts = vec![];
         if get_prototype_member_path(member, &mut path_parts) {
             if call.args.is_empty() {
                 return None;
             }
 
-            let mut filtered_args = vec![];
-            if !filter_call_args(
-                &call.args,
-                method_name == APPLY_METHOD_NAME,
-                &mut filtered_args,
-            ) {
+            let method_ident = path_parts[0].clone();
+            let this_expr_or_spread = &call.args[0];
+
+            // ...$this_expr - we can not return an Expr for an spread expression
+            if this_expr_or_spread.spread.is_some() {
+                return Some((this_expr_or_spread.clone(), method_ident, call.clone()));
+            }
+
+            if invalid_args(ident_name, call) {
                 return None;
             }
 
-            let method_ident = path_parts[0].clone();
-            let this_expr = &call.args[0].expr;
+            let filtered_args = call
+                .args
+                .iter()
+                .skip(1)
+                .cloned()
+                .collect::<Vec<ExprOrSpread>>();
+
+            let this_expr = &this_expr_or_spread.expr;
 
             if this_expr.is_lit()
                 && (!csi_methods.method_allows_literal_callers(&method_ident.sym)
@@ -86,40 +94,15 @@ impl FunctionPrototypeTransform {
                 ctxt: SyntaxContext::empty(),
             };
 
-            return Some((*this_expr.clone(), method_ident, new_call));
+            return Some((
+                ExprOrSpread::from(*this_expr.clone()),
+                method_ident,
+                new_call,
+            ));
         }
 
         None
     }
-}
-
-fn filter_call_args(
-    args: &[ExprOrSpread],
-    is_apply: bool,
-    filtered_args: &mut Vec<ExprOrSpread>,
-) -> bool {
-    // when using apply, arguments are provided as an array
-    let mut success_filtering = true;
-    if is_apply {
-        if args.len() >= 2 {
-            if args[1].expr.is_array() {
-                let array = args[1].expr.as_array().unwrap();
-                filtered_args.append(
-                    &mut array
-                        .elems
-                        .iter()
-                        .filter(|elem| elem.is_some())
-                        .map(|elem| elem.as_ref().unwrap().clone())
-                        .collect(),
-                );
-            } else {
-                success_filtering = false;
-            }
-        }
-    } else {
-        filtered_args.append(&mut args.iter().skip(1).cloned().collect::<Vec<ExprOrSpread>>());
-    }
-    success_filtering
 }
 
 fn get_prototype_member_path(member: &MemberExpr, parts: &mut Vec<Ident>) -> bool {
@@ -144,4 +127,32 @@ fn all_args_are_literal(args: &[ExprOrSpread]) -> bool {
 
 fn is_undefined_or_null(expr: &Expr) -> bool {
     expr.is_ident_ref_to("undefined") || expr.is_ident_ref_to("null")
+}
+
+fn invalid_args(ident_name: &IdentName, call: &CallExpr) -> bool {
+    let name = ident_name.sym.to_string();
+    if name != "apply" {
+        return false;
+    }
+
+    if call.args.len() >= 2 {
+        let this = &call.args[0];
+        let args_array = &call.args[1];
+        if args_array.expr.is_array() {
+            let array = args_array.expr.as_array().unwrap();
+            return this.expr.is_lit()
+                && array.elems.iter().skip(1).all(|elem| {
+                    if elem.is_none() {
+                        return false;
+                    }
+
+                    let expr_or_spread = elem.as_ref().unwrap();
+                    expr_or_spread.expr.is_lit() || is_undefined_or_null(&expr_or_spread.expr)
+                });
+        } else if args_array.spread.is_some() {
+            return false;
+        }
+    }
+
+    true
 }

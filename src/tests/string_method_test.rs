@@ -95,17 +95,17 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
-    const a = (__datadog_test_0 = b, __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));");
+    const a = (__datadog_test_0 = b, __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1.apply(__datadog_test_0, [\n        2\n    ]), __datadog_test_1, __datadog_test_0, 2));");
         Ok(())
     }
 
     #[test]
     fn test_prototype_substring_apply_with_call_arg() -> Result<(), String> {
-        let original_code = "{const a = String.prototype.substring.apply(b(), [2]);}".to_string();
+        let original_code = "{const a = String.prototype.substring.apply(b(), [c]);}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;
-    const a = (__datadog_test_0 = b(), __datadog_test_1 = String.prototype.substring, _ddiast.stringSubstring(__datadog_test_1.call(__datadog_test_0, 2), __datadog_test_1, __datadog_test_0, 2));");
+        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+    const a = (__datadog_test_0 = b(), __datadog_test_1 = String.prototype.substring, __datadog_test_2 = c, _ddiast.stringSubstring(__datadog_test_1.apply(__datadog_test_0, [\n        __datadog_test_2\n    ]), __datadog_test_1, __datadog_test_0, __datadog_test_2));");
         Ok(())
     }
 
@@ -126,6 +126,51 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
         assert_that(&rewritten.code).contains("const a = String.prototype.concat.call(1,2,3)");
+        Ok(())
+    }
+
+    #[test]
+    fn test_prototype_concat_call_this_spread() -> Result<(), String> {
+        let original_code = "{const c = String.prototype.concat.call(...a)}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = String.prototype.concat, __datadog_test_1 = [\n        ...a\n    ], _ddiast.stringConcat(__datadog_test_0.call(...__datadog_test_1), __datadog_test_0, ...__datadog_test_1));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_prototype_concat_call_args_spread() -> Result<(), String> {
+        let original_code = "{const c = String.prototype.concat.call(a, ...b)}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, __datadog_test_2 = [\n        ...b\n    ], _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0, ...__datadog_test_2));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_prototype_concat_apply_args_spread() -> Result<(), String> {
+        let original_code = "{const c = String.prototype.concat.apply(a, ...b)}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, __datadog_test_2 = [\n        ...b\n    ], _ddiast.stringConcat(__datadog_test_1.apply(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0, ...__datadog_test_2));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_concat_args_spread() -> Result<(), String> {
+        let original_code = "{const c = a.concat(...b)}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = __datadog_test_0.concat, __datadog_test_2 = [\n        ...b\n    ], _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2), __datadog_test_1, __datadog_test_0, ...__datadog_test_2));");
+        Ok(())
+    }
+
+    #[test]
+    fn test_prototype_concat_call_args_spread_multiple() -> Result<(), String> {
+        let original_code = "{const c = String.prototype.concat.call(a, ...b, ...c)}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains("const c = (__datadog_test_0 = a, __datadog_test_1 = String.prototype.concat, __datadog_test_2 = [\n        ...b\n    ], __datadog_test_3 = [\n        ...c\n    ], _ddiast.stringConcat(__datadog_test_1.call(__datadog_test_0, ...__datadog_test_2, ...__datadog_test_3), __datadog_test_1, __datadog_test_0, ...__datadog_test_2, ...__datadog_test_3));");
         Ok(())
     }
 

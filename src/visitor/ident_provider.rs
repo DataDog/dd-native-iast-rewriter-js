@@ -6,26 +6,36 @@ use std::collections::HashSet;
 use swc::atoms::JsWord;
 use swc_common::{Span, SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{
-    AssignExpr, AssignOp, AssignTarget, BindingIdent, Expr, Ident, SimpleAssignTarget,
+    ArrayLit, AssignExpr, AssignOp, AssignTarget, BindingIdent, Expr, ExprOrSpread, Ident,
+    SimpleAssignTarget,
 };
 
 use super::visitor_util::get_dd_local_variable_name;
+
+#[derive(PartialEq, Eq, Clone, Copy)]
+pub enum IdentKind {
+    Expr,
+    Spread,
+}
 
 pub trait IdentProvider {
     fn get_ident_used_in_assignation(
         &mut self,
         operand: &Expr,
         assignations: &mut Vec<Expr>,
-        arguments: &mut Vec<Expr>,
+        arguments: &mut Vec<ExprOrSpread>,
         span: &Span,
+        ident_kind: IdentKind,
     ) -> Option<Ident> {
-        let id = self.get_temporal_ident_used_in_assignation(operand, assignations, span);
+        let id =
+            self.get_temporal_ident_used_in_assignation(operand, assignations, span, ident_kind);
+
+        let id_expr = id
+            .as_ref()
+            .map_or_else(|| operand.clone(), |ident| Expr::Ident(ident.clone()));
 
         // store ident as argument
-        arguments.push(
-            id.as_ref()
-                .map_or_else(|| operand.clone(), |ident| Expr::Ident(ident.clone())),
-        );
+        arguments.push(self.get_expr_or_spread(&id_expr, ident_kind));
 
         id
     }
@@ -35,13 +45,14 @@ pub trait IdentProvider {
         operand: &Expr,
         assignations: &mut Vec<Expr>,
         span: &Span,
+        ident_kind: IdentKind,
     ) -> Option<Ident> {
         if operand.is_lit() {
             return None;
         }
 
         let next_ident = self.next_ident();
-        let (assign, id) = self.create_assign_expression(next_ident, operand, span);
+        let (assign, id) = self.create_assign_expression(next_ident, operand, span, ident_kind);
 
         // store ident and assignation expression
         self.register_ident(id.clone());
@@ -56,6 +67,7 @@ pub trait IdentProvider {
         index: usize,
         expr: &Expr,
         span: &Span,
+        ident_kind: IdentKind,
     ) -> (AssignExpr, Ident) {
         let id = Ident {
             span: DUMMY_SP,
@@ -73,11 +85,47 @@ pub trait IdentProvider {
                     id: id.clone(),
                     type_ann: None,
                 })),
-                right: Box::new(expr.clone()),
+                right: self.create_assign_right_operand_expression(expr, ident_kind),
                 op: AssignOp::Assign,
             },
             id,
         )
+    }
+
+    fn create_assign_right_operand_expression(
+        &mut self,
+        expr: &Expr,
+        ident_kind: IdentKind,
+    ) -> Box<Expr> {
+        // when IdentKind::Spread, create a new array with the spread expression [...a] to avoid spreading it twice.
+        // 'a' could be a Proxy which intercepts the get and does some operation on every call
+        // (__datadog_test_0 = "hello".concat, __datadog_test_1 = [...a], _ddiast.concat(__datadog_test_0.call("hello", ...__datadog_test_1), __datadog_test_0, "hello", ...__datadog_test_1))
+        let right_ep = if ident_kind == IdentKind::Spread {
+            Expr::Array(ArrayLit {
+                span: DUMMY_SP,
+                elems: vec![Some(ExprOrSpread {
+                    spread: Some(DUMMY_SP),
+                    expr: Box::new(expr.clone()),
+                })],
+            })
+        } else {
+            expr.clone()
+        };
+
+        Box::new(right_ep)
+    }
+
+    fn get_expr_or_spread(&mut self, expr: &Expr, ident_kind: IdentKind) -> ExprOrSpread {
+        let spread = if ident_kind == IdentKind::Spread {
+            Some(DUMMY_SP)
+        } else {
+            None
+        };
+
+        ExprOrSpread {
+            spread,
+            expr: Box::new(expr.clone()),
+        }
     }
 
     fn register_ident(&mut self, ident: Ident);

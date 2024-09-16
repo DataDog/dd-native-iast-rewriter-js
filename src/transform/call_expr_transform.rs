@@ -11,12 +11,18 @@ use crate::{
         function_prototype_transform::FunctionPrototypeTransform,
         operand_handler::{DefaultOperandHandler, OperandHandler},
     },
-    visitor::{csi_methods::CsiMethods, ident_provider::IdentProvider},
+    visitor::{
+        csi_methods::CsiMethods,
+        ident_provider::{IdentKind, IdentProvider},
+    },
 };
 
 use crate::visitor::visitor_util::get_dd_paren_expr;
 
-use super::{operand_handler::IdentMode, transform_status::TransformResult};
+use super::{
+    operand_handler::{ExpandArrays, IdentMode},
+    transform_status::TransformResult,
+};
 
 pub struct ResultExpr {
     pub expr: Expr,
@@ -152,12 +158,13 @@ fn replace_prototype_call_or_apply(
     );
 
     match prototype_call_option {
-        Some(mut prototype_call) => replace_call_expr_if_csi_method_with_member(
+        Some(mut prototype_call) => replace_call_expr_or_spread_if_csi_method_with_member(
             &prototype_call.0,
             &prototype_call.1.into(),
             &mut prototype_call.2,
             csi_methods,
-            Some(member),
+            member,
+            &ident_name.sym,
             ident_provider,
         ),
         _ => None,
@@ -176,6 +183,7 @@ fn replace_call_expr_if_csi_method(
         ident_name,
         call,
         csi_methods,
+        None,
         None,
         ident_provider,
     )
@@ -198,26 +206,23 @@ fn replace_call_expr_if_csi_method_without_callee(
             // let __datadog_test_0;
             // (__datadog_test_0 = arg0, _ddiast.aloneMethod
             // (aloneMethod(__datadog_test_0), aloneMethod, undefined, __datadog_test_0));
-            arguments.push(Expr::Ident(ident.clone()));
+            arguments.push(ExprOrSpread::from(Expr::Ident(ident.clone())));
             let global = Ident {
                 span,
                 sym: JsWord::from("undefined"),
                 optional: false,
                 ctxt: SyntaxContext::empty(),
             };
-            arguments.push(Expr::Ident(global));
+            arguments.push(ExprOrSpread::from(Expr::Ident(global)));
 
-            let mut call_replacement = call.clone();
-            call_replacement.args.iter_mut().for_each(|expr_or_spread| {
-                DefaultOperandHandler::replace_expressions_in_operand(
-                    &mut expr_or_spread.expr,
-                    IdentMode::Replace,
-                    &mut assignations,
-                    &mut arguments,
-                    &span,
-                    ident_provider,
-                )
-            });
+            let call_replacement = replace_call_callee_and_args(
+                call,
+                None,
+                &mut assignations,
+                &mut arguments,
+                None,
+                ident_provider,
+            );
 
             return Some(ResultExpr {
                 tag: method_name.clone(),
@@ -240,6 +245,7 @@ fn replace_call_expr_if_csi_method_with_member(
     call: &mut CallExpr,
     csi_methods: &CsiMethods,
     member_expr_opt: Option<&MemberExpr>,
+    call_or_apply: Option<&str>,
     ident_provider: &mut dyn IdentProvider,
 ) -> Option<ResultExpr> {
     let method_name = &ident_name.sym.to_string();
@@ -252,11 +258,14 @@ fn replace_call_expr_if_csi_method_with_member(
         // replace original call expression with a parent expression splitting every component and finally invoking .call
         //  a) a.substring() -> __datadog_token_$i = a, __datadog_token_$i2 = __datadog_token_$i.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
         //  b) String.prototype.substring.[call|apply](a) -> __datadog_token_$i = a, __datadog_token_$i2 = String.prototype.substring, __datadog_token_$i2.call(__datadog_token_$i, __datadog_token_$i2)
-        let mut call_replacement = call.clone();
 
         // __datadog_token_$i = a
-        let ident_replacement_option =
-            ident_provider.get_temporal_ident_used_in_assignation(expr, &mut assignations, &span);
+        let ident_replacement_option = ident_provider.get_temporal_ident_used_in_assignation(
+            expr,
+            &mut assignations,
+            &span,
+            IdentKind::Expr,
+        );
 
         let ident_replacement = ident_replacement_option.map_or_else(|| expr.clone(), Expr::Ident);
 
@@ -268,6 +277,7 @@ fn replace_call_expr_if_csi_method_with_member(
                     &mut assignations,
                     &mut arguments,
                     &span,
+                    IdentKind::Expr,
                 )
             }
             None => {
@@ -284,29 +294,21 @@ fn replace_call_expr_if_csi_method_with_member(
                     &mut assignations,
                     &mut arguments,
                     &span,
+                    IdentKind::Expr,
                 )
             }
         };
 
-        arguments.push(ident_replacement.clone());
+        arguments.push(ExprOrSpread::from(ident_replacement.clone()));
 
-        // change callee to __datadog_token_$i2.call
-        call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
-            span,
-            obj: Box::new(ident_callee.map_or_else(|| expr.clone(), Expr::Ident)),
-            prop: MemberProp::Ident(IdentName::new(JsWord::from("call"), span)),
-        })));
-
-        call_replacement.args.iter_mut().for_each(|expr_or_spread| {
-            DefaultOperandHandler::replace_expressions_in_operand(
-                &mut expr_or_spread.expr,
-                IdentMode::Replace,
-                &mut assignations,
-                &mut arguments,
-                &span,
-                ident_provider,
-            )
-        });
+        let mut call_replacement = replace_call_callee_and_args(
+            call,
+            Some(ident_callee.map_or_else(|| expr.clone(), Expr::Ident)),
+            &mut assignations,
+            &mut arguments,
+            call_or_apply,
+            ident_provider,
+        );
 
         // insert .call(this) argument
         call_replacement.args.insert(
@@ -329,4 +331,130 @@ fn replace_call_expr_if_csi_method_with_member(
         });
     }
     None
+}
+
+fn replace_call_expr_or_spread_if_csi_method_with_member(
+    expr_or_spread: &ExprOrSpread,
+    ident_name: &IdentName,
+    call: &mut CallExpr,
+    csi_methods: &CsiMethods,
+    member_expr: &MemberExpr,
+    call_or_apply: &str,
+    ident_provider: &mut dyn IdentProvider,
+) -> Option<ResultExpr> {
+    if expr_or_spread.spread.is_none() {
+        //  String.prototype.concat.call(a, b) or a.concat(b)
+        replace_call_expr_if_csi_method_with_member(
+            &expr_or_spread.expr,
+            ident_name,
+            call,
+            csi_methods,
+            Some(member_expr),
+            Some(call_or_apply),
+            ident_provider,
+        )
+    } else {
+        //  String.prototype.concat.call(...a, b)
+        replace_call_spread_if_csi_method_with_member(
+            ident_name,
+            call,
+            csi_methods,
+            member_expr,
+            call_or_apply,
+            ident_provider,
+        )
+    }
+}
+
+fn replace_call_spread_if_csi_method_with_member(
+    ident_name: &IdentName,
+    call: &mut CallExpr,
+    csi_methods: &CsiMethods,
+    member_expr: &MemberExpr,
+    call_or_apply: &str,
+    ident_provider: &mut dyn IdentProvider,
+) -> Option<ResultExpr> {
+    let method_name = &ident_name.sym.to_string();
+
+    if let Some(csi_method) = csi_methods.get(method_name) {
+        let mut assignations = Vec::new();
+        let mut arguments = Vec::new();
+        let span = call.span;
+
+        // __datadog_token_$i2 = member
+        let ident_callee = ident_provider.get_ident_used_in_assignation(
+            &Expr::Member(member_expr.clone()),
+            &mut assignations,
+            &mut arguments,
+            &span,
+            IdentKind::Expr,
+        );
+
+        // return if there is no ident_callee
+        ident_callee.as_ref()?;
+
+        let call_replacement = replace_call_callee_and_args(
+            call,
+            Some(Expr::Ident(ident_callee.unwrap())),
+            &mut assignations,
+            &mut arguments,
+            Some(call_or_apply),
+            ident_provider,
+        );
+
+        return Some(ResultExpr {
+            tag: method_name.clone(),
+            expr: get_dd_paren_expr(
+                &Expr::Call(call_replacement),
+                &arguments,
+                &mut assignations,
+                csi_method.dst.as_str(),
+                &span,
+            ),
+        });
+    }
+    None
+}
+
+fn replace_call_callee_and_args(
+    call: &mut CallExpr,
+    ident_callee_expr: Option<Expr>,
+    assignations: &mut Vec<Expr>,
+    arguments: &mut Vec<ExprOrSpread>,
+    call_or_apply: Option<&str>,
+    ident_provider: &mut dyn IdentProvider,
+) -> CallExpr {
+    let mut call_replacement = call.clone();
+
+    let span = call.span;
+
+    let prop_name = call_or_apply.unwrap_or("call");
+
+    // change callee to __datadog_token_$i2.[call|apply]
+    if let Some(ident) = ident_callee_expr {
+        call_replacement.callee = Callee::Expr(Box::new(Expr::Member(MemberExpr {
+            span,
+            obj: Box::new(ident),
+            prop: MemberProp::Ident(IdentName::new(prop_name.into(), span)),
+        })));
+    }
+
+    let expand_arrays = if prop_name == "apply" {
+        ExpandArrays::Yes
+    } else {
+        ExpandArrays::No
+    };
+    call_replacement.args.iter_mut().for_each(|expr_or_spread| {
+        DefaultOperandHandler::replace_expressions_in_expr_or_spread(
+            expr_or_spread,
+            IdentMode::Replace,
+            assignations,
+            arguments,
+            &span,
+            ident_provider,
+            expand_arrays,
+        )
+    });
+
+    call_replacement
 }
