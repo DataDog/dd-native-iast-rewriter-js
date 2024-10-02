@@ -246,7 +246,7 @@ __datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddia
       )
     })
 
-    it.only('with String.raw + tagged template + \\n', () => {
+    it('with String.raw + tagged template + \\n', () => {
       const js = readFileSync(path.join(__dirname, 'resources/tmpl-literal.js')).toString()
       const rewritten = rewriteAndExpectNoTransformation(js)
 
@@ -254,6 +254,17 @@ __datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddia
       const e1 = eval(js).RAW_AND_NEWLINE
       // eslint-disable-next-line no-eval
       const e2 = eval(rewritten).RAW_AND_NEWLINE
+      expect(e1).to.be.equal(e2)
+    })
+
+    it('with String.raw + tagged template + new line', () => {
+      const js = readFileSync(path.join(__dirname, 'resources/tmpl-literal.js')).toString()
+      const rewritten = rewriteAndExpectNoTransformation(js)
+
+      // eslint-disable-next-line no-eval
+      const e1 = eval(js).RAW_AND_NEWLINE2
+      // eslint-disable-next-line no-eval
+      const e2 = eval(rewritten).RAW_AND_NEWLINE2
       expect(e1).to.be.equal(e2)
     })
   })
