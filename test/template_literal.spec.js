@@ -5,6 +5,8 @@
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-multi-str */
 const { rewriteAst, rewriteAndExpectNoTransformation, rewriteAndExpect } = require('./util')
+const { readFileSync } = require('fs')
+const path = require('path')
 
 describe('template literal', () => {
   describe('rewriting tests', () => {
@@ -242,6 +244,17 @@ __datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddia
 __datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.tplOperator(\
 `Hello ${__datadog_test_2}`, __datadog_test_2));\n}'
       )
+    })
+
+    it.only('with String.raw + tagged template + \\n', () => {
+      const js = readFileSync(path.join(__dirname, 'resources/tmpl-literal.js')).toString()
+      const rewritten = rewriteAndExpectNoTransformation(js)
+
+      // eslint-disable-next-line no-eval
+      const e1 = eval(js).RAW_AND_NEWLINE
+      // eslint-disable-next-line no-eval
+      const e2 = eval(rewritten).RAW_AND_NEWLINE
+      expect(e1).to.be.equal(e2)
     })
   })
 
