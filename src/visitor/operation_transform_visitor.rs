@@ -52,6 +52,10 @@ impl VisitorWithContext for OperationTransformVisitor<'_> {
 
 impl OperationTransformVisitor<'_> {
     fn update_status(&mut self, status: Status, tag: Option<String>) {
+        if self.transform_status.status == Status::Cancelled {
+            return;
+        }
+
         if status != Status::NotModified {
             self.transform_status.status = status;
         }
