@@ -4,7 +4,7 @@
  **/
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-multi-str */
-const { rewriteAst, rewriteAndExpectNoTransformation, rewriteAndExpect } = require('./util')
+const { rewriteAst, rewriteAndExpectNoTransformation, rewriteAndExpect, csiMethods } = require('./util')
 const { readFileSync } = require('fs')
 const path = require('path')
 
@@ -18,6 +18,13 @@ describe('template literal', () => {
     it('literal', () => {
       const js = 'const result = `Hello${" "}World!`;'
       rewriteAndExpectNoTransformation(js)
+    })
+
+    it('not enabled tplOperator', () => {
+      const js = 'const result = `Hello${a}World!`;'
+      rewriteAndExpectNoTransformation(js, {
+        csiMethods: csiMethods.filter((m) => m.src !== 'tplOperator')
+      })
     })
 
     it('middle', () => {
