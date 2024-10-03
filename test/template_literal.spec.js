@@ -4,7 +4,9 @@
  **/
 /* eslint-disable no-template-curly-in-string */
 /* eslint-disable no-multi-str */
-const { rewriteAst, rewriteAndExpectNoTransformation, rewriteAndExpect } = require('./util')
+const { rewriteAst, rewriteAndExpectNoTransformation, rewriteAndExpect, csiMethods } = require('./util')
+const { readFileSync } = require('fs')
+const path = require('path')
 
 describe('template literal', () => {
   describe('rewriting tests', () => {
@@ -18,19 +20,30 @@ describe('template literal', () => {
       rewriteAndExpectNoTransformation(js)
     })
 
+    it('not enabled tplOperator', () => {
+      const js = 'const result = `Hello${a}World!`;'
+      rewriteAndExpectNoTransformation(js, {
+        csiMethods: csiMethods.filter((m) => m.src !== 'tplOperator')
+      })
+    })
+
     it('middle', () => {
       const js = 'const result = `Hello${a}World!`;'
       rewriteAndExpect(
         js,
         '{\nlet __datadog_test_0;\n\
-          const result = (__datadog_test_0 = _ddiast.plusOperator(a + "World!", a, "World!"), _ddiast.plusOperator(\
-"Hello" + __datadog_test_0, "Hello", __datadog_test_0));\n}'
+          const result = (__datadog_test_0 = a, _ddiast.tplOperator(`Hello${__datadog_test_0}World!`, \
+__datadog_test_0));\n}'
       )
     })
 
     it('start', () => {
       const js = 'const result = `${a}Hello World!`;'
-      rewriteAndExpect(js, '{\nconst result = _ddiast.plusOperator(a + "Hello World!", a, "Hello World!");\n}')
+      rewriteAndExpect(
+        js,
+        '{\nlet __datadog_test_0;\n\
+const result = (__datadog_test_0 = a, _ddiast.tplOperator(`${__datadog_test_0}Hello World!`, __datadog_test_0));\n}'
+      )
     })
 
     it('multiline string', () => {
@@ -45,13 +58,15 @@ describe('template literal', () => {
 </html>\`);
   });`
       const expected = `{\nrouter.get('/xss', function(req, res) {
-    let __datadog_test_0, __datadog_test_1;
+    let __datadog_test_0;
     res.header('content-type', 'text/html');
-    res.send((__datadog_test_1 = (__datadog_test_0 = req.query.param, _ddiast.plusOperator(__datadog_test_0 + "</p>\
-\\n    </body>\\n</body>\\n</html>", __datadog_test_0, "</p>\\n    </body>\\n</body>\\n</html>")), \
-_ddiast.plusOperator('<html lang="en">\\n    <body>\\n        <h1>XSS vulnerability</h1>\\n        \
-<p>Received param: ' + __datadog_test_1, '<html lang="en">\\n    <body>\\n        <h1>XSS vulnerability</h1>\
-\\n        <p>Received param: ', __datadog_test_1)));
+    res.send((__datadog_test_0 = req.query.param, _ddiast.tplOperator(\`<html lang="en">
+      <body>
+      <h1>XSS vulnerability</h1>
+      <p>Received param: \${__datadog_test_0}</p>
+      </body>
+      </body>
+      </html>\`, __datadog_test_0)));
 });\n}`
       rewriteAndExpect(js, expected)
     })
@@ -61,14 +76,18 @@ _ddiast.plusOperator('<html lang="en">\\n    <body>\\n        <h1>XSS vulnerabil
       rewriteAndExpect(
         js,
         '{\nlet __datadog_test_0, __datadog_test_1;\n\
-const result = (__datadog_test_0 = a, __datadog_test_1 = _ddiast.plusOperator(b + "", b, ""), \
-_ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1));\n}'
+const result = (__datadog_test_0 = a, __datadog_test_1 = b, _ddiast.tplOperator(\
+`${__datadog_test_0}${__datadog_test_1}`, __datadog_test_0, __datadog_test_1));\n}'
       )
     })
 
     it('end', () => {
       const js = 'const result = `Hello World!${a}`;'
-      rewriteAndExpect(js, '{\nconst result = _ddiast.plusOperator("Hello World!" + a, "Hello World!", a);\n}')
+      rewriteAndExpect(
+        js,
+        '{\nlet __datadog_test_0;\n\
+const result = (__datadog_test_0 = a, _ddiast.tplOperator(`Hello World!${__datadog_test_0}`, __datadog_test_0));\n}'
+      )
     })
 
     it('with binary operations', () => {
@@ -76,8 +95,8 @@ _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __da
       rewriteAndExpect(
         js,
         '{\nlet __datadog_test_0;\n\
-        const result = (__datadog_test_0 = _ddiast.plusOperator(a + b, a, b), _ddiast.plusOperator("Hello World!" \
-+ __datadog_test_0, "Hello World!", __datadog_test_0));\n}'
+        const result = (__datadog_test_0 = _ddiast.plusOperator(a + b, a, b), _ddiast.tplOperator(\
+`Hello World!${__datadog_test_0}`, __datadog_test_0));\n}'
       )
     })
 
@@ -85,8 +104,8 @@ _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __da
       const js = 'const result = `Hello World!${a()}`;'
       rewriteAndExpect(
         js,
-        '{\nlet __datadog_test_0;\nconst result = (__datadog_test_0 = a(), _ddiast.plusOperator("Hello World!" \
-+ __datadog_test_0, "Hello World!", __datadog_test_0));\n}'
+        '{\nlet __datadog_test_0;\nconst result = (__datadog_test_0 = a(), _ddiast.tplOperator(\
+`Hello World!${__datadog_test_0}`, __datadog_test_0));\n}'
       )
     })
 
@@ -96,8 +115,8 @@ _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __da
         js,
         '{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2;\n\
         const result = (__datadog_test_2 = (__datadog_test_0 = a, __datadog_test_1 = b(), _ddiast.plusOperator(\
-__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator("Hello World!" \
-+ __datadog_test_2, "Hello World!", __datadog_test_2));\n}'
+__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.tplOperator(\
+`Hello World!${__datadog_test_2}`, __datadog_test_2));\n}'
       )
     })
 
@@ -107,8 +126,8 @@ __datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddia
         js,
         '{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2;\n\
         const result = (__datadog_test_2 = (__datadog_test_0 = a, __datadog_test_1 = b.x, _ddiast.plusOperator(\
-__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator("Hello World!" \
-+ __datadog_test_2, "Hello World!", __datadog_test_2));\n}'
+__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.tplOperator(\
+`Hello World!${__datadog_test_2}`, __datadog_test_2));\n}'
       )
     })
 
@@ -118,30 +137,38 @@ __datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddia
         js,
         '{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2;\n\
         const result = (__datadog_test_2 = (__datadog_test_0 = a, __datadog_test_1 = b.x.y.z, _ddiast.plusOperator(\
-__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator("Hello World!" + \
-__datadog_test_2, "Hello World!", __datadog_test_2));\n}'
+__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.tplOperator(\
+`Hello World!${__datadog_test_2}`, __datadog_test_2));\n}'
       )
     })
 
     it('inside if test', () => {
       const js = 'const c = a === `Hello${b}` ? "world" : "moon";'
-      rewriteAndExpect(js, '{\nconst c = a === _ddiast.plusOperator("Hello" + b, "Hello", b) ? "world" : "moon";\n}')
+      rewriteAndExpect(
+        js,
+        '{\nlet __datadog_test_0;\n\
+const c = a === (__datadog_test_0 = b, _ddiast.tplOperator(`Hello${__datadog_test_0}`, __datadog_test_0)) ? "world" : \
+"moon";\n}'
+      )
     })
 
     it('inside if cons', () => {
       const js = 'const c = a === "hello" ? `World ${b}` : "Moon";'
-      rewriteAndExpect(js, '{\nconst c = a === "hello" ? _ddiast.plusOperator("World " + b, "World ", b) : "Moon";\n}')
+      rewriteAndExpect(
+        js,
+        '{\nlet __datadog_test_0;\n\
+const c = a === "hello" ? (__datadog_test_0 = b, _ddiast.tplOperator(`World ${__datadog_test_0}`, __datadog_test_0)) \
+: "Moon";\n}'
+      )
     })
 
     it('typeof among variables is replaced by a variable', () => {
       const js = 'const a = `He${typeof b}llo wor${a}ld`'
       rewriteAndExpect(
         js,
-        '{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;\n\
-        const a = (__datadog_test_3 = (__datadog_test_1 = typeof b, __datadog_test_2 = (__datadog_test_0 \
-= _ddiast.plusOperator(a + "ld", a, "ld"), _ddiast.plusOperator("llo wor" + __datadog_test_0, "llo wor", \
-__datadog_test_0)), _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, __datadog_test_1, __datadog_test_2))\
-, _ddiast.plusOperator("He" + __datadog_test_3, "He", __datadog_test_3));\n}'
+        '{\nlet __datadog_test_0, __datadog_test_1;\n\
+const a = (__datadog_test_0 = typeof b, __datadog_test_1 = a, _ddiast.tplOperator(`He${__datadog_test_0}llo \
+wor${__datadog_test_1}ld`, __datadog_test_0, __datadog_test_1));\n}'
       )
     })
 
@@ -159,15 +186,11 @@ __datadog_test_0)), _ddiast.plusOperator(__datadog_test_1 + __datadog_test_2, __
       const js = "const a = `Hello ${c} ${'how are u ' + `${'bye ' + d}`} world`;"
       rewriteAndExpect(
         js,
-        '{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3, __datadog_test_4\
-, __datadog_test_5, __datadog_test_6;\n\
-const a = (__datadog_test_6 = (__datadog_test_4 = c, __datadog_test_5 = (__datadog_test_3 = (__datadog_test_2 = (\
-__datadog_test_1 = (__datadog_test_0 = _ddiast.plusOperator(\'bye \' + d, \'bye \', d), _ddiast.plusOperator(\
-__datadog_test_0 + "", __datadog_test_0, "")), _ddiast.plusOperator(\'how are u \' + __datadog_test_1, \'how are u \', \
-__datadog_test_1)), _ddiast.plusOperator(__datadog_test_2 + " world", __datadog_test_2, " world")), \
-_ddiast.plusOperator(" " + __datadog_test_3, " ", __datadog_test_3)), _ddiast.plusOperator(__datadog_test_4 + \
-__datadog_test_5, __datadog_test_4, __datadog_test_5)), _ddiast.plusOperator("Hello " + __datadog_test_6, "Hello "\
-, __datadog_test_6));\n}'
+        "{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;\n\
+const a = (__datadog_test_2 = c, __datadog_test_3 = (__datadog_test_1 = (__datadog_test_0 = _ddiast.plusOperator(\
+'bye ' + d, 'bye ', d), _ddiast.tplOperator(`${__datadog_test_0}`, __datadog_test_0)), _ddiast.plusOperator(\
+'how are u ' + __datadog_test_1, 'how are u ', __datadog_test_1)), _ddiast.tplOperator(\
+`Hello ${__datadog_test_2} ${__datadog_test_3} world`, __datadog_test_2, __datadog_test_3));\n}"
       )
     })
 
@@ -175,8 +198,8 @@ __datadog_test_5, __datadog_test_4, __datadog_test_5)), _ddiast.plusOperator("He
       const js = 'const a = `Hello ${c++}`;'
       rewriteAndExpect(
         js,
-        '{\nlet __datadog_test_0;\nconst a = (__datadog_test_0 = c++, _ddiast.plusOperator("Hello " + __datadog_test_0\
-, "Hello ", __datadog_test_0));\n}'
+        '{\nlet __datadog_test_0;\nconst a = (__datadog_test_0 = c++, _ddiast.tplOperator(`Hello ${__datadog_test_0}`, \
+__datadog_test_0));\n}'
       )
     })
 
@@ -184,8 +207,8 @@ __datadog_test_5, __datadog_test_4, __datadog_test_5)), _ddiast.plusOperator("He
       const js = 'const a = `Hello ${--c}`;'
       rewriteAndExpect(
         js,
-        '{\nlet __datadog_test_0;\nconst a = (__datadog_test_0 = --c, _ddiast.plusOperator("Hello " + __datadog_test_0\
-, "Hello ", __datadog_test_0));\n}'
+        '{\nlet __datadog_test_0;\nconst a = (__datadog_test_0 = --c, _ddiast.tplOperator(`Hello ${__datadog_test_0}`, \
+__datadog_test_0));\n}'
       )
     })
 
@@ -193,8 +216,8 @@ __datadog_test_5, __datadog_test_4, __datadog_test_5)), _ddiast.plusOperator("He
       const js = 'const a = `Hello ${await b()}`;'
       rewriteAndExpect(
         js,
-        '{\nlet __datadog_test_0;\nconst a = (__datadog_test_0 = await b(), _ddiast.plusOperator("Hello " + \
-__datadog_test_0, "Hello ", __datadog_test_0));\n}'
+        '{\nlet __datadog_test_0;\n\
+const a = (__datadog_test_0 = await b(), _ddiast.tplOperator(`Hello ${__datadog_test_0}`, __datadog_test_0));\n}'
       )
     })
 
@@ -204,8 +227,8 @@ __datadog_test_0, "Hello ", __datadog_test_0));\n}'
         js,
         '{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2;\n\
           const a = (__datadog_test_2 = (__datadog_test_0 = b, __datadog_test_1 = await c(), _ddiast.plusOperator(\
-__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator("Hello " + \
-__datadog_test_2, "Hello ", __datadog_test_2));\n}'
+__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.tplOperator(\
+`Hello ${__datadog_test_2}`, __datadog_test_2));\n}'
       )
     })
 
@@ -214,8 +237,8 @@ __datadog_test_2, "Hello ", __datadog_test_2));\n}'
       rewriteAndExpect(
         js,
         '{\nlet __datadog_test_0;\n\
-          const a = (__datadog_test_0 = _ddiast.plusOperator(b + c, b, c) ? d : e, _ddiast.plusOperator("Hello " \
-+ __datadog_test_0, "Hello ", __datadog_test_0));\n}'
+          const a = (__datadog_test_0 = _ddiast.plusOperator(b + c, b, c) ? d : e, _ddiast.tplOperator(\
+`Hello ${__datadog_test_0}`, __datadog_test_0));\n}'
       )
     })
 
@@ -225,9 +248,31 @@ __datadog_test_2, "Hello ", __datadog_test_2));\n}'
         js,
         '{\nlet __datadog_test_0, __datadog_test_1, __datadog_test_2;\n\
         const a = (__datadog_test_2 = (__datadog_test_0 = a, __datadog_test_1 = new B(), _ddiast.plusOperator(\
-__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.plusOperator("Hello " + \
-__datadog_test_2, "Hello ", __datadog_test_2));\n}'
+__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddiast.tplOperator(\
+`Hello ${__datadog_test_2}`, __datadog_test_2));\n}'
       )
+    })
+
+    it('with String.raw + tagged template + \\n', () => {
+      const js = readFileSync(path.join(__dirname, 'resources/tmpl-literal.js')).toString()
+      const rewritten = rewriteAndExpectNoTransformation(js)
+
+      // eslint-disable-next-line no-eval
+      const e1 = eval(js).RAW_AND_NEWLINE
+      // eslint-disable-next-line no-eval
+      const e2 = eval(rewritten).RAW_AND_NEWLINE
+      expect(e1).to.be.equal(e2)
+    })
+
+    it('with String.raw + tagged template + new line', () => {
+      const js = readFileSync(path.join(__dirname, 'resources/tmpl-literal.js')).toString()
+      const rewritten = rewriteAndExpectNoTransformation(js)
+
+      // eslint-disable-next-line no-eval
+      const e1 = eval(js).RAW_AND_NEWLINE2
+      // eslint-disable-next-line no-eval
+      const e2 = eval(rewritten).RAW_AND_NEWLINE2
+      expect(e1).to.be.equal(e2)
     })
   })
 
@@ -235,7 +280,8 @@ __datadog_test_2, "Hello ", __datadog_test_2));\n}'
     // Used in rewritten code
     // eslint-disable-next-line no-unused-vars
     const _ddiast = {
-      plusOperator: (res) => res
+      plusOperator: (res) => res,
+      tplOperator: (res) => res
     }
     function rewriteAndCompare (origFunc, args) {
       const expectedResult = origFunc(...args)

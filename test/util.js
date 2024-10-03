@@ -21,6 +21,7 @@ const removeSourceMap = (code) => {
 
 const csiMethods = [
   { src: 'plusOperator', operator: true },
+  { src: 'tplOperator', operator: true },
   { src: 'substring', dst: 'stringSubstring' },
   { src: 'trim' },
   { src: 'trimStart' },
@@ -60,13 +61,14 @@ const rewriteAst = (code, opts) => {
 const wrapBlock = (code) => `{${os.EOL}${code}${os.EOL}}`
 
 const rewriteAndExpectNoTransformation = (code, opts) => {
-  rewriteAndExpect(wrapBlock(code), wrapBlock(code), true, opts)
+  return rewriteAndExpect(wrapBlock(code), wrapBlock(code), true, opts)
 }
 
 const rewriteAndExpect = (code, expect, block, opts) => {
   code = !block ? `{${code}}` : code
   const rewritten = rewriteAst(code, opts)
   expectAst(rewritten, expect)
+  return rewritten
 }
 
 const rewriteAndExpectError = (code) => {

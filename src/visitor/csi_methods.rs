@@ -2,7 +2,7 @@
  * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
  * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
  **/
-use super::visitor_util::DD_PLUS_OPERATOR;
+use super::visitor_util::{DD_PLUS_OPERATOR, DD_TEMPLATE_LITERAL_OPERATOR};
 
 #[derive(Clone, Debug)]
 pub struct CsiMethod {
@@ -33,6 +33,7 @@ impl CsiMethod {
 pub struct CsiMethods {
     pub methods: Vec<CsiMethod>,
     pub plus_operator: Option<CsiMethod>,
+    pub tpl_operator: Option<CsiMethod>,
     pub method_with_literal_callers: Vec<&'static str>,
 }
 
@@ -42,9 +43,14 @@ impl CsiMethods {
             .iter()
             .find(|csi_method| csi_method.operator && csi_method.src == DD_PLUS_OPERATOR);
 
+        let tpl_operator = csi_methods.iter().find(|csi_method| {
+            csi_method.operator && csi_method.src == DD_TEMPLATE_LITERAL_OPERATOR
+        });
+
         CsiMethods {
             methods: csi_methods.to_vec(),
             plus_operator: plus_operator.cloned(),
+            tpl_operator: tpl_operator.cloned(),
             method_with_literal_callers: vec![
                 "concat",
                 "replace",
@@ -60,6 +66,7 @@ impl CsiMethods {
         CsiMethods {
             methods: vec![],
             plus_operator: None,
+            tpl_operator: None,
             method_with_literal_callers: vec![],
         }
     }
@@ -74,10 +81,21 @@ impl CsiMethods {
         self.plus_operator.is_some()
     }
 
+    pub fn tpl_operator_is_enabled(&self) -> bool {
+        self.tpl_operator.is_some()
+    }
+
     pub fn get_dd_plus_operator_name(&self) -> String {
         match &self.plus_operator {
             Some(csi_method) => csi_method.dst.clone(),
             _ => DD_PLUS_OPERATOR.to_string(),
+        }
+    }
+
+    pub fn get_dd_tpl_operator_name(&self) -> String {
+        match &self.tpl_operator {
+            Some(csi_method) => csi_method.dst.clone(),
+            _ => DD_TEMPLATE_LITERAL_OPERATOR.to_string(),
         }
     }
 

@@ -40,8 +40,8 @@ describe('logger', () => {
     expect(logger.debug.secondCall.args).to.deep.eq([
       'Rewriting js file: test.js with config: \
 Config { chain_source_map: false, print_comments: false, local_var_prefix: "logger-test", csi_methods: \
-CsiMethods { methods: [], plus_operator: None, method_with_literal_callers: [] }, verbosity: Information, \
-literals: true }'
+CsiMethods { methods: [], plus_operator: None, tpl_operator: None, method_with_literal_callers: [] }, \
+verbosity: Information, literals: true }'
     ])
   })
 
@@ -57,8 +57,8 @@ literals: true }'
     expect(debug.secondCall.args).to.deep.eq([
       'Rewriting js file: test.js with config: \
 Config { chain_source_map: false, print_comments: false, local_var_prefix: "logger-test", csi_methods: \
-CsiMethods { methods: [], plus_operator: None, method_with_literal_callers: [] }, verbosity: Information, \
-literals: true }'
+CsiMethods { methods: [], plus_operator: None, tpl_operator: None, method_with_literal_callers: [] }, \
+verbosity: Information, literals: true }'
     ])
   })
 
