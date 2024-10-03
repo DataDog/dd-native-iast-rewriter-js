@@ -333,4 +333,16 @@ mod tests {
         assert_that(&rewritten.code).contains("(__datadog_test_0 = this.height, __datadog_test_1 = this.w(), _ddiast.plusOperator(__datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1))");
         Ok(())
     }
+
+    #[test]
+    fn test_expression_not_modified_at_the_end() -> Result<(), String> {
+        let original_code = "{const a = b + c\nconst d = 'a' + 'b'\n}".to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+        assert_that(&rewritten.code).contains(
+            "const a = _ddiast.plusOperator(b + c, b, c);
+    const d = 'a' + 'b';",
+        );
+        Ok(())
+    }
 }

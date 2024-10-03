@@ -52,7 +52,10 @@ impl VisitorWithContext for OperationTransformVisitor<'_> {
 
 impl OperationTransformVisitor<'_> {
     fn update_status(&mut self, status: Status, tag: Option<String>) {
-        self.transform_status.status = status;
+        if status != Status::NotModified {
+            self.transform_status.status = status;
+        }
+
         if self.transform_status.status == Status::Modified {
             self.transform_status.telemetry.inc(tag);
         }
