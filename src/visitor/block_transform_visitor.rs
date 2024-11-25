@@ -11,7 +11,7 @@ use crate::{
     },
 };
 use std::collections::HashSet;
-use swc_common::SyntaxContext;
+use swc_common::{SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
@@ -71,6 +71,7 @@ impl VisitMut for BlockTransformVisitor<'_> {
             &self.config.local_var_prefix,
         ) {
             return self.cancel_visit("Variable name duplicated");
+            // insert_variable_declaration(&ident_provider.idents, expr);
         } else {
             insert_variable_declaration(&ident_provider.idents, expr);
         }
@@ -81,7 +82,9 @@ impl VisitMut for BlockTransformVisitor<'_> {
 
 fn variables_contains_possible_duplicate(variable_decl: &HashSet<Ident>, prefix: &String) -> bool {
     let prefix = get_dd_local_variable_prefix(prefix);
-    variable_decl.iter().any(|var| var.sym.starts_with(&prefix))
+    variable_decl
+        .iter()
+        .any(|var| var.span != DUMMY_SP && var.sym.starts_with(&prefix))
 }
 
 fn insert_variable_declaration(ident_expressions: &[Ident], expr: &mut BlockStmt) {
