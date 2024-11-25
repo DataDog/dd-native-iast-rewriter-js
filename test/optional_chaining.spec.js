@@ -31,8 +31,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 (__datadog_test_1 = __datadog_test_0, __datadog_test_2 = __datadog_test_1.substring, \
 _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), __datadog_test_2, __datadog_test_1, 1)));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -47,8 +46,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 (__datadog_test_1 = __datadog_test_0, __datadog_test_2 = __datadog_test_1.substring, \
 _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), __datadog_test_2, __datadog_test_1, 1)));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -63,8 +61,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 (__datadog_test_1 = __datadog_test_0, __datadog_test_2 = __datadog_test_1.substring, \
 _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), __datadog_test_2, __datadog_test_1, 1)));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -82,8 +79,7 @@ __datadog_test_0 == null ? undefined : (__datadog_test_4 = __datadog_test_0, \
 __datadog_test_5 = __datadog_test_4.substring, _ddiast.stringSubstring(\
 __datadog_test_5.call(__datadog_test_4, 1), __datadog_test_5, __datadog_test_4, 1)));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -98,8 +94,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 (__datadog_test_1 = __datadog_test_0.b, __datadog_test_2 = __datadog_test_1.substring, \
 _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), __datadog_test_2, __datadog_test_1, 1)));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -114,8 +109,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 (__datadog_test_1 = __datadog_test_0, __datadog_test_2 = __datadog_test_1.substring, \
 _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), __datadog_test_2, __datadog_test_1, 1)));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -131,8 +125,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), __datadog_test_2, __datadog_test_1, 1))\
 .otherMethod(2));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -148,8 +141,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), __datadog_test_2, __datadog_test_1, 1))\
 .c?.otherMethod(2));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -165,8 +157,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2, __datadog_test_3;
 __datadog_test_3 = __datadog_test_2.substring, _ddiast.stringSubstring(__datadog_test_3.call(__datadog_test_2, 1), \
 __datadog_test_3, __datadog_test_2, 1)));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -181,8 +172,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 __datadog_test_2 = __datadog_test_1.substring, _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), \
 __datadog_test_2, __datadog_test_1, 1)));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -198,8 +188,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), __datadog_test_2, \
 __datadog_test_1, 1)))).otherMethod();
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -214,8 +203,7 @@ let __datadog_test_0, __datadog_test_1, __datadog_test_2;
 (__datadog_test_1 = __datadog_test_0.param, __datadog_test_2 = __datadog_test_1.substring, \
 _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), __datadog_test_2, __datadog_test_1, 1)));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
       )
     })
 
@@ -232,8 +220,22 @@ __datadog_test_3.call(__datadog_test_2, 1), __datadog_test_3, __datadog_test_2, 
 undefined : (__datadog_test_4 = __datadog_test_0.b, __datadog_test_5 = __datadog_test_4.substring, \
 _ddiast.stringSubstring(__datadog_test_5.call(__datadog_test_4, 2), __datadog_test_5, __datadog_test_4, 2)));
 }`,
-        false,
-        { logLevel: 'DEBUG', logger: console }
+        false
+      )
+    })
+
+    it('should modify a?().b.substring(1)', () => {
+      const js = 'a?.().b.substring(1)'
+
+      rewriteAndExpect(
+        js,
+        `{
+let __datadog_test_0, __datadog_test_1, __datadog_test_2;
+(__datadog_test_0 = a, __datadog_test_0 == null ? undefined : (__datadog_test_1 = __datadog_test_0().b, \
+__datadog_test_2 = __datadog_test_1.substring, _ddiast.stringSubstring(__datadog_test_2.call(__datadog_test_1, 1), \
+__datadog_test_2, __datadog_test_1, 1)));
+}`,
+        false
       )
     })
   })

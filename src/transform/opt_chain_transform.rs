@@ -1,13 +1,13 @@
+/**
+ * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
+ * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+ **/
 use crate::visitor::{
     csi_methods::CsiMethods,
     ident_provider::{IdentKind, IdentProvider},
 };
 use swc::atoms::JsWord;
 use swc_common::{util::take::Take, SyntaxContext, DUMMY_SP};
-/**
- * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
- * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
- **/
 use swc_ecma_ast::*;
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 
@@ -20,8 +20,8 @@ struct OptChainVisitor<'a> {
     pub ident_provider: &'a mut dyn IdentProvider,
     pub csi_methods: CsiMethods,
     pub found: bool,
-    // pub transform_status: &'a mut TransformStatus,
 }
+
 impl OptChainVisitor<'_> {
     pub fn default(
         ident_provider: &mut dyn IdentProvider,
@@ -54,6 +54,13 @@ impl VisitMut for OptChainVisitor<'_> {
                     if opt_chain_expr.optional {
                         match &*opt_chain_expr.base {
                             OptChainBase::Call(call_expr) => {
+                                /*
+                                 * if expression is like obj.b?(arg1, arg2), to prevent double calling to the b getter
+                                 *  we should extract a.b to a variable, and call to the new variable maintaining
+                                 *  the expected this property:
+                                 *
+                                 *  (_1 = obj, _2 = _1.b, _2 == null ? undefined : _2.call(_1, arg1, arg2))
+                                 */
                                 if let Expr::Member(mut member_expr) = *call_expr.callee.clone() {
                                     let mut member_obj_arguments = Vec::new();
                                     let span = DUMMY_SP;
@@ -65,6 +72,7 @@ impl VisitMut for OptChainVisitor<'_> {
                                             &span,
                                             IdentKind::Expr,
                                         );
+
                                     if let Some(member_obj_ident) = member_obj_ident_opt {
                                         let new_member_expr = MemberExpr {
                                             span: DUMMY_SP,
@@ -132,6 +140,7 @@ impl VisitMut for OptChainVisitor<'_> {
                                             &span,
                                             IdentKind::Expr,
                                         );
+
                                     if let Some(new_ident) = new_ident_opt {
                                         if let Some(fist_arg) = self.assignments.first() {
                                             self.assignment = Some(fist_arg.clone());
@@ -163,8 +172,10 @@ impl VisitMut for OptChainVisitor<'_> {
                                         &span,
                                         IdentKind::Expr,
                                     );
+
                                 if let Some(new_ident) = new_ident_opt {
                                     self.new_ident = Some(new_ident.clone());
+
                                     let member_expr_new = MemberExpr {
                                         span: DUMMY_SP,
                                         obj: Box::new(Expr::Ident(new_ident)),
@@ -194,7 +205,7 @@ impl VisitMut for OptChainVisitor<'_> {
                             OptChainBase::Member(base) => {
                                 expr.map_with_mut(|_| Expr::Member(base.clone()));
                             }
-                        }
+                        };
                     }
                 } else if !opt_chain_expr.optional {
                     if let OptChainBase::Call(opt_call) = &mut *opt_chain_expr.base {
@@ -202,8 +213,10 @@ impl VisitMut for OptChainVisitor<'_> {
                             if let OptChainBase::Member(member_expr) = &*opt_chain_expr.base {
                                 if let MemberProp::Ident(method_ident) = &member_expr.prop {
                                     let prop_name = &method_ident.sym;
+
                                     if self.csi_methods.get(prop_name).is_some() {
                                         self.found = true;
+
                                         expr.visit_mut_with(self);
                                         return;
                                     }
@@ -215,6 +228,7 @@ impl VisitMut for OptChainVisitor<'_> {
 
                 expr.visit_mut_children_with(self);
             }
+
             _ => {
                 expr.visit_mut_children_with(self);
             }
