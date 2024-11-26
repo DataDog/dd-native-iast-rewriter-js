@@ -297,13 +297,11 @@ impl OptChainTransform {
                 exprs: visitor
                     .assignments
                     .iter_mut()
-                    .map(|assignation| Box::new(std::mem::take(assignation)))
+                    .map(|assignation| Box::new(assignation.take()))
                     .collect::<Vec<Box<Expr>>>(),
             })),
         });
 
-        opt_chain_expr.map_with_mut(|_| expr);
-
-        TransformResult::modified(opt_chain_expr.clone())
+        TransformResult::modified(expr)
     }
 }
