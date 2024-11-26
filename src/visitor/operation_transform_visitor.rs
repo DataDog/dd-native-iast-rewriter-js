@@ -12,6 +12,7 @@ use crate::{
         assign_add_transform::AssignAddTransform,
         binary_add_transform::BinaryAddTransform,
         call_expr_transform::CallExprTransform,
+        opt_chain_transform::OptChainTransform,
         template_transform::TemplateTransform,
         transform_status::{Status, TransformStatus},
     },
@@ -127,7 +128,6 @@ impl VisitMut for OperationTransformVisitor<'_> {
             Expr::Call(call) => {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 call.visit_mut_children_with(opv_with_child_ctx);
-
                 if call.callee.is_expr() {
                     let result = CallExprTransform::to_dd_call_expr(
                         call,
@@ -138,6 +138,27 @@ impl VisitMut for OperationTransformVisitor<'_> {
                         expr.map_with_mut(|e| result.expr.unwrap_or(e));
                         opv_with_child_ctx.update_status(result.status, result.tag);
                     }
+                }
+            }
+
+            Expr::OptChain(_) => {
+                let opv_with_child_ctx = &mut *self.with_child_ctx();
+                let transform_result = OptChainTransform::to_dd_cond_expr(
+                    expr,
+                    opv_with_child_ctx.csi_methods,
+                    opv_with_child_ctx.ident_provider,
+                );
+                if transform_result.is_modified() {
+                    expr.map_with_mut(|e| transform_result.expr.unwrap_or(e));
+                    opv_with_child_ctx.update_status(transform_result.status, transform_result.tag);
+                }
+
+                expr.visit_mut_children_with(opv_with_child_ctx);
+            }
+
+            Expr::Unary(unary_expr) => {
+                if UnaryOp::Delete != unary_expr.op {
+                    expr.visit_mut_children_with(self);
                 }
             }
 

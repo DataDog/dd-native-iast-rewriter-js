@@ -7,5 +7,6 @@ pub(crate) mod binary_add_transform;
 pub(crate) mod call_expr_transform;
 pub(crate) mod function_prototype_transform;
 pub(crate) mod operand_handler;
+pub(crate) mod opt_chain_transform;
 pub(crate) mod template_transform;
 pub(crate) mod transform_status;
