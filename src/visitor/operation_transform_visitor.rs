@@ -141,10 +141,10 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 }
             }
 
-            Expr::OptChain(opt_chain_expr) => {
+            Expr::OptChain(_) => {
                 let opv_with_child_ctx = &mut *self.with_child_ctx();
                 let transform_result = OptChainTransform::to_dd_cond_expr(
-                    opt_chain_expr,
+                    expr,
                     opv_with_child_ctx.csi_methods,
                     opv_with_child_ctx.ident_provider,
                 );
