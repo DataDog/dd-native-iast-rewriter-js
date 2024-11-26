@@ -156,6 +156,12 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 expr.visit_mut_children_with(opv_with_child_ctx);
             }
 
+            Expr::Unary(unary_expr) => {
+                if UnaryOp::Delete != unary_expr.op {
+                    expr.visit_mut_children_with(self);
+                }
+            }
+
             _ => {
                 expr.visit_mut_children_with(self);
             }

@@ -11,13 +11,19 @@ describe('Optional chaining', () => {
     it('does not rewrite if it is not necessary', () => {
       const js = 'a?.customMethod(1);'
 
-      rewriteAndExpectNoTransformation(js, { logLevel: 'DEBUG', logger: console })
+      rewriteAndExpectNoTransformation(js)
+    })
+
+    it('does not rewrite when it is a delete', () => {
+      const js = 'delete a?.substring(1).b;'
+
+      rewriteAndExpectNoTransformation(js)
     })
 
     it('should not modify optional method', () => {
       const js = 'a?.substring?.(1);'
 
-      rewriteAndExpectNoTransformation(js, { logLevel: 'DEBUG', logger: console })
+      rewriteAndExpectNoTransformation(js)
     })
 
     it('should modify a?.substring(1)', () => {
