@@ -19,6 +19,16 @@ const removeSourceMap = (code) => {
     .join('\n')
 }
 
+const removePrefix = (code) => {
+  const PREFIX_DETECTOR = "((1, eval)('this')));"
+  const prefixIndex = code.indexOf(PREFIX_DETECTOR)
+  if (prefixIndex > -1) {
+    return code.substring(prefixIndex + PREFIX_DETECTOR.length).trim()
+  }
+
+  return code
+}
+
 const csiMethods = [
   { src: 'plusOperator', operator: true },
   { src: 'tplOperator', operator: true },
@@ -43,7 +53,9 @@ const rewriteWithOpts = (code, opts) => {
     {
       localVarPrefix: 'test',
       csiMethods,
-      telemetryVerbosity: TELEMETRY_VERBOSITY
+      telemetryVerbosity: TELEMETRY_VERBOSITY,
+      logLevel: 'DEBUG',
+      logger: console
     },
     opts || {}
   )
@@ -55,7 +67,20 @@ const rewriteWithOpts = (code, opts) => {
 
 const rewriteAst = (code, opts) => {
   const rewritten = rewriteWithOpts(code, opts)
-  return opts && opts.keepSourceMap ? rewritten.content : removeSourceMap(rewritten.content)
+  let content = rewritten.content
+  if (opts) {
+    if (!opts.keepSourceMap) {
+      content = removeSourceMap(content)
+    }
+
+    if (!opts.keepPrefix) {
+      content = removePrefix(content)
+    }
+
+    return content
+  } else {
+    return removePrefix(removeSourceMap(content))
+  }
 }
 
 const wrapBlock = (code) => `{${os.EOL}${code}${os.EOL}}`
@@ -88,10 +113,12 @@ const getGlobalMethods = function (methods) {
 
 const expectAst = (received, expected) => {
   const rLines = received
+    .trim()
     .split('\n') // it seems that rewriter do not take into account OS line endings
     .map((l) => l.trim())
     .join('\n')
   const eLines = expected
+    .trim()
     .split('\n')
     .map((l) => l.trim())
     .join('\n')
