@@ -60,6 +60,7 @@ fn rewrite_js_with_csi_methods(
             csi_methods: csi_methods.clone(),
             verbosity: TelemetryVerbosity::Information,
             literals: false,
+            file_prefix_code: Vec::new(),
         },
         &source_map_reader,
     )
@@ -100,6 +101,7 @@ fn get_default_config_with_verbosity(
         csi_methods: get_default_csi_methods(),
         verbosity,
         literals: false,
+        file_prefix_code: Vec::new(),
     }
 }
 
@@ -111,6 +113,7 @@ fn get_chained_and_print_comments_config() -> Config {
         csi_methods: get_default_csi_methods(),
         verbosity: TelemetryVerbosity::Debug,
         literals: false,
+        file_prefix_code: Vec::new(),
     }
 }
 
@@ -122,6 +125,7 @@ fn get_literals_config() -> Config {
         csi_methods: get_default_csi_methods(),
         verbosity: TelemetryVerbosity::Debug,
         literals: true,
+        file_prefix_code: Vec::new(),
     }
 }
 

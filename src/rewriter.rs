@@ -32,8 +32,9 @@ use swc_common::{
     errors::{ColorConfig, Handler},
     FileName, FilePathMapping, SourceFile,
 };
-use swc_ecma_ast::{EsVersion, Program};
+use swc_ecma_ast::{EsVersion, Program, Stmt};
 
+use std::fmt;
 use swc_ecma_parser::{EsSyntax, Syntax};
 use swc_ecma_visit::VisitMutWith;
 
@@ -58,7 +59,6 @@ pub struct TransformOutputWithStatus {
     pub literals_result: Option<LiteralsResult>,
 }
 
-#[derive(Debug)]
 pub struct Config {
     pub chain_source_map: bool,
     pub print_comments: bool,
@@ -66,6 +66,21 @@ pub struct Config {
     pub csi_methods: CsiMethods,
     pub verbosity: TelemetryVerbosity,
     pub literals: bool,
+    pub file_prefix_code: Vec<Stmt>,
+}
+
+impl fmt::Debug for Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Config")
+            .field("chain_source_map", &self.chain_source_map)
+            .field("print_comments", &self.print_comments)
+            .field("local_var_prefix", &self.local_var_prefix)
+            .field("csi_methods", &self.csi_methods)
+            .field("verbosity", &self.verbosity)
+            .field("literals", &self.literals)
+            // file_prefix_code intentionally ignored
+            .finish()
+    }
 }
 
 pub fn rewrite_js<R: Read>(
@@ -144,7 +159,7 @@ fn default_handler_opts() -> HandlerOpts {
     }
 }
 
-fn parse_js(
+pub fn parse_js(
     source_file: &Arc<SourceFile>,
     handler: &Handler,
     compiler: &Compiler,

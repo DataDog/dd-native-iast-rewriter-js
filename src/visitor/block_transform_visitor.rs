@@ -51,6 +51,20 @@ impl BlockTransformVisitor<'_> {
 impl Visit for BlockTransformVisitor<'_> {}
 
 impl VisitMut for BlockTransformVisitor<'_> {
+    fn visit_mut_program(&mut self, node: &mut Program) {
+        node.visit_mut_children_with(self);
+        // TODO prepend
+        //  if (typeof _ddiast === 'undefined') (function (globals) { const noop = (res) => res; globals._ddiast = { csimethod: noop,... } })((1,eval)('this'))
+
+        if self.transform_status.status == Status::Modified {
+            if let Program::Script(script) = node {
+                for prefix_statement in self.config.file_prefix_code.iter().rev() {
+                    script.body.insert(0, prefix_statement.clone());
+                }
+            }
+        }
+    }
+
     fn visit_mut_block_stmt(&mut self, expr: &mut BlockStmt) {
         if self.visit_is_cancelled() {
             return;

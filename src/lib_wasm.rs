@@ -4,14 +4,8 @@
 **/
 extern crate base64;
 
-use std::{
-    collections::HashMap,
-    io::{Cursor, Read},
-    path::{Path, PathBuf},
-};
-
 use crate::{
-    rewriter::{print_js, rewrite_js, Config},
+    rewriter::{parse_js, print_js, rewrite_js, Config},
     telemetry::{Telemetry, TelemetryVerbosity},
     tracer_logger::{self},
     transform::transform_status::TransformStatus,
@@ -20,6 +14,15 @@ use crate::{
 };
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    io::{Cursor, Read},
+    path::{Path, PathBuf},
+    sync::Arc,
+};
+use swc::{try_with_handler, Compiler, HandlerOpts};
+use swc_common::{errors::ColorConfig, FileName, FilePathMapping};
+use swc_ecma_ast::Program;
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 
 #[derive(Deserialize)]
@@ -102,6 +105,7 @@ impl RewriterConfig {
             csi_methods: self.get_csi_methods(),
             verbosity: TelemetryVerbosity::parse(self.telemetry_verbosity.clone()),
             literals: self.literals.unwrap_or(true),
+            file_prefix_code: Vec::new(),
         }
     }
 }
@@ -168,9 +172,45 @@ impl Rewriter {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
         let rewriter_config = serde_wasm_bindgen::from_value::<RewriterConfig>(config_js);
-        let config: Config = rewriter_config
+        let mut config: Config = rewriter_config
             .unwrap_or(RewriterConfig::default())
             .to_config();
+
+        let template = ";if (typeof _ddiast === 'undefined') (function(globals){ const noop = (res) => res; globals._ddiast = globals._ddiast || { __CSI_METHODS__ }; }((1,eval)('this')));";
+
+        let csi_methods_code: String = config
+            .csi_methods
+            .methods
+            .iter()
+            .map(|csi_method| format!("{}: noop", csi_method.dst))
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        let final_template = template.replace("__CSI_METHODS__", &csi_methods_code);
+
+        let compiler = Compiler::new(Arc::new(swc_common::SourceMap::new(
+            FilePathMapping::empty(),
+        )));
+        let handler_opts = HandlerOpts {
+            color: ColorConfig::Never,
+            skip_filename: false,
+        };
+
+        let program_result = try_with_handler(compiler.cm.clone(), handler_opts, |handler| {
+            let source_file = compiler.cm.new_source_file(
+                Arc::new(FileName::Real(PathBuf::from("inline.js".to_string()))),
+                final_template.clone(),
+            );
+
+            parse_js(&source_file, handler, &compiler)
+        });
+
+        if program_result.is_ok() {
+            let program = program_result.unwrap();
+            if let Program::Script(script) = program {
+                config.file_prefix_code.clone_from(&script.body);
+            }
+        }
 
         Self { config }
     }
