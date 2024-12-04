@@ -69,7 +69,7 @@ pub fn get_dd_paren_expr(
         call
     } else {
         assignations.push(call);
-        return Expr::Paren(ParenExpr {
+        Expr::Paren(ParenExpr {
             span: *span,
             expr: Box::new(Expr::Seq(SeqExpr {
                 span: *span,
@@ -78,6 +78,6 @@ pub fn get_dd_paren_expr(
                     .map(|assignation| Box::new(assignation.clone()))
                     .collect::<Vec<Box<Expr>>>(),
             })),
-        });
+        })
     }
 }
