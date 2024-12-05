@@ -14,7 +14,6 @@ use std::collections::HashSet;
 use swc_common::{SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
-
 use super::{ident_provider::DefaultIdentProvider, visitor_with_context::Ctx};
 
 pub struct BlockTransformVisitor<'a> {
@@ -50,16 +49,33 @@ impl BlockTransformVisitor<'_> {
 
 impl Visit for BlockTransformVisitor<'_> {}
 
+fn is_use_strict(stmt: &Stmt) -> bool {
+    if let Stmt::Expr(expr_stmt) = stmt {
+        if let Expr::Lit(lit) = &*expr_stmt.expr {
+            if let Lit::Str(Str { value, .. }) = lit {
+                return value == "use strict";
+            }
+        }
+    }
+    false
+}
+
 impl VisitMut for BlockTransformVisitor<'_> {
     fn visit_mut_program(&mut self, node: &mut Program) {
         node.visit_mut_children_with(self);
-        // TODO prepend
-        //  if (typeof _ddiast === 'undefined') (function (globals) { const noop = (res) => res; globals._ddiast = { csimethod: noop,... } })((1,eval)('this'))
 
+        // TODO check if code starts with 'use strict', if it is, insert new code in index 1 instead fo 0
         if self.transform_status.status == Status::Modified {
             if let Program::Script(script) = node {
+                let mut index = 0;
+                if let Some(stmt) = script.body.first() {
+                    if is_use_strict(stmt) {
+                        index = index + 1;
+                    }
+                }
+
                 for prefix_statement in self.config.file_prefix_code.iter().rev() {
-                    script.body.insert(0, prefix_statement.clone());
+                    script.body.insert(index, prefix_statement.clone());
                 }
             }
         }
