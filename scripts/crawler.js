@@ -10,10 +10,8 @@ const { Rewriter } = require('../main')
 
 const INCLUDED_FILES = /(.*)\.m?js$/
 const ENCODING = 'utf8'
-const USE_STRICT = /^(["']use strict["'];*)$/gm
 const REWRITTEN_FILE_TOKEN_NAME = '___rewritten'
 const REWRITTEN_FILE_BACKUP_NAME = REWRITTEN_FILE_TOKEN_NAME + '_original'
-const DD_IAST_GLOBAL_METHODS_FILE_ENV = 'DD_IAST_GLOBAL_METHODS_FILE'
 const V8_NATIVE_CALL_REGEX = /%(\w+\(\S*?|\s*\))/gm
 const V8_NATIVE_CALL_REPLACEMENT_PREFIX = '__v8_native_remainder'
 const V8_NATIVE_CALL_REPLACEMENT_REGEX = /__v8_native_remainder(\w+\(\S*?|\s*\))/gm
@@ -40,17 +38,11 @@ const CSI_METHODS = [
   { src: 'trimStart' }
 ]
 
-const GLOBAL_METHODS_TEMPLATE = `;(function(globals){
-  globals._ddiast = globals._ddiast || { __CSI_METHODS__ };
-}((1,eval)('this')));`
-
 const DEFAULT_OPTIONS = {
   restore: false,
   rootPath: null,
   filePattern: '.*',
   override: false,
-  globals: true,
-  globalsFile: null,
   rewrite: true,
   modules: false,
   natives: true,
@@ -66,13 +58,6 @@ const cyan = console.log.bind(this, '\x1b[35m%s\x1b[0m')
 const literals = process.env.HARDCODED_SECRET_ENABLED !== 'false' && process.env.HARDCODED_SECRET_ENABLED !== '0'
 
 const rewriter = new Rewriter({ comments: true, csiMethods: CSI_METHODS, telemetryVerbosity: 'Debug', literals })
-
-const getGlobalMethods = function (methods) {
-  const fnSignAndBody = '(res) {return res;}'
-  return GLOBAL_METHODS_TEMPLATE.replace('__CSI_METHODS__', methods.join(`${fnSignAndBody},`) + fnSignAndBody)
-}
-
-const GLOBAL_METHODS = getGlobalMethods(rewriter.csiMethods())
 
 const crawl = (dirPath, options, visitor) => {
   blue(dirPath)
@@ -163,10 +148,6 @@ const parseOptions = (args) => {
     }
   }
 
-  if (process.env[DD_IAST_GLOBAL_METHODS_FILE_ENV]) {
-    options.globalsFile = process.env[DD_IAST_GLOBAL_METHODS_FILE_ENV]
-  }
-
   return options
 }
 
@@ -180,15 +161,8 @@ const showHelp = () => {
 and rewritten file is saved with a suffix next to original file'
   )
   console.log('  --restore                           Restores all js files to their original state')
-  console.log('  --no-globals                        Do not inject default global._ddiast.* methods')
   console.log('  --no-rewrite                        Search for files but do not rewrite')
   console.log('  --no-natives                        Disable v8 native calls substitution', os.EOL)
-
-  console.log('Environment variables:')
-  console.log(
-    '  DD_IAST_GLOBAL_METHODS_FILE         Path to the file containing methods to inject in the \
-rewritten file header'
-  )
 }
 
 const options = parseOptions(process.argv)
@@ -259,7 +233,7 @@ crawl(options.rootPath, options, {
         if (options.natives) {
           rewritten = this.replaceNativeV8Calls(rewritten, fileName, true)
         }
-        return this.addGlobalMethods(code, rewritten, options)
+        return rewritten
       } catch (e) {
         red(`     -> ${fileName}: ${e}`)
         rewritingErrors.push({
@@ -280,31 +254,6 @@ crawl(options.rootPath, options, {
     const replacement = restore ? '%' : V8_NATIVE_CALL_REPLACEMENT_PREFIX
     code = code.replace(regex, replacement + '$1')
     return code
-  },
-  addGlobalMethods (code, rewritten, options) {
-    if (rewritten === code) {
-      return code
-    }
-    if (options.globals) {
-      let globalMethods
-      if (options.globalsFile) {
-        try {
-          globalMethods = fs.readFileSync(options.globalsFile, ENCODING)
-        } catch (e) {
-          red(e)
-        }
-      } else {
-        globalMethods = GLOBAL_METHODS
-      }
-
-      if (rewritten.match(USE_STRICT)) {
-        return rewritten.replace(USE_STRICT, '$1' + os.EOL + globalMethods + os.EOL)
-      } else {
-        return globalMethods + os.EOL + rewritten
-      }
-    }
-
-    return rewritten
   }
 })
 
