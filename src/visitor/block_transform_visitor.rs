@@ -1,3 +1,4 @@
+use super::{ident_provider::DefaultIdentProvider, visitor_with_context::Ctx};
 /**
 * Unless explicitly stated otherwise all files in this repository are licensed under the Apache-2.0 License.
 * This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
@@ -14,7 +15,6 @@ use std::collections::HashSet;
 use swc_common::{SyntaxContext, DUMMY_SP};
 use swc_ecma_ast::{Stmt::Decl as DeclEnumOption, *};
 use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
-use super::{ident_provider::DefaultIdentProvider, visitor_with_context::Ctx};
 
 pub struct BlockTransformVisitor<'a> {
     pub transform_status: &'a mut TransformStatus,
@@ -51,10 +51,8 @@ impl Visit for BlockTransformVisitor<'_> {}
 
 fn is_use_strict(stmt: &Stmt) -> bool {
     if let Stmt::Expr(expr_stmt) = stmt {
-        if let Expr::Lit(lit) = &*expr_stmt.expr {
-            if let Lit::Str(Str { value, .. }) = lit {
-                return value == "use strict";
-            }
+        if let Expr::Lit(Lit::Str(Str { value, .. })) = &*expr_stmt.expr {
+            return value == "use strict";
         }
     }
     false
@@ -70,7 +68,7 @@ impl VisitMut for BlockTransformVisitor<'_> {
                 let mut index = 0;
                 if let Some(stmt) = script.body.first() {
                     if is_use_strict(stmt) {
-                        index = index + 1;
+                        index += 1;
                     }
                 }
 
