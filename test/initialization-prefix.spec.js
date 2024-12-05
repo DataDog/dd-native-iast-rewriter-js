@@ -8,9 +8,11 @@ const { rewriteAndExpectNoTransformation, rewriteAst, wrapBlock } = require('./u
 
 const testOptions = {
   keepPrefix: true,
-  csiMethods: [{
-    src: 'trim'
-  }]
+  csiMethods: [
+    {
+      src: 'trim'
+    }
+  ]
 }
 
 const EXPECTED_PREFIX = `;
@@ -35,15 +37,30 @@ describe('Initialization prefix', () => {
       expect(rewritten.startsWith(EXPECTED_PREFIX)).to.be.true
     })
 
-    it('should maintain \'use strict\' at the begining', () => {
+    it('should add prefix in rewritten files in ESM modules', () => {
+      const js = 'import { a } from "a"; { a.trim() }'
+      const rewritten = rewriteAst(js, testOptions)
+      expect(rewritten.startsWith(EXPECTED_PREFIX)).to.be.true
+    })
+
+    it("should maintain 'use strict' at the beginning", () => {
       const js = `'use strict'
 function a() { a.trim() }`
       const rewritten = rewriteAst(js, testOptions)
       expect(rewritten).to.include(EXPECTED_PREFIX)
-      expect(rewritten.startsWith('\'use strict\'')).to.be.true
+      expect(rewritten.startsWith("'use strict'")).to.be.true
     })
 
-    it('should maintain \'use strict\' at the beginning ignoring comments', () => {
+    it("should maintain 'use strict' at the beginning in ESM modules", () => {
+      const js = `'use strict'
+import { a } from "a";
+function a() { a.trim() }`
+      const rewritten = rewriteAst(js, testOptions)
+      expect(rewritten).to.include(EXPECTED_PREFIX)
+      expect(rewritten.startsWith("'use strict'")).to.be.true
+    })
+
+    it("should maintain 'use strict' at the beginning ignoring comments", () => {
       const js = `// test
 'use strict'
 function a() { a.trim() }`
@@ -52,11 +69,44 @@ function a() { a.trim() }`
       expect(rewritten.startsWith(`'use strict';\n${EXPECTED_PREFIX}`)).to.be.true
     })
 
-    it('should maintain "use strict" at the begining', () => {
+    it('should maintain "use strict" at the beginning', () => {
       const js = `"use strict"
 function a() { a.trim() }`
       const rewritten = rewriteAst(js, testOptions)
       expect(rewritten.startsWith(`"use strict";\n${EXPECTED_PREFIX}`)).to.be.true
+    })
+
+    it('should maintain "use strict" if it comes after /**/ comment and {comments: true} in config', () => {
+      const comment = `/* this is a
+ * multiline comment
+ */`
+      const js = `${comment}
+"use strict"
+function a() { a.trim() }`
+      const rewritten = rewriteAst(js, { ...testOptions, comments: true })
+
+      expect(rewritten.startsWith(`${comment} "use strict";\n${EXPECTED_PREFIX}`)).to.be.true
+    })
+
+    it('should maintain "use strict" if it comes after // comment and {comments: true} in config', () => {
+      const comment = '// this is a comment'
+      const js = `${comment}
+"use strict"
+function a() { a.trim() }`
+      const rewritten = rewriteAst(js, { ...testOptions, comments: true })
+
+      expect(rewritten.startsWith(`${comment}\n"use strict";\n${EXPECTED_PREFIX}`)).to.be.true
+    })
+
+    it('should maintain "use strict" if it comes before // comment and { comments: true } in config', () => {
+      const comment = '// this is a comment'
+      const js = `"use strict"
+${comment}
+function a() { a.trim() }`
+
+      const rewritten = rewriteAst(js, { ...testOptions, comments: true })
+
+      expect(rewritten.startsWith(`"use strict";\n${EXPECTED_PREFIX}\n${comment}`)).to.be.true
     })
   })
 
@@ -76,6 +126,26 @@ function a() { a.trim() }`
   return val.trim()
 }`
       const rewrittenCode = rewriteAst(code, testOptions)
+      // eslint-disable-next-line no-eval
+      const rewrittenFunction = (1, eval)(rewrittenCode)
+
+      expect(rewrittenFunction('   test   ')).to.be.equals('test')
+    })
+
+    it('should execute valid code when _ddiast is not defined yet and src and dst are differents', () => {
+      const code = `(val) => {
+  return val.trim()
+}`
+      const newTestOptions = {
+        ...testOptions,
+        csiMethods: [
+          {
+            src: 'trim',
+            dst: 'modifiedTrim'
+          }
+        ]
+      }
+      const rewrittenCode = rewriteAst(code, newTestOptions)
       // eslint-disable-next-line no-eval
       const rewrittenFunction = (1, eval)(rewrittenCode)
 

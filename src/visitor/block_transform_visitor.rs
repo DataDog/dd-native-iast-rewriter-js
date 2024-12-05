@@ -62,18 +62,32 @@ impl VisitMut for BlockTransformVisitor<'_> {
     fn visit_mut_program(&mut self, node: &mut Program) {
         node.visit_mut_children_with(self);
 
-        // TODO check if code starts with 'use strict', if it is, insert new code in index 1 instead fo 0
         if self.transform_status.status == Status::Modified {
-            if let Program::Script(script) = node {
-                let mut index = 0;
-                if let Some(stmt) = script.body.first() {
-                    if is_use_strict(stmt) {
-                        index += 1;
+            match node {
+                Program::Script(script) => {
+                    let mut index = 0;
+                    if let Some(stmt) = script.body.first() {
+                        if is_use_strict(stmt) {
+                            index += 1;
+                        }
+                    }
+
+                    for prefix_statement in self.config.file_prefix_code.iter().rev() {
+                        script.body.insert(index, prefix_statement.clone());
                     }
                 }
-
-                for prefix_statement in self.config.file_prefix_code.iter().rev() {
-                    script.body.insert(index, prefix_statement.clone());
+                Program::Module(module) => {
+                    let mut index = 0;
+                    if let Some(ModuleItem::Stmt(stmt)) = module.body.first() {
+                        if is_use_strict(stmt) {
+                            index += 1;
+                        }
+                    }
+                    for prefix_statement in self.config.file_prefix_code.iter().rev() {
+                        module
+                            .body
+                            .insert(index, ModuleItem::Stmt(prefix_statement.clone()));
+                    }
                 }
             }
         }
@@ -83,7 +97,6 @@ impl VisitMut for BlockTransformVisitor<'_> {
         if self.visit_is_cancelled() {
             return;
         }
-
         let mut ident_provider = DefaultIdentProvider::new(&self.config.local_var_prefix);
         let mut operation_visitor = OperationTransformVisitor {
             ident_provider: &mut ident_provider,
@@ -99,7 +112,6 @@ impl VisitMut for BlockTransformVisitor<'_> {
             &self.config.local_var_prefix,
         ) {
             return self.cancel_visit("Variable name duplicated");
-            // insert_variable_declaration(&ident_provider.idents, expr);
         } else {
             insert_variable_declaration(&ident_provider.idents, expr);
         }
