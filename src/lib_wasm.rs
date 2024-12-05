@@ -22,7 +22,7 @@ use std::{
 };
 use swc::{try_with_handler, Compiler, HandlerOpts};
 use swc_common::{errors::ColorConfig, FileName, FilePathMapping};
-use swc_ecma_ast::Program;
+use swc_ecma_ast::{Program, Stmt};
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 
 #[derive(Deserialize)]
@@ -165,6 +165,43 @@ impl FileReader<Cursor<Vec<u8>>> for WasmFileReader {
     }
 }
 
+fn generate_prefix_stmts(config: &Config) -> Vec<Stmt> {
+    let template = ";if (typeof _ddiast === 'undefined') (function(globals){ const noop = (res) => res; globals._ddiast = globals._ddiast || { __CSI_METHODS__ }; }((1,eval)('this')));";
+
+    let csi_methods_code = config
+        .csi_methods
+        .methods
+        .iter()
+        .map(|csi_method| format!("{}: noop", csi_method.dst))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let final_template = template.replace("__CSI_METHODS__", &csi_methods_code);
+
+    let compiler = Compiler::new(Arc::new(swc_common::SourceMap::new(
+        FilePathMapping::empty(),
+    )));
+    let handler_opts = HandlerOpts {
+        color: ColorConfig::Never,
+        skip_filename: false,
+    };
+
+    let program_result = try_with_handler(compiler.cm.clone(), handler_opts, |handler| {
+        let source_file = compiler.cm.new_source_file(
+            Arc::new(FileName::Real(PathBuf::from("inline.js".to_string()))),
+            final_template.clone(),
+        );
+
+        parse_js(&source_file, handler, &compiler)
+    });
+
+    if let Ok(Program::Script(script)) = program_result {
+        return script.body;
+    }
+
+    Vec::new()
+}
+
 #[wasm_bindgen]
 impl Rewriter {
     #[wasm_bindgen(constructor)]
@@ -176,41 +213,9 @@ impl Rewriter {
             .unwrap_or(RewriterConfig::default())
             .to_config();
 
-        let template = ";if (typeof _ddiast === 'undefined') (function(globals){ const noop = (res) => res; globals._ddiast = globals._ddiast || { __CSI_METHODS__ }; }((1,eval)('this')));";
-
-        let csi_methods_code: String = config
-            .csi_methods
-            .methods
-            .iter()
-            .map(|csi_method| format!("{}: noop", csi_method.dst))
-            .collect::<Vec<_>>()
-            .join(", ");
-
-        let final_template = template.replace("__CSI_METHODS__", &csi_methods_code);
-
-        let compiler = Compiler::new(Arc::new(swc_common::SourceMap::new(
-            FilePathMapping::empty(),
-        )));
-        let handler_opts = HandlerOpts {
-            color: ColorConfig::Never,
-            skip_filename: false,
-        };
-
-        let program_result = try_with_handler(compiler.cm.clone(), handler_opts, |handler| {
-            let source_file = compiler.cm.new_source_file(
-                Arc::new(FileName::Real(PathBuf::from("inline.js".to_string()))),
-                final_template.clone(),
-            );
-
-            parse_js(&source_file, handler, &compiler)
-        });
-
-        if program_result.is_ok() {
-            let program = program_result.unwrap();
-            if let Program::Script(script) = program {
-                config.file_prefix_code.clone_from(&script.body);
-            }
-        }
+        config
+            .file_prefix_code
+            .clone_from(&generate_prefix_stmts(&config));
 
         Self { config }
     }
