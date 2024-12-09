@@ -59,40 +59,6 @@ fn is_use_strict(stmt: &Stmt) -> bool {
 }
 
 impl VisitMut for BlockTransformVisitor<'_> {
-    fn visit_mut_program(&mut self, node: &mut Program) {
-        node.visit_mut_children_with(self);
-
-        if self.transform_status.status == Status::Modified {
-            match node {
-                Program::Script(script) => {
-                    let mut index = 0;
-                    if let Some(stmt) = script.body.first() {
-                        if is_use_strict(stmt) {
-                            index += 1;
-                        }
-                    }
-
-                    for prefix_statement in self.config.file_prefix_code.iter().rev() {
-                        script.body.insert(index, prefix_statement.clone());
-                    }
-                }
-                Program::Module(module) => {
-                    let mut index = 0;
-                    if let Some(ModuleItem::Stmt(stmt)) = module.body.first() {
-                        if is_use_strict(stmt) {
-                            index += 1;
-                        }
-                    }
-                    for prefix_statement in self.config.file_prefix_code.iter().rev() {
-                        module
-                            .body
-                            .insert(index, ModuleItem::Stmt(prefix_statement.clone()));
-                    }
-                }
-            }
-        }
-    }
-
     fn visit_mut_block_stmt(&mut self, expr: &mut BlockStmt) {
         if self.visit_is_cancelled() {
             return;
@@ -117,6 +83,41 @@ impl VisitMut for BlockTransformVisitor<'_> {
         }
 
         expr.visit_mut_children_with(self);
+    }
+
+    fn visit_mut_program(&mut self, node: &mut Program) {
+        node.visit_mut_children_with(self);
+
+        if self.transform_status.status == Status::Modified {
+            match node {
+                Program::Script(script) => {
+                    let mut index = 0;
+                    if let Some(stmt) = script.body.first() {
+                        if is_use_strict(stmt) {
+                            index = 1;
+                        }
+                    }
+
+                    for prefix_statement in self.config.file_prefix_code.iter().rev() {
+                        script.body.insert(index, prefix_statement.clone());
+                    }
+                }
+                Program::Module(module) => {
+                    let mut index = 0;
+                    if let Some(ModuleItem::Stmt(stmt)) = module.body.first() {
+                        if is_use_strict(stmt) {
+                            index = 1;
+                        }
+                    }
+
+                    for prefix_statement in self.config.file_prefix_code.iter().rev() {
+                        module
+                            .body
+                            .insert(index, ModuleItem::Stmt(prefix_statement.clone()));
+                    }
+                }
+            }
+        }
     }
 }
 
