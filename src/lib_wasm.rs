@@ -181,11 +181,11 @@ fn generate_prefix_stmts(config: &Config) -> Vec<Stmt> {
     let compiler = Compiler::new(Arc::new(swc_common::SourceMap::new(
         FilePathMapping::empty(),
     )));
+
     let handler_opts = HandlerOpts {
         color: ColorConfig::Never,
         skip_filename: false,
     };
-
     let program_result = try_with_handler(compiler.cm.clone(), handler_opts, |handler| {
         let source_file = compiler.cm.new_source_file(
             Arc::new(FileName::Real(PathBuf::from("inline.js".to_string()))),
