@@ -53,9 +53,7 @@ const rewriteWithOpts = (code, opts) => {
     {
       localVarPrefix: 'test',
       csiMethods,
-      telemetryVerbosity: TELEMETRY_VERBOSITY,
-      logLevel: 'DEBUG',
-      logger: console
+      telemetryVerbosity: TELEMETRY_VERBOSITY
     },
     opts || {}
   )
