@@ -159,7 +159,7 @@ fn default_handler_opts() -> HandlerOpts {
     }
 }
 
-pub fn parse_js(
+fn parse_js(
     source_file: &Arc<SourceFile>,
     handler: &Handler,
     compiler: &Compiler,
@@ -345,6 +345,42 @@ fn extract_source_map<R: Read>(
         source,
         source_map_comment,
     }
+}
+
+pub fn generate_prefix_stmts(csi_methods: &CsiMethods) -> Vec<Stmt> {
+    let template = ";if (typeof _ddiast === 'undefined') (function(globals){ const noop = (res) => res; globals._ddiast = globals._ddiast || { __CSI_METHODS__ }; }((1,eval)('this')));";
+
+    let csi_methods_code = csi_methods
+        .methods
+        .iter()
+        .map(|csi_method| format!("{}: noop", csi_method.dst))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let final_template = template.replace("__CSI_METHODS__", &csi_methods_code);
+
+    let compiler = Compiler::new(Arc::new(swc_common::SourceMap::new(
+        FilePathMapping::empty(),
+    )));
+
+    let handler_opts = HandlerOpts {
+        color: ColorConfig::Never,
+        skip_filename: false,
+    };
+    let program_result = try_with_handler(compiler.cm.clone(), handler_opts, |handler| {
+        let source_file = compiler.cm.new_source_file(
+            Arc::new(FileName::Real(PathBuf::from("inline.js".to_string()))),
+            final_template.clone(),
+        );
+
+        parse_js(&source_file, handler, &compiler)
+    });
+
+    if let Ok(Program::Script(script)) = program_result {
+        return script.body;
+    }
+
+    Vec::new()
 }
 
 #[cfg(test)]
