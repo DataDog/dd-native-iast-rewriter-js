@@ -96,4 +96,21 @@ mod tests {
     var f = (__datadog_test_0 = yield 'yielded', _ddiast.tplOperator(`foo${__datadog_test_0}bar`, __datadog_test_0));");
         Ok(())
     }
+
+    #[test]
+    fn test_template_literal_with_arrow() -> Result<(), String> {
+        let original_code = "function names(arg) {
+            const flag = arg;
+            const addPrefix = (value) => (flag ? value : `\"my_prefix_${value}\"`);
+            const result = `${addPrefix('NAME_0')}`;
+            return result;
+    }"
+        .to_string();
+
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+
+        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;");
+        Ok(())
+    }
 }

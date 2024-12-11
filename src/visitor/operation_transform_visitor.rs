@@ -162,6 +162,11 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 }
             }
 
+            Expr::Paren(_) => {
+                let opv_with_child_ctx = &mut *self.with_child_no_reset_ctx();
+                expr.visit_mut_children_with(opv_with_child_ctx);
+            }
+
             _ => {
                 expr.visit_mut_children_with(self);
             }

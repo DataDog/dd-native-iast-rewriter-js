@@ -49,6 +49,13 @@ pub trait VisitorWithContext {
     {
         self.with_ctx(self.get_ctx().child(true))
     }
+
+    fn with_child_no_reset_ctx(&mut self) -> WithCtx<'_, Self>
+    where
+        Self: Sized,
+    {
+        self.with_ctx(self.get_ctx().child(false))
+    }
 }
 
 pub struct WithCtx<'a, V>
