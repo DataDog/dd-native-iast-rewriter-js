@@ -28,8 +28,54 @@ function namesBlock(arg) {
 
 function namesNested(arg) {
   const flag = arg
-  const addSufix = (value) => `(${!value}_suffix`
+  const addSufix = (value) => `${!value}_suffix`
   const addPrefix = (value) => (flag ? `"${value}"` : `"my_prefix.${addSufix(value)}"`)
+  const result = `
+      ${addPrefix('NAME_0')}
+      ${addPrefix('NAME_1')}
+      ${addPrefix('NAME_2')}
+      ${addPrefix('NAME_3')}
+    `
+  return result
+}
+
+function namesDoubleResult(arg) {
+  const flag = arg
+  const addPrefix = (value) => (flag ? `"${value}"` : `"my_prefix.${value}"`)
+  const resultFake = `
+      ${addPrefix('NAME_0')}
+      ${addPrefix('NAME_1')}
+      ${addPrefix('NAME_2')}
+      ${addPrefix('NAME_3')}
+    `
+  const result = `
+      ${addPrefix('NAME_0')}
+      ${addPrefix('NAME_1')}
+      ${addPrefix('NAME_2')}
+      ${addPrefix('NAME_3')}
+    `
+  return result
+}
+
+function namesNoFlag() {
+  const addPrefix = (value) => `"my_prefix.${value}"`
+  const result = `
+      ${addPrefix('NAME_0')}
+      ${addPrefix('NAME_1')}
+      ${addPrefix('NAME_2')}
+      ${addPrefix('NAME_3')}
+    `
+  return result
+}
+
+function namesNoFlagDoubleResult() {
+  const addPrefix = (value) => `"my_prefix.${value}"`
+  const resultFake = `
+      ${addPrefix('NAME_0')}
+      ${addPrefix('NAME_1')}
+      ${addPrefix('NAME_2')}
+      ${addPrefix('NAME_3')}
+    `
   const result = `
       ${addPrefix('NAME_0')}
       ${addPrefix('NAME_1')}
@@ -59,5 +105,8 @@ module.exports = {
   names,
   namesBlock,
   namesNested,
+  namesDoubleResult,
+  namesNoFlag,
+  namesNoFlagDoubleResult,
   paren,
 }

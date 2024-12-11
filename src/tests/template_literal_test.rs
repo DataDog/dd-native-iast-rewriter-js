@@ -110,7 +110,35 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
 
-        assert_that(&rewritten.code).contains("let __datadog_test_0, __datadog_test_1;");
+        assert_that(&rewritten.code).contains(
+            "let __datadog_test_0;
+    const flag = arg;
+    const addPrefix = (value)=>{
+        let __datadog_test_0;",
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_template_literal_with_paren() -> Result<(), String> {
+        let original_code = "function names(arg) {
+            const flag = arg;
+            const addPrefix = (value) => (flag ? value : `\"my_prefix_${value}\"`);
+            let a, b
+            const result = (a = 'NAME_0', b = 'NAME_1', `${addPrefix(a)}`);
+            return result;
+    }"
+        .to_string();
+
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+
+        assert_that(&rewritten.code).contains(
+            "let __datadog_test_0;
+    const flag = arg;
+    const addPrefix = (value)=>{
+        let __datadog_test_0;",
+        );
         Ok(())
     }
 }

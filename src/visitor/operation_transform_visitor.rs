@@ -9,6 +9,7 @@ use swc_ecma_visit::{Visit, VisitMut, VisitMutWith};
 use crate::{
     telemetry::Telemetry,
     transform::{
+        arrow_transform::ArrowTransform,
         assign_add_transform::AssignAddTransform,
         binary_add_transform::BinaryAddTransform,
         call_expr_transform::CallExprTransform,
@@ -162,9 +163,12 @@ impl VisitMut for OperationTransformVisitor<'_> {
                 }
             }
 
-            Expr::Paren(_) => {
-                let opv_with_child_ctx = &mut *self.with_child_no_reset_ctx();
-                expr.visit_mut_children_with(opv_with_child_ctx);
+            Expr::Arrow(arrow) => {
+                let transform_result = ArrowTransform::to_dd_arrow_expr(arrow);
+                if transform_result.is_modified() {
+                    expr.map_with_mut(|e| transform_result.expr.unwrap_or(e));
+                    // do not update status yet
+                }
             }
 
             _ => {
