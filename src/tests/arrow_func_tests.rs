@@ -102,4 +102,28 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_arrow_with_block_modified() -> Result<(), String> {
+        let original_code = "{
+          const a = (arg) => { return arg ? `hello ${arg}` : '' }
+          const b = `${a('world')} bye`
+        }"
+        .to_string();
+        let js_file = "test.js".to_string();
+        let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
+
+        assert_that(
+            &rewritten
+                .transform_status
+                .is_some_and(|status| status.status == Status::Modified),
+        );
+        assert_that(&rewritten.code).contains("const a = (arg)=>{
+        let __datadog_test_0;
+        return arg ? (__datadog_test_0 = arg, _ddiast.tplOperator(`hello ${__datadog_test_0}`, __datadog_test_0)) : '';
+    };
+    const b = (__datadog_test_0 = a('world'), _ddiast.tplOperator(`${__datadog_test_0} bye`, __datadog_test_0));");
+
+        Ok(())
+    }
 }
