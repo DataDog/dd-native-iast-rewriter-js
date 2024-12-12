@@ -5,7 +5,7 @@
 extern crate base64;
 
 use crate::{
-    rewriter::{parse_js, print_js, rewrite_js, Config},
+    rewriter::{generate_prefix_stmts, print_js, rewrite_js, Config},
     telemetry::{Telemetry, TelemetryVerbosity},
     tracer_logger::{self},
     transform::transform_status::TransformStatus,
@@ -18,11 +18,7 @@ use std::{
     collections::HashMap,
     io::{Cursor, Read},
     path::{Path, PathBuf},
-    sync::Arc,
 };
-use swc::{try_with_handler, Compiler, HandlerOpts};
-use swc_common::{errors::ColorConfig, FileName, FilePathMapping};
-use swc_ecma_ast::{Program, Stmt};
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 
 #[derive(Deserialize)]
@@ -95,6 +91,9 @@ impl RewriterConfig {
     }
 
     fn to_config(&self) -> Config {
+        let csi_methods = self.get_csi_methods();
+        let file_prefix_code = generate_prefix_stmts(&csi_methods);
+
         Config {
             chain_source_map: self.chain_source_map.unwrap_or(false),
             print_comments: self.comments.unwrap_or(false),
@@ -102,10 +101,10 @@ impl RewriterConfig {
                 .local_var_prefix
                 .clone()
                 .unwrap_or_else(|| rnd_string(6)),
-            csi_methods: self.get_csi_methods(),
+            csi_methods,
             verbosity: TelemetryVerbosity::parse(self.telemetry_verbosity.clone()),
             literals: self.literals.unwrap_or(true),
-            file_prefix_code: Vec::new(),
+            file_prefix_code,
         }
     }
 }
@@ -165,43 +164,6 @@ impl FileReader<Cursor<Vec<u8>>> for WasmFileReader {
     }
 }
 
-fn generate_prefix_stmts(config: &Config) -> Vec<Stmt> {
-    let template = ";if (typeof _ddiast === 'undefined') (function(globals){ const noop = (res) => res; globals._ddiast = globals._ddiast || { __CSI_METHODS__ }; }((1,eval)('this')));";
-
-    let csi_methods_code = config
-        .csi_methods
-        .methods
-        .iter()
-        .map(|csi_method| format!("{}: noop", csi_method.dst))
-        .collect::<Vec<_>>()
-        .join(", ");
-
-    let final_template = template.replace("__CSI_METHODS__", &csi_methods_code);
-
-    let compiler = Compiler::new(Arc::new(swc_common::SourceMap::new(
-        FilePathMapping::empty(),
-    )));
-
-    let handler_opts = HandlerOpts {
-        color: ColorConfig::Never,
-        skip_filename: false,
-    };
-    let program_result = try_with_handler(compiler.cm.clone(), handler_opts, |handler| {
-        let source_file = compiler.cm.new_source_file(
-            Arc::new(FileName::Real(PathBuf::from("inline.js".to_string()))),
-            final_template.clone(),
-        );
-
-        parse_js(&source_file, handler, &compiler)
-    });
-
-    if let Ok(Program::Script(script)) = program_result {
-        return script.body;
-    }
-
-    Vec::new()
-}
-
 #[wasm_bindgen]
 impl Rewriter {
     #[wasm_bindgen(constructor)]
@@ -209,13 +171,9 @@ impl Rewriter {
         std::panic::set_hook(Box::new(console_error_panic_hook::hook));
 
         let rewriter_config = serde_wasm_bindgen::from_value::<RewriterConfig>(config_js);
-        let mut config: Config = rewriter_config
+        let config: Config = rewriter_config
             .unwrap_or(RewriterConfig::default())
             .to_config();
-
-        config
-            .file_prefix_code
-            .clone_from(&generate_prefix_stmts(&config));
 
         Self { config }
     }
