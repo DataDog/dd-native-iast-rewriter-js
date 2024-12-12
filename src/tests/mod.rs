@@ -11,6 +11,7 @@ use crate::{
 use anyhow::Error;
 use std::path::PathBuf;
 
+mod arrow_func_tests;
 mod binary_assignation_test;
 mod binary_expression_test;
 mod literal_test;

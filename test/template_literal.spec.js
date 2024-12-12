@@ -381,5 +381,31 @@ __datadog_test_0 + __datadog_test_1, __datadog_test_0, __datadog_test_1)), _ddia
       rewriteAndCompare(testFunction, [1, 'b'])
       rewriteAndCompare(testFunction, ['a', 2])
     })
+
+    it('issue 101', () => {
+      // eslint-disable-next-line no-unused-vars
+      const _ddiast = {
+        plusOperator: (res) => res,
+        tplOperator: (res) => res
+      }
+
+      const js = readFileSync(path.join(__dirname, 'resources/issue-101.js')).toString()
+
+      // eslint-disable-next-line no-eval
+      const issue101 = eval(js)
+
+      const rewritten = rewriteAst(js)
+
+      // eslint-disable-next-line no-eval
+      const rewrittenIssue101 = eval(rewritten)
+
+      expect(issue101.names(false)).to.be.equal(rewrittenIssue101.names(false))
+      expect(issue101.namesBlock(false)).to.be.equal(rewrittenIssue101.namesBlock(false))
+      expect(issue101.namesNested(false)).to.be.equal(rewrittenIssue101.namesNested(false))
+      expect(issue101.namesDoubleResult(false)).to.be.equal(rewrittenIssue101.namesDoubleResult(false))
+      expect(issue101.namesNoFlag(false)).to.be.equal(rewrittenIssue101.namesNoFlag(false))
+      expect(issue101.namesNoFlagDoubleResult(false)).to.be.equal(rewrittenIssue101.namesNoFlagDoubleResult(false))
+      expect(issue101.paren(false)).to.be.equal(rewrittenIssue101.paren(false))
+    })
   })
 })
