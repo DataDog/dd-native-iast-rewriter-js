@@ -118,7 +118,8 @@ mod tests {
                 .transform_status
                 .is_some_and(|status| status.status == Status::Modified),
         );
-        assert_that(&rewritten.code).contains("const a = (arg)=>{
+        assert_that(&rewritten.code).contains("let __datadog_test_0;
+    const a = (arg)=>{
         let __datadog_test_0;
         return arg ? (__datadog_test_0 = arg, _ddiast.tplOperator(`hello ${__datadog_test_0}`, __datadog_test_0)) : '';
     };
