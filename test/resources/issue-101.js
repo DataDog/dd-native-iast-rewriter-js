@@ -1,6 +1,6 @@
 'use strict'
 
-function names(arg) {
+function names (arg) {
   const flag = arg
   const addPrefix = (value) => (flag ? `"${value}"` : `"my_prefix.${value}"`)
   const result = `
@@ -12,7 +12,7 @@ function names(arg) {
   return result
 }
 
-function namesBlock(arg) {
+function namesBlock (arg) {
   const flag = arg
   const addPrefix = (value) => {
     return flag ? `"${value}"` : `"my_prefix.${value}"`
@@ -26,7 +26,7 @@ function namesBlock(arg) {
   return result
 }
 
-function namesNested(arg) {
+function namesNested (arg) {
   const flag = arg
   const addSufix = (value) => `${!value}_suffix`
   const addPrefix = (value) => (flag ? `"${value}"` : `"my_prefix.${addSufix(value)}"`)
@@ -39,7 +39,7 @@ function namesNested(arg) {
   return result
 }
 
-function namesDoubleResult(arg) {
+function namesDoubleResult (arg) {
   const flag = arg
   const addPrefix = (value) => (flag ? `"${value}"` : `"my_prefix.${value}"`)
   const resultFake = `
@@ -57,7 +57,7 @@ function namesDoubleResult(arg) {
   return result
 }
 
-function namesNoFlag() {
+function namesNoFlag () {
   const addPrefix = (value) => `"my_prefix.${value}"`
   const result = `
       ${addPrefix('NAME_0')}
@@ -68,7 +68,7 @@ function namesNoFlag() {
   return result
 }
 
-function namesNoFlagDoubleResult() {
+function namesNoFlagDoubleResult () {
   const addPrefix = (value) => `"my_prefix.${value}"`
   const resultFake = `
       ${addPrefix('NAME_0')}
@@ -85,7 +85,7 @@ function namesNoFlagDoubleResult() {
   return result
 }
 
-function paren(arg) {
+function paren (arg) {
   const flag = arg
   let a, b, c
   const addPrefix = (value) => (flag ? `"${value}"` : `"my_prefix.${value}"`)
