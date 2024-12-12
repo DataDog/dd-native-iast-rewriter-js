@@ -49,15 +49,6 @@ impl BlockTransformVisitor<'_> {
 
 impl Visit for BlockTransformVisitor<'_> {}
 
-fn is_use_strict(stmt: &Stmt) -> bool {
-    if let Stmt::Expr(expr_stmt) = stmt {
-        if let Expr::Lit(Lit::Str(Str { value, .. })) = &*expr_stmt.expr {
-            return value == "use strict";
-        }
-    }
-    false
-}
-
 impl VisitMut for BlockTransformVisitor<'_> {
     fn visit_mut_block_stmt(&mut self, expr: &mut BlockStmt) {
         if self.visit_is_cancelled() {
@@ -93,7 +84,7 @@ impl VisitMut for BlockTransformVisitor<'_> {
                 Program::Script(script) => {
                     let mut index = 0;
                     if let Some(stmt) = script.body.first() {
-                        if is_use_strict(stmt) {
+                        if stmt.is_use_strict() {
                             index = 1;
                         }
                     }
@@ -105,7 +96,7 @@ impl VisitMut for BlockTransformVisitor<'_> {
                 Program::Module(module) => {
                     let mut index = 0;
                     if let Some(ModuleItem::Stmt(stmt)) = module.body.first() {
-                        if is_use_strict(stmt) {
+                        if stmt.is_use_strict() {
                             index = 1;
                         }
                     }
@@ -157,19 +148,9 @@ fn insert_variable_declaration(ident_expressions: &[Ident], expr: &mut BlockStmt
 }
 
 fn get_variable_insertion_index(stmts: &[Stmt]) -> usize {
-    if !stmts.is_empty() {
-        match &stmts[0] {
-            Stmt::Expr(expr) => match &*expr.expr {
-                Expr::Lit(Lit::Str(lit)) => {
-                    if lit.value.eq("use strict") {
-                        return 1;
-                    }
-                }
-                _ => return 0,
-            },
-            _ => return 0,
-        }
+    if !stmts.is_empty() && stmts[0].is_use_strict() {
+        1
+    } else {
+        0
     }
-
-    0
 }
