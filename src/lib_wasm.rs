@@ -4,14 +4,8 @@
 **/
 extern crate base64;
 
-use std::{
-    collections::HashMap,
-    io::{Cursor, Read},
-    path::{Path, PathBuf},
-};
-
 use crate::{
-    rewriter::{print_js, rewrite_js, Config},
+    rewriter::{generate_prefix_stmts, print_js, rewrite_js, Config},
     telemetry::{Telemetry, TelemetryVerbosity},
     tracer_logger::{self},
     transform::transform_status::TransformStatus,
@@ -20,6 +14,11 @@ use crate::{
 };
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    io::{Cursor, Read},
+    path::{Path, PathBuf},
+};
 use wasm_bindgen::{prelude::wasm_bindgen, JsError, JsValue};
 
 #[derive(Deserialize)]
@@ -92,6 +91,9 @@ impl RewriterConfig {
     }
 
     fn to_config(&self) -> Config {
+        let csi_methods = self.get_csi_methods();
+        let file_prefix_code = generate_prefix_stmts(&csi_methods);
+
         Config {
             chain_source_map: self.chain_source_map.unwrap_or(false),
             print_comments: self.comments.unwrap_or(false),
@@ -99,9 +101,10 @@ impl RewriterConfig {
                 .local_var_prefix
                 .clone()
                 .unwrap_or_else(|| rnd_string(6)),
-            csi_methods: self.get_csi_methods(),
+            csi_methods,
             verbosity: TelemetryVerbosity::parse(self.telemetry_verbosity.clone()),
             literals: self.literals.unwrap_or(true),
+            file_prefix_code,
         }
     }
 }

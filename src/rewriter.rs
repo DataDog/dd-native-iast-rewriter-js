@@ -32,8 +32,9 @@ use swc_common::{
     errors::{ColorConfig, Handler},
     FileName, FilePathMapping, SourceFile,
 };
-use swc_ecma_ast::{EsVersion, Program};
+use swc_ecma_ast::{EsVersion, Program, Stmt};
 
+use std::fmt;
 use swc_ecma_parser::{EsSyntax, Syntax};
 use swc_ecma_visit::VisitMutWith;
 
@@ -58,7 +59,6 @@ pub struct TransformOutputWithStatus {
     pub literals_result: Option<LiteralsResult>,
 }
 
-#[derive(Debug)]
 pub struct Config {
     pub chain_source_map: bool,
     pub print_comments: bool,
@@ -66,6 +66,21 @@ pub struct Config {
     pub csi_methods: CsiMethods,
     pub verbosity: TelemetryVerbosity,
     pub literals: bool,
+    pub file_prefix_code: Vec<Stmt>,
+}
+
+impl fmt::Debug for Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Config")
+            .field("chain_source_map", &self.chain_source_map)
+            .field("print_comments", &self.print_comments)
+            .field("local_var_prefix", &self.local_var_prefix)
+            .field("csi_methods", &self.csi_methods)
+            .field("verbosity", &self.verbosity)
+            .field("literals", &self.literals)
+            // file_prefix_code intentionally ignored
+            .finish()
+    }
 }
 
 pub fn rewrite_js<R: Read>(
@@ -330,6 +345,42 @@ fn extract_source_map<R: Read>(
         source,
         source_map_comment,
     }
+}
+
+pub fn generate_prefix_stmts(csi_methods: &CsiMethods) -> Vec<Stmt> {
+    let template = ";if (typeof _ddiast === 'undefined') (function(globals){ const noop = (res) => res; globals._ddiast = globals._ddiast || { __CSI_METHODS__ }; }((1,eval)('this')));";
+
+    let csi_methods_code = csi_methods
+        .methods
+        .iter()
+        .map(|csi_method| format!("{}: noop", csi_method.dst))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let final_template = template.replace("__CSI_METHODS__", &csi_methods_code);
+
+    let compiler = Compiler::new(Arc::new(swc_common::SourceMap::new(
+        FilePathMapping::empty(),
+    )));
+
+    let handler_opts = HandlerOpts {
+        color: ColorConfig::Never,
+        skip_filename: false,
+    };
+    let program_result = try_with_handler(compiler.cm.clone(), handler_opts, |handler| {
+        let source_file = compiler.cm.new_source_file(
+            Arc::new(FileName::Real(PathBuf::from("inline.js".to_string()))),
+            final_template.clone(),
+        );
+
+        parse_js(&source_file, handler, &compiler)
+    });
+
+    if let Ok(Program::Script(script)) = program_result {
+        return script.body;
+    }
+
+    Vec::new()
 }
 
 #[cfg(test)]
