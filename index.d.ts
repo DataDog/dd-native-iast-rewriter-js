@@ -46,6 +46,6 @@ export class NonCacheRewriter {
   csiMethods(): Array<string>
 }
 
-export class Rewriter extends NonCacheRewriter {}
+export const Rewriter: NonCacheRewriter
 
 export function cacheRewrittenSourceMap(filename: string, fileContent: string): void
