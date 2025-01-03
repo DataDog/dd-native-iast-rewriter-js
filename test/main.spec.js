@@ -30,33 +30,69 @@ describe('main', () => {
         cacheRewrittenSourceMap
       }
     })
-
-    rewriter = new main.Rewriter()
   })
 
-  it('loads sourceMap when source file has been modified', () => {
-    status = 'modified'
+  describe('default Rewriter', () => {
+    beforeEach(() => {
+      rewriter = new main.Rewriter()
+    })
 
-    const response = rewriter.rewrite('content', 'file')
+    it('loads sourceMap when source file has been modified', () => {
+      status = 'modified'
 
-    expect(response.metrics.status).to.eq('modified')
-    expect(cacheRewrittenSourceMap).to.be.calledOnceWith('file', 'content')
+      const response = rewriter.rewrite('content', 'file')
+
+      expect(response.metrics.status).to.eq('modified')
+      expect(cacheRewrittenSourceMap).to.be.calledOnceWith('file', 'content')
+    })
+
+    it('does not load sourceMap when source file has not been modified', () => {
+      status = 'notmodified'
+
+      const response = rewriter.rewrite('content', 'file')
+
+      expect(response.metrics.status).to.eq('notmodified')
+      expect(cacheRewrittenSourceMap).to.not.be.called
+    })
+
+    it('should catch errors produced in cacheRewrittenSourceMap', () => {
+      status = 'modified'
+
+      cacheRewrittenSourceMap.throws(() => new Error('Error reading sourceMap file'))
+
+      expect(() => rewriter.rewrite('content', 'file')).to.not.throw()
+    })
   })
 
-  it('does not load sourceMap when source file has not been modified', () => {
-    status = 'notmodified'
+  describe('NonCacheRewriter', () => {
+    beforeEach(() => {
+      rewriter = new main.NonCacheRewriter()
+    })
 
-    const response = rewriter.rewrite('content', 'file')
+    it('does not load sourceMap when source file has been modified', () => {
+      status = 'modified'
 
-    expect(response.metrics.status).to.eq('notmodified')
-    expect(cacheRewrittenSourceMap).to.not.be.called
-  })
+      const response = rewriter.rewrite('content', 'file')
 
-  it('should catch errors produced in cacheRewrittenSourceMap', () => {
-    status = 'modified'
+      expect(response.metrics.status).to.eq('modified')
+      expect(cacheRewrittenSourceMap).to.not.be.called
+    })
 
-    cacheRewrittenSourceMap.throws(() => new Error('Error reading sourceMap file'))
+    it('does not load sourceMap when source file has not been modified', () => {
+      status = 'notmodified'
 
-    expect(() => rewriter.rewrite('content', 'file')).to.not.throw()
+      const response = rewriter.rewrite('content', 'file')
+
+      expect(response.metrics.status).to.eq('notmodified')
+      expect(cacheRewrittenSourceMap).to.not.be.called
+    })
+
+    it('should catch errors produced in cacheRewrittenSourceMap', () => {
+      status = 'modified'
+
+      cacheRewrittenSourceMap.throws(() => new Error('Error reading sourceMap file'))
+
+      expect(() => rewriter.rewrite('content', 'file')).to.not.throw()
+    })
   })
 })
