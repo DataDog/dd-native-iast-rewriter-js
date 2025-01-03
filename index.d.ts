@@ -40,8 +40,12 @@ export interface LiteralInfo {
   value: string
   locations: Array<LiteralLocation>
 }
-export class Rewriter {
+export class NonCacheRewriter {
   constructor(config?: RewriterConfig | undefined | null)
   rewrite(code: string, file: string): Result
   csiMethods(): Array<string>
 }
+
+export class Rewriter extends NonCacheRewriter {}
+
+export function cacheRewrittenSourceMap(filename: string, fileContent: string): void
