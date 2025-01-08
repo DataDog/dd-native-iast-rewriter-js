@@ -10,14 +10,17 @@ mod tests {
 
     use anyhow::Error;
 
-    use crate::{rewriter::debug_js, tests::rewrite_js};
+    use crate::{
+        rewriter::debug_js,
+        tests::{assert_not_modified, rewrite_js},
+    };
 
     #[test]
     fn test_simple_plus_literal() -> Result<(), String> {
         let original_code = "{const result = 'a' + 'b'}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const result = 'a' + 'b'");
+        assert_not_modified(&rewritten);
         Ok(())
     }
 
@@ -26,7 +29,7 @@ mod tests {
         let original_code = "{const result = 'a' + 'b' + 'c'}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const result = 'a' + 'b' + 'c'");
+        assert_not_modified(&rewritten);
         Ok(())
     }
 
@@ -45,7 +48,7 @@ mod tests {
         let original_code = "{const result = 1 + 2}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const result = 1 + 2");
+        assert_not_modified(&rewritten);
         Ok(())
     }
 

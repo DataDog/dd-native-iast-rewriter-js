@@ -184,7 +184,13 @@ impl Rewriter {
 
         rewrite_js(code, &file, &self.config, &source_map_reader)
             .map(|result| Result {
-                content: print_js(&result, &self.config),
+                content: print_js(
+                    &result.code,
+                    &result.source_map,
+                    &result.original_source_map,
+                    &self.config,
+                )
+                .into_owned(),
                 metrics: get_metrics(result.transform_status, &file),
                 literals_result: result.literals_result,
             })

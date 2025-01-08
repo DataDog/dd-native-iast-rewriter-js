@@ -9,8 +9,8 @@ mod tests {
     use crate::{
         rewriter::print_js,
         tests::{
-            csi_from_str, get_chained_and_print_comments_config, get_default_config, rewrite_js,
-            rewrite_js_with_csi_methods,
+            assert_not_modified, csi_from_str, get_chained_and_print_comments_config,
+            get_default_config, rewrite_js, rewrite_js_with_csi_methods,
         },
         visitor::csi_methods::CsiMethods,
     };
@@ -65,7 +65,7 @@ mod tests {
         let original_code = "{const a = \"b\".substring(1);}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const a = \"b\".substring(1)");
+        assert_not_modified(&rewritten);
         Ok(())
     }
 
@@ -74,8 +74,7 @@ mod tests {
         let original_code = "{const a = String.prototype.substring.call('hello', 2);}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code)
-            .contains("const a = String.prototype.substring.call('hello', 2)");
+        assert_not_modified(&rewritten);
         Ok(())
     }
 
@@ -125,7 +124,7 @@ mod tests {
         let original_code = "{const a = String.prototype.concat.call(1,2,3)}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const a = String.prototype.concat.call(1,2,3)");
+        assert_not_modified(&rewritten);
         Ok(())
     }
 
@@ -190,7 +189,7 @@ mod tests {
         let original_code = "{const a = \"b\".trim();}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const a = \"b\".trim();");
+        assert_not_modified(&rewritten);
         Ok(())
     }
 
@@ -223,7 +222,7 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js_with_csi_methods(original_code, js_file, &CsiMethods::empty())
             .map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const a = b.concat('hello')");
+        assert_not_modified(&rewritten);
         Ok(())
     }
 
@@ -232,7 +231,7 @@ mod tests {
         let original_code = "{const a = b.plusOperator('hello')}".to_string();
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file).map_err(|e| e.to_string())?;
-        assert_that(&rewritten.code).contains("const a = b.plusOperator('hello')");
+        assert_not_modified(&rewritten);
         Ok(())
     }
 
@@ -273,7 +272,15 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file)
             .map_err(|e| e.to_string())
-            .map(|rewrite_output| print_js(&rewrite_output, &get_default_config(false)))?;
+            .map(|result| {
+                print_js(
+                    &result.code,
+                    &result.source_map,
+                    &result.original_source_map,
+                    &get_default_config(false),
+                )
+                .into_owned()
+            })?;
 
         assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
     __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \
@@ -292,8 +299,14 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file)
             .map_err(|e| e.to_string())
-            .map(|rewrite_output| {
-                print_js(&rewrite_output, &get_chained_and_print_comments_config())
+            .map(|result| {
+                print_js(
+                    &result.code,
+                    &result.source_map,
+                    &result.original_source_map,
+                    &get_chained_and_print_comments_config(),
+                )
+                .into_owned()
             })?;
 
         assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
@@ -311,7 +324,15 @@ mod tests {
         let js_file = "test.js".to_string();
         let rewritten = rewrite_js(original_code, js_file)
             .map_err(|e| e.to_string())
-            .map(|rewrite_output| print_js(&rewrite_output, &get_default_config(false)))?;
+            .map(|result| {
+                print_js(
+                    &result.code,
+                    &result.source_map,
+                    &result.original_source_map,
+                    &get_default_config(false),
+                )
+                .into_owned()
+            })?;
 
         assert_that(&rewritten).contains("const a = {\n        __html: (__datadog_test_2 = (__datadog_test_0 = b, \
     __datadog_test_1 = __datadog_test_0.replace, _ddiast.replace(__datadog_test_1.call(__datadog_test_0, /\\/\\*# sourceMappingURL=.*\\*\\//g, ''), \

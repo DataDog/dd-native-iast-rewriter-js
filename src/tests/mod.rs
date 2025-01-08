@@ -5,10 +5,12 @@
 use crate::{
     rewriter::{Config, RewrittenOutput},
     telemetry::TelemetryVerbosity,
+    transform::transform_status::Status,
     util::DefaultFileReader,
     visitor::csi_methods::{CsiMethod, CsiMethods},
 };
 use anyhow::Error;
+use speculoos::{assert_that, prelude::BooleanAssertions};
 use std::path::PathBuf;
 
 mod arrow_func_tests;
@@ -144,4 +146,14 @@ fn csi_op_from_str(src: &str, dst: Option<&str>) -> CsiMethod {
         None => None,
     };
     CsiMethod::new(String::from(src), dst_string, true, false)
+}
+
+fn assert_not_modified(output: &RewrittenOutput) {
+    assert_that(
+        &output
+            .transform_status
+            .as_ref()
+            .is_some_and(|transform_status| transform_status.status == Status::NotModified),
+    )
+    .is_true();
 }
