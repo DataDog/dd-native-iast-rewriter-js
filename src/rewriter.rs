@@ -26,7 +26,7 @@ use std::{
 use swc::{
     config::{IsModule, SourceMapsConfig},
     sourcemap::{decode, decode_data_url, DecodedMap, SourceMap, SourceMapBuilder},
-    try_with_handler, Compiler, HandlerOpts, PrintArgs, SwcComments, TransformOutput,
+    try_with_handler, Compiler, HandlerOpts, PrintArgs, SwcComments,
 };
 use swc_common::{
     comments::Comments,
@@ -52,13 +52,6 @@ pub struct RewrittenOutput {
 pub struct OriginalSourceMap {
     pub source: Option<SourceMap>,
     pub source_map_comment: Option<String>,
-}
-
-pub struct TransformOutputWithStatus {
-    pub output: TransformOutput,
-    pub original_map: OriginalSourceMap,
-    pub status: TransformStatus,
-    pub literals_result: Option<LiteralsResult>,
 }
 
 pub struct Config {
@@ -103,15 +96,7 @@ pub fn rewrite_js<R: Read>(
 
         let program = parse_js(&source_file, handler, &compiler)?;
 
-        let result = transform_js(program, file, file_reader, config, &compiler);
-
-        result.map(|transformed| RewrittenOutput {
-            code: transformed.output.code,
-            source_map: transformed.output.map.unwrap_or_default(),
-            original_source_map: transformed.original_map,
-            transform_status: Some(transformed.status),
-            literals_result: transformed.literals_result,
-        })
+        transform_js(program, file, file_reader, config, &compiler)
     })
 }
 
@@ -196,7 +181,7 @@ fn transform_js<R: Read>(
     file_reader: &impl FileReader<R>,
     config: &Config,
     compiler: &Compiler,
-) -> Result<TransformOutputWithStatus, Error> {
+) -> Result<RewrittenOutput, Error> {
     let mut transform_status = TransformStatus::not_modified(config);
 
     let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status, config);
@@ -217,29 +202,27 @@ fn transform_js<R: Read>(
         Status::Modified => {
             // extract sourcemap before printing otherwise comments are consumed
             // and looks like it is not possible to read them after compiler.print() invocation
-            let original_map = extract_source_map(file, compiler.comments(), file_reader);
+            let original_source_map = extract_source_map(file, compiler.comments(), file_reader);
 
             compiler
                 .print(&program, print_args)
-                .map(|output| TransformOutputWithStatus {
-                    output,
-                    original_map,
-                    status: transform_status,
+                .map(|output| RewrittenOutput {
+                    code: output.code,
+                    source_map: output.map.unwrap_or_default(),
+                    original_source_map,
+                    transform_status: Some(transform_status),
                     literals_result,
                 })
         }
 
-        Status::NotModified => Ok(TransformOutputWithStatus {
-            output: TransformOutput {
-                code: String::from(""),
-                map: None,
-                output: None,
-            },
-            original_map: OriginalSourceMap {
+        Status::NotModified => Ok(RewrittenOutput {
+            code: String::default(),
+            source_map: String::default(),
+            original_source_map: OriginalSourceMap {
                 source: None,
                 source_map_comment: None,
             },
-            status: transform_status,
+            transform_status: Some(transform_status),
             literals_result,
         }),
 
