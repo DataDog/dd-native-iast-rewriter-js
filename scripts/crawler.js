@@ -199,9 +199,7 @@ crawl(options.rootPath, options, {
         const start = process.hrtime.bigint()
 
         const response = rewriter.rewrite(code, path)
-
-        // rewrite returns an empty content when for the 'notmodified' status
-        let rewritten = response.content || code
+        let rewritten = response.content
 
         green(`     -> ${fileName}`)
 

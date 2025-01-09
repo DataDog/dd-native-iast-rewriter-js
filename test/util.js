@@ -84,7 +84,7 @@ const rewriteAst = (code, opts) => {
 const wrapBlock = (code) => `{${os.EOL}${code}${os.EOL}}`
 
 const rewriteAndExpectNoTransformation = (code, opts) => {
-  return rewriteAndExpect(wrapBlock(code), '', true, opts) || code
+  return rewriteAndExpect(wrapBlock(code), wrapBlock(code), true, opts)
 }
 
 const rewriteAndExpect = (code, expect, block, opts) => {

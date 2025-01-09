@@ -32,6 +32,22 @@ class NonCacheRewriter {
 
   rewrite (code, file) {
     return this.nativeRewriter.rewrite(code, file)
+    const response = this.nativeRewriter.rewrite(code, file)
+
+    try {
+      const { metrics, content } = response
+      const status = metrics?.status
+      if (status === 'modified') {
+        cacheRewrittenSourceMap(file, content)
+      } else if (status === 'notmodified') {
+        // rewrite returns an empty content when for the 'notmodified' status
+        response.content = code
+      }
+    } catch (e) {
+      this.logError(e)
+    }
+
+    return response
   }
 
   csiMethods () {

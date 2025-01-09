@@ -268,7 +268,7 @@ __datadog_test_2, __datadog_test_1, 1)));
       // eslint-disable-next-line no-eval
       const originalResult = eval(code)
       // eslint-disable-next-line no-eval
-      const modifiedResult = eval(rewriteAst(code) || code)
+      const modifiedResult = eval(rewriteAst(code))
 
       expect(modifiedResult).to.be.eq(originalResult)
     }
