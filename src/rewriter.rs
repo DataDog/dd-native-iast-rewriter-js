@@ -94,9 +94,8 @@ pub fn rewrite_js<R: Read>(
             .cm
             .new_source_file(Arc::new(FileName::Real(PathBuf::from(file))), code);
 
-        let program = parse_js(&source_file, handler, &compiler)?;
-
-        transform_js(program, file, file_reader, config, &compiler)
+        parse_js(&source_file, handler, &compiler)
+            .map(|program| transform_js(program, file, file_reader, config, &compiler))?
     })
 }
 
