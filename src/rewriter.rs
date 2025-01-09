@@ -105,11 +105,8 @@ pub fn print_js<'a>(
     original_source_map: &OriginalSourceMap,
     config: &Config,
 ) -> Cow<'a, str> {
-    let mut final_source_map: String = source_map.to_owned();
-    if config.chain_source_map {
-        final_source_map = chain_source_maps(source_map, &original_source_map.source)
-            .unwrap_or_else(|_| String::from(source_map));
-    }
+    let final_source_map = chain_source_maps(source_map, &original_source_map.source, config)
+        .unwrap_or_else(|| String::from(source_map));
 
     let final_code = if config.print_comments {
         match &original_source_map.source_map_comment {
@@ -235,12 +232,16 @@ fn transform_js<R: Read>(
     }
 }
 
-fn chain_source_maps(source_map: &str, original_map: &Option<SourceMap>) -> Result<String, Error> {
-    debug!("Chaining sourcemaps");
+fn chain_source_maps(
+    source_map: &str,
+    original_map: &Option<SourceMap>,
+    config: &Config,
+) -> Option<String> {
+    config.chain_source_map.then(|| {
+        debug!("Chaining sourcemaps");
 
-    if let Some(new_source) = parse_source_map(Some(source_map)) {
-        match original_map {
-            Some(original_source) => {
+        original_map.as_ref().and_then(|original_source| {
+            parse_source_map(Some(source_map)).and_then(|new_source| {
                 let mut builder = SourceMapBuilder::new(None);
                 let mut sources: HashMap<String, u32> = HashMap::new();
                 let mut names: HashMap<String, u32> = HashMap::new();
@@ -277,6 +278,7 @@ fn chain_source_maps(source_map: &str, original_map: &Option<SourceMap>) -> Resu
                         );
                     }
                 }
+
                 let mut source_map_output: Vec<u8> = vec![];
                 builder
                     .into_sourcemap()
@@ -287,14 +289,11 @@ fn chain_source_maps(source_map: &str, original_map: &Option<SourceMap>) -> Resu
                     })
                     .map_err(|err| {
                         debug!("Error chaining sourcemaps {err:?}");
-                        Error::new(err)
                     })
-            }
-            None => Result::Ok(String::from(source_map)),
-        }
-    } else {
-        Result::Ok(String::from(source_map))
-    }
+                    .ok()
+            })
+        })
+    })?
 }
 
 fn extract_source_map<R: Read>(
