@@ -19,7 +19,8 @@ class DummyRewriter {
 }
 
 let NativeRewriter
-class CacheRewriter {
+
+class NonCacheRewriter {
   constructor (config) {
     if (NativeRewriter) {
       this.nativeRewriter = new NativeRewriter(config)
@@ -30,18 +31,7 @@ class CacheRewriter {
   }
 
   rewrite (code, file) {
-    const response = this.nativeRewriter.rewrite(code, file)
-
-    try {
-      const { metrics, content } = response
-      if (metrics?.status === 'modified') {
-        cacheRewrittenSourceMap(file, content)
-      }
-    } catch (e) {
-      this.logError(e)
-    }
-
-    return response
+    return this.nativeRewriter.rewrite(code, file)
   }
 
   csiMethods () {
@@ -65,12 +55,29 @@ class CacheRewriter {
   }
 }
 
-function getRewriter () {
+class CacheRewriter extends NonCacheRewriter {
+  rewrite (code, file) {
+    const response = super.rewrite(code, file)
+
+    try {
+      const { metrics, content } = response
+      if (metrics?.status === 'modified') {
+        cacheRewrittenSourceMap(file, content)
+      }
+    } catch (e) {
+      this.logError(e)
+    }
+
+    return response
+  }
+}
+
+function getRewriter (withoutCache = false) {
   try {
     const iastRewriter = require('./wasm/wasm_iast_rewriter')
 
     NativeRewriter = iastRewriter.Rewriter
-    return CacheRewriter
+    return withoutCache ? NonCacheRewriter : CacheRewriter
   } catch (e) {
     return DummyRewriter
   }
@@ -78,8 +85,10 @@ function getRewriter () {
 
 module.exports = {
   Rewriter: getRewriter(),
+  NonCacheRewriter: getRewriter(true),
   DummyRewriter,
   getPrepareStackTrace,
   getOriginalPathAndLineFromSourceMap,
-  kSymbolPrepareStackTrace
+  kSymbolPrepareStackTrace,
+  cacheRewrittenSourceMap
 }
