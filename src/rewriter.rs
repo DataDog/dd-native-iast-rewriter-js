@@ -16,6 +16,7 @@ use anyhow::{Error, Result};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use log::debug;
 use std::{
+    borrow::Cow,
     collections::HashMap,
     io::Read,
     path::{Path, PathBuf},
@@ -25,7 +26,7 @@ use std::{
 use swc::{
     config::{IsModule, SourceMapsConfig},
     sourcemap::{decode, decode_data_url, DecodedMap, SourceMap, SourceMapBuilder},
-    try_with_handler, Compiler, HandlerOpts, PrintArgs, SwcComments, TransformOutput,
+    try_with_handler, Compiler, HandlerOpts, PrintArgs, SwcComments,
 };
 use swc_common::{
     comments::Comments,
@@ -51,12 +52,6 @@ pub struct RewrittenOutput {
 pub struct OriginalSourceMap {
     pub source: Option<SourceMap>,
     pub source_map_comment: Option<String>,
-}
-
-pub struct TransformOutputWithStatus {
-    pub output: TransformOutput,
-    pub status: TransformStatus,
-    pub literals_result: Option<LiteralsResult>,
 }
 
 pub struct Config {
@@ -99,42 +94,30 @@ pub fn rewrite_js<R: Read>(
             .cm
             .new_source_file(Arc::new(FileName::Real(PathBuf::from(file))), code);
 
-        let program = parse_js(&source_file, handler, &compiler)?;
-
-        // extract sourcemap before printing otherwise comments are consumed
-        // and looks like it is not possible to read them after compiler.print() invocation
-        let original_map = extract_source_map(file, compiler.comments(), file_reader);
-
-        let result = transform_js(program, &source_file, file, config, &compiler);
-
-        result.map(|transformed| RewrittenOutput {
-            code: transformed.output.code,
-            source_map: transformed.output.map.unwrap_or_default(),
-            original_source_map: original_map,
-            transform_status: Some(transformed.status),
-            literals_result: transformed.literals_result,
-        })
+        parse_js(&source_file, handler, &compiler)
+            .and_then(|program| transform_js(program, file, file_reader, config, &compiler))
     })
 }
 
-pub fn print_js(output: &RewrittenOutput, config: &Config) -> String {
-    let mut final_source_map: String = String::from(&output.source_map);
-    let original_source_map = &output.original_source_map;
-    if config.chain_source_map {
-        final_source_map = chain_source_maps(&output.source_map, &original_source_map.source)
-            .unwrap_or_else(|_| String::from(&output.source_map));
-    }
+pub fn print_js<'a>(
+    code: &'a str,
+    source_map: &str,
+    original_source_map: &OriginalSourceMap,
+    config: &Config,
+) -> Cow<'a, str> {
+    let final_source_map = chain_source_maps(source_map, &original_source_map.source, config)
+        .unwrap_or_else(|| String::from(source_map));
 
     let final_code = if config.print_comments {
         match &original_source_map.source_map_comment {
             Some(comment) => {
                 debug!("Replacing original sourceMappingUrl comment: {comment}");
-                output.code.replace(comment.as_str(), "")
+                code.replace(comment.as_str(), "").into()
             }
-            _ => output.code.clone(),
+            _ => code.into(),
         }
     } else {
-        output.code.clone()
+        code.into()
     };
 
     if final_source_map.is_empty() {
@@ -149,6 +132,7 @@ pub fn print_js(output: &RewrittenOutput, config: &Config) -> String {
             SOURCE_MAP_URL,
             STANDARD.encode(final_source_map)
         )
+        .into()
     }
 }
 
@@ -187,13 +171,13 @@ fn parse_js(
     )
 }
 
-fn transform_js(
+fn transform_js<R: Read>(
     mut program: Program,
-    source_file: &SourceFile,
     file: &str,
+    file_reader: &impl FileReader<R>,
     config: &Config,
     compiler: &Compiler,
-) -> Result<TransformOutputWithStatus, Error> {
+) -> Result<RewrittenOutput, Error> {
     let mut transform_status = TransformStatus::not_modified(config);
 
     let mut block_transform_visitor = BlockTransformVisitor::default(&mut transform_status, config);
@@ -212,22 +196,29 @@ fn transform_js(
 
     match transform_status.status {
         Status::Modified => {
+            // extract sourcemap before printing otherwise comments are consumed
+            // and looks like it is not possible to read them after compiler.print() invocation
+            let original_source_map = extract_source_map(file, compiler.comments(), file_reader);
+
             compiler
                 .print(&program, print_args)
-                .map(|output| TransformOutputWithStatus {
-                    output,
-                    status: transform_status,
+                .map(|output| RewrittenOutput {
+                    code: output.code,
+                    source_map: output.map.unwrap_or_default(),
+                    original_source_map,
+                    transform_status: Some(transform_status),
                     literals_result,
                 })
         }
 
-        Status::NotModified => Ok(TransformOutputWithStatus {
-            output: TransformOutput {
-                code: source_file.src.to_string(),
-                map: None,
-                output: None,
+        Status::NotModified => Ok(RewrittenOutput {
+            code: String::default(),
+            source_map: String::default(),
+            original_source_map: OriginalSourceMap {
+                source: None,
+                source_map_comment: None,
             },
-            status: transform_status,
+            transform_status: Some(transform_status),
             literals_result,
         }),
 
@@ -242,14 +233,15 @@ fn transform_js(
 }
 
 fn chain_source_maps(
-    source_map: &String,
+    source_map: &str,
     original_map: &Option<SourceMap>,
-) -> Result<String, Error> {
-    debug!("Chaining sourcemaps");
+    config: &Config,
+) -> Option<String> {
+    config.chain_source_map.then(|| {
+        debug!("Chaining sourcemaps");
 
-    if let Some(new_source) = parse_source_map(Some(source_map.as_str())) {
-        match original_map {
-            Some(original_source) => {
+        original_map.as_ref().and_then(|original_source| {
+            parse_source_map(Some(source_map)).and_then(|new_source| {
                 let mut builder = SourceMapBuilder::new(None);
                 let mut sources: HashMap<String, u32> = HashMap::new();
                 let mut names: HashMap<String, u32> = HashMap::new();
@@ -286,6 +278,7 @@ fn chain_source_maps(
                         );
                     }
                 }
+
                 let mut source_map_output: Vec<u8> = vec![];
                 builder
                     .into_sourcemap()
@@ -296,14 +289,11 @@ fn chain_source_maps(
                     })
                     .map_err(|err| {
                         debug!("Error chaining sourcemaps {err:?}");
-                        Error::new(err)
                     })
-            }
-            None => Result::Ok(String::from(source_map)),
-        }
-    } else {
-        Result::Ok(String::from(source_map))
-    }
+                    .ok()
+            })
+        })
+    })?
 }
 
 fn extract_source_map<R: Read>(

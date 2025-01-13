@@ -11,7 +11,7 @@ mod tests {
     use swc::sourcemap::{decode_data_url, DecodedMap};
 
     use crate::{
-        rewriter::{print_js, rewrite_js, RewrittenOutput},
+        rewriter::{print_js, rewrite_js, Config, RewrittenOutput},
         tests::{
             get_chained_and_print_comments_config, get_default_config, get_test_resources_folder,
         },
@@ -116,10 +116,20 @@ mod tests {
         }
     }
 
+    fn print(result: &RewrittenOutput, config: &Config) -> String {
+        print_js(
+            &result.code,
+            &result.source_map,
+            &result.original_source_map,
+            config,
+        )
+        .into_owned()
+    }
+
     #[test]
     fn test_source_maps_unchained_embedded() -> Result<(), String> {
         let rewritten = get_rewritten_js("StrUtil_embedded.js")?;
-        let result = print_js(&rewritten, &get_default_config(false));
+        let result = print(&rewritten, &get_default_config(false));
         assert_that(&result).contains(SOURCE_MAP_URL);
         check_sourcemap_tokens(result, UNCHAINED_TOKENS.to_vec());
         Ok(())
@@ -128,7 +138,7 @@ mod tests {
     #[test]
     fn test_source_maps_unchained_external() -> Result<(), String> {
         let rewritten = get_rewritten_js("StrUtil_external.js")?;
-        let result = print_js(&rewritten, &get_default_config(false));
+        let result = print(&rewritten, &get_default_config(false));
         assert_that(&result).contains(SOURCE_MAP_URL);
         check_sourcemap_tokens(result, UNCHAINED_TOKENS.to_vec());
         Ok(())
@@ -137,7 +147,7 @@ mod tests {
     #[test]
     fn test_source_maps_unchained_without_original_source_map() -> Result<(), String> {
         let rewritten = get_rewritten_js("StrUtil_without_sm.js")?;
-        let result = print_js(&rewritten, &get_default_config(false));
+        let result = print(&rewritten, &get_default_config(false));
         assert_that(&result).contains(SOURCE_MAP_URL);
         check_sourcemap_tokens(result, UNCHAINED_TOKENS.to_vec());
         Ok(())
@@ -146,7 +156,7 @@ mod tests {
     #[test]
     fn test_source_maps_chained_embedded() -> Result<(), String> {
         let rewritten = get_rewritten_js("StrUtil_embedded.js")?;
-        let result = print_js(&rewritten, &get_chained_and_print_comments_config());
+        let result = print(&rewritten, &get_chained_and_print_comments_config());
         assert_that(&result).contains(SOURCE_MAP_URL);
         check_sourcemap_tokens(result, CHAINED_TOKENS.to_vec());
         Ok(())
@@ -155,7 +165,7 @@ mod tests {
     #[test]
     fn test_source_maps_chained_external() -> Result<(), String> {
         let rewritten = get_rewritten_js("StrUtil_external.js")?;
-        let result = print_js(&rewritten, &get_chained_and_print_comments_config());
+        let result = print(&rewritten, &get_chained_and_print_comments_config());
         assert_that(&result).contains(SOURCE_MAP_URL);
         check_sourcemap_tokens(result, CHAINED_TOKENS.to_vec());
         Ok(())
@@ -164,7 +174,7 @@ mod tests {
     #[test]
     fn test_source_maps_chained_without_original_source_map() -> Result<(), String> {
         let rewritten = get_rewritten_js("StrUtil_without_sm.js")?;
-        let result = print_js(&rewritten, &get_chained_and_print_comments_config());
+        let result = print(&rewritten, &get_chained_and_print_comments_config());
         assert_that(&result).contains(SOURCE_MAP_URL);
         check_sourcemap_tokens(result, UNCHAINED_TOKENS.to_vec());
         Ok(())
