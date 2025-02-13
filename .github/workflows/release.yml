@@ -24,7 +24,7 @@ jobs:
           npm pack
       - uses: codex-team/action-nodejs-package-info@v1.1
         id: package
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}-${{ steps.package.outputs.version }}
           path: '*.tgz'
@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: codex-team/action-nodejs-package-info@v1.1
         id: package
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}-${{ steps.package.outputs.version }}
       - uses: actions/create-release@v1
@@ -74,7 +74,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: codex-team/action-nodejs-package-info@v1.1
         id: package
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}-${{ steps.package.outputs.version }}
       - uses: actions/setup-node@v3

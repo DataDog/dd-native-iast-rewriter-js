@@ -61,7 +61,7 @@ jobs:
       - uses: codex-team/action-nodejs-package-info@v1.1
         id: package
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: datadog-wasm-js-rewriter-${{ steps.package.outputs.version }}
           path: '*.tgz'
@@ -111,7 +111,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - uses: codex-team/action-nodejs-package-info@v1.1
         id: package
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: datadog-wasm-js-rewriter-${{ steps.package.outputs.version }}
       - run: npm i datadog-wasm-js-rewriter-${{ steps.package.outputs.version }}.tgz
@@ -141,7 +141,7 @@ jobs:
           node-version: '16'
       - uses: codex-team/action-nodejs-package-info@v1.1
         id: package
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: datadog-wasm-js-rewriter-${{ steps.package.outputs.version }}
       - run: docker build -t test -f ./docker/${{ matrix.target.dockerfile }} --build-arg NPM_VERSION=${{ steps.package.outputs.version }} .
@@ -161,7 +161,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: codex-team/action-nodejs-package-info@v1.1
         id: package
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: datadog-wasm-js-rewriter-${{ steps.package.outputs.version }}
 
