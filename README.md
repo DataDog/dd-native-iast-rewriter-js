@@ -1,4 +1,4 @@
-# dd-native-iast-rewriter-js
+# dd-wasm-js-rewriter
 
 Nodejs native AST rewriter heavily based on [Speedy Web Compiler o SWC compiler](https://github.com/swc-project/swc) used to instrument Javascript source files.
 
@@ -11,7 +11,7 @@ Nodejs native AST rewriter heavily based on [Speedy Web Compiler o SWC compiler]
 ## Usage
 
 ```javascript
-const Rewriter = require('@datadog/native-iast-rewriter')
+const Rewriter = require('@datadog/wasm-js-rewriter')
 
 const rewriter = new Rewriter(rewriterConfig)
 const result = rewriter.rewrite(code, filename)
@@ -53,7 +53,7 @@ CsiMethod {
 ## Example
 
 ```javascript
-const Rewriter = require('@datadog/native-iast-rewriter')
+const Rewriter = require('@datadog/wasm-js-rewriter')
 
 const rewriterConfig = {
   csiMethods: [{ src: 'substring' }],

@@ -115,7 +115,7 @@ jobs:
         id: package
       - uses: actions/upload-artifact@v3
         with:
-          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
+          name: datadog-wasm-js-rewriter-${{ steps.package.outputs.version }}
           path: '*.tgz'
 
   test-native-js:
@@ -148,8 +148,8 @@ jobs:
         id: package
       - uses: actions/download-artifact@v3
         with:
-          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
-      - run: npm i --verbose datadog-native-iast-rewriter-${{ steps.package.outputs.version }}.tgz
+          name: datadog-wasm-js-rewriter-${{ steps.package.outputs.version }}
+      - run: npm i --verbose datadog-wasm-js-rewriter-${{ steps.package.outputs.version }}.tgz
       - run: npm run test:junit
       - run: npm run test:integration:ci
       - name: Publish Test Report
@@ -178,7 +178,7 @@ jobs:
         id: package
       - uses: actions/download-artifact@v3
         with:
-          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
+          name: datadog-wasm-js-rewriter-${{ steps.package.outputs.version }}
       - run: docker build -t test -f ./docker/${{ matrix.target.dockerfile }} --build-arg NPM_VERSION=${{ steps.package.outputs.version }} .
       - run: docker run --name tester test
       - run: docker cp tester:/test/build/junit.xml ./junit.xml
@@ -198,7 +198,7 @@ jobs:
         id: package
       - uses: actions/download-artifact@v3
         with:
-          name: datadog-native-iast-rewriter-${{ steps.package.outputs.version }}
+          name: datadog-wasm-js-rewriter-${{ steps.package.outputs.version }}
 
       - name: Restore v8 builder Image
         id: cache-docker-v8

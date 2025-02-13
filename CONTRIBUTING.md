@@ -1,4 +1,4 @@
-# Contributing to dd-native-iast-rewriter-js
+# Contributing to dd-wasm-js-rewriter
 
 Please reach out before starting work on any major code changes.
 This will ensure we avoid duplicating work, or that your code can't be merged due to a rapidly changing

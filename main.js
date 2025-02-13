@@ -81,7 +81,7 @@ class CacheRewriter extends NonCacheRewriter {
 
 function getRewriter (withoutCache = false) {
   try {
-    const iastRewriter = require('./wasm/wasm_iast_rewriter')
+    const iastRewriter = require('./wasm/wasm_js_rewriter')
 
     NativeRewriter = iastRewriter.Rewriter
     return withoutCache ? NonCacheRewriter : CacheRewriter

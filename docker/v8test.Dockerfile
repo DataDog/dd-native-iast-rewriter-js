@@ -8,7 +8,7 @@ WORKDIR /build
 RUN rm -rf /build/v8/test/mjsunit/asm
 
 # copy rewriter npm packages and extract them
-COPY ./datadog-native-iast-rewriter* /build/
+COPY ./datadog-wasm-js-rewriter* /build/
 RUN cat *.tgz | tar zxvf - -i
 COPY ./scripts/crawler.js /build/package/scripts/crawler.js
 RUN npm i --prefix package

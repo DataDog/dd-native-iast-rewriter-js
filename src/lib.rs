@@ -13,12 +13,4 @@ mod visitor;
 #[cfg(test)]
 mod tests;
 
-#[cfg(not(feature = "napi"))]
 mod lib_wasm;
-
-#[macro_use]
-#[cfg(feature = "napi")]
-extern crate napi_derive;
-
-#[cfg(feature = "napi")]
-mod lib_napi;

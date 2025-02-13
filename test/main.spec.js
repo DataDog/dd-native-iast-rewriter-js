@@ -22,7 +22,7 @@ describe('main', () => {
 
     cacheRewrittenSourceMap = sinon.stub()
     main = proxyquire('../main', {
-      './wasm/wasm_iast_rewriter': {
+      './wasm/wasm_js_rewriter': {
         '@noCallThru': true,
         Rewriter
       },

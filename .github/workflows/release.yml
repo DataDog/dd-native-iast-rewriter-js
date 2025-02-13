@@ -1,7 +1,7 @@
 name: Release
 
 env:
-  ARTIFACT_NAME: datadog-native-iast-rewriter
+  ARTIFACT_NAME: datadog-wasm-js-rewriter
 
 on:
   push:

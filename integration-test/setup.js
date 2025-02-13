@@ -8,7 +8,7 @@
 const chai = require('chai')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
-const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/native-iast-rewriter' : '../'
+const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/wasm-js-rewriter' : '../'
 const { Rewriter, getPrepareStackTrace } = require(rewriterPackage)
 const path = require('path')
 const Module = require('module')

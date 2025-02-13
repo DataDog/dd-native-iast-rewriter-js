@@ -69,7 +69,7 @@ function testDefault () {
 
 function testWasm () {
   console.log('start wasm')
-  const { Rewriter } = require('../wasm/wasm_iast_rewriter.js')
+  const { Rewriter } = require('../wasm/wasm_js_rewriter.js')
   const start = process.hrtime.bigint()
   const rewriter = new Rewriter()
   rewriteFilesToRewrite(rewriter)
