@@ -1,15 +1,12 @@
 [package]
 edition = "2021"
-name = "native-iast-rewriter"
-version = "2.8.0"
+name = "wasm-js-rewriter"
+version = "3.0.0"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-# Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
-napi = { version = "2.2.0", default-features = false, features = ["napi4"] }
-napi-derive = "2.2.0"
 swc = "0.282.1"
 swc_common = "0.36.0"
 swc_ecma_ast = "0.117.0"
@@ -31,13 +28,9 @@ tempfile = "3.3.0"
 speculoos = "0.11.0"
 ctor = "0.1.23"
 
-[build-dependencies]
-napi-build = "2.0.1"
-
 [profile.release]
 lto = false
 
 [features]
 default = ["instant/wasm-bindgen", "instant/inaccurate"]
-napi = []
 

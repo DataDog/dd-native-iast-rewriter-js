@@ -7,7 +7,7 @@ const os = require('os')
 const path = require('path')
 const fs = require('fs')
 
-const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/native-iast-rewriter' : '../main'
+const rewriterPackage = process.env.NPM_REWRITER === 'true' ? '@datadog/wasm-js-rewriter' : '../main'
 const { Rewriter, DummyRewriter } = require(rewriterPackage)
 
 const TELEMETRY_VERBOSITY = 'DEBUG'

@@ -57,7 +57,7 @@ function readVersionFromCargoLock (cargoLockContent) {
       if (line.indexOf('version =') === 0) {
         return JSON.parse(line.split('=')[1].trim())
       }
-    } else if (line === 'name = "native-iast-rewriter"') {
+    } else if (line === 'name = "wasm-js-rewriter"') {
       inPackage = true
     }
   }

@@ -1,32 +1,19 @@
 {
-  "name": "@datadog/native-iast-rewriter",
-  "homepage": "https://github.com/DataDog/dd-native-iast-rewriter-js/blob/main/README.md",
-  "version": "2.8.0",
-  "description": "Datadog IAST instrumentation addon for NodeJS",
+  "name": "@datadog/wasm-js-rewriter",
+  "homepage": "https://github.com/DataDog/dd-wasm-js-rewriter/blob/main/README.md",
+  "version": "3.0.0",
+  "description": "Datadog instrumentation addon for NodeJS",
   "main": "main.js",
   "types": "index.d.ts",
-  "napi": {
-    "name": "iast-rewriter",
-    "triples": {
-      "defaults": false,
-      "additional": [
-        "x86_64-unknown-linux-gnu",
-        "x86_64-unknown-linux-musl",
-        "x86_64-pc-windows-msvc",
-        "aarch64-apple-darwin",
-        "x86_64-apple-darwin"
-      ]
-    }
-  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DataDog/dd-native-iast-rewriter-js.git"
+    "url": "git+https://github.com/DataDog/dd-wasm-js-rewriter.git"
   },
   "keywords": ["datadog", "iast"],
   "author": "Datadog Inc. <info@datadoghq.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/DataDog/dd-native-iast-rewriter-js/issues"
+    "url": "https://github.com/DataDog/dd-wasm-js-rewriter/issues"
   },
   "dependencies": {
     "lru-cache": "^7.14.0",
@@ -36,7 +23,6 @@
     "@babel/core": "^7.18.10",
     "@babel/parser": "^7.20.3",
     "@babel/types": "^7.18.10",
-    "@napi-rs/cli": "^2.0.0",
     "@swc-node/register": "^1.4.2",
     "@typescript-eslint/eslint-plugin": "^5.37.0",
     "@typescript-eslint/parser": "^5.38.1",
@@ -71,25 +57,12 @@
     "node": ">= 10"
   },
   "scripts": {
-    "artifacts": "napi artifacts",
-    "artifacts:prepare": "node ./scripts/artifacts.mjs",
-    "artifacts:prepublish": "napi prepublish --skip-gh-release",
-    "artifacts:gyp": "node ./scripts/artifacts-gyp.mjs",
-    "build": "wasm-pack build --scope datadog --out-dir wasm --out-name wasm_iast_rewriter --target nodejs",
-    "build:napi": "napi build --platform --release --features \"napi\" && npm run artifacts:gyp",
-    "build:napi:debug": "napi build --platform --features \"napi\" && npm run artifacts:gyp",
-    "build:napi:linux": "napi build --target x86_64-unknown-linux-gnu --platform --release --features \"napi\"",
-    "build:napi:alpine": "napi build --target x86_64-unknown-linux-musl --platform --release --features \"napi\"",
-    "build:napi:windows": "napi build --target x86_64-pc-windows-msvc --platform --release --features \"napi\"",
-    "build:napi:darwin": "napi build --target x86_64-apple-darwin --platform --release --features \"napi\"",
-    "build:napi:darwinArm": "napi build --target aarch64-apple-darwin --platform --release --features \"napi\"",
+    "build": "wasm-pack build --scope datadog --out-dir wasm --out-name wasm_js_rewriter --target nodejs",
     "format": "run-p format:prettier format:rs",
     "format:prettier": "prettier . -w",
     "format:rs": "cargo fmt",
     "lint": "eslint . -c ./.eslintrc.json",
     "rustfmt": "rustfmt --config imports_granularity=Crate src/*.rs",
-    "prepublishOnly:napi": "run-p artifacts:prepare artifacts:prepublish",
-    "version": "napi version",
     "test": "mocha --file 'test/setup.js' test/**/*.spec.js",
     "test:junit": "mocha --file 'test/setup.js' --reporter mocha-junit-reporter --reporter-options mochaFile=./build/junit.xml test/**/*.spec.js",
     "test:integration": "mocha --file 'integration-test/setup.js' integration-test/**/*.spec.js",
