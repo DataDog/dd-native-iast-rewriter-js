@@ -27,7 +27,7 @@ describe('logger', () => {
 
     rewriter.rewrite('function concat(a, b){ return a + b }', 'test.js')
 
-    expect(logger.error).to.have.been.calledOnceWith('IAST rewriter logger configured OK')
+    expect(logger.error).to.have.been.calledOnceWith('Wasm js rewriter logger configured OK')
   })
 
   it('should set logger as rewriter logger with DEBUG level', () => {
@@ -36,7 +36,7 @@ describe('logger', () => {
     rewriter.rewrite('function concat(a, b){ return a + b }', 'test.js')
 
     expect(logger.debug).to.have.been.called
-    expect(logger.debug.firstCall.args).to.deep.eq(['IAST rewriter logger configured OK'])
+    expect(logger.debug.firstCall.args).to.deep.eq(['Wasm js rewriter logger configured OK'])
     expect(logger.debug.secondCall.args).to.deep.eq([
       'Rewriting js file: test.js with config: \
 Config { chain_source_map: false, print_comments: false, local_var_prefix: "logger-test", csi_methods: \
@@ -53,7 +53,7 @@ verbosity: Information, literals: true }'
     rewriter.rewrite('function concat(a, b){ return a + b }', 'test.js')
 
     expect(debug).to.have.been.called
-    expect(debug.firstCall.args).to.deep.eq(['IAST rewriter logger configured OK'])
+    expect(debug.firstCall.args).to.deep.eq(['Wasm js rewriter logger configured OK'])
     expect(debug.secondCall.args).to.deep.eq([
       'Rewriting js file: test.js with config: \
 Config { chain_source_map: false, print_comments: false, local_var_prefix: "logger-test", csi_methods: \

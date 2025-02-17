@@ -230,7 +230,7 @@ impl Rewriter {
             .map(|_| {
                 log::log!(
                     log::max_level().to_level().unwrap_or(log::Level::Error),
-                    "IAST rewriter logger configured OK"
+                    "Wasm js rewriter logger configured OK"
                 )
             })
             .map_err(|err| JsError::new(&format!("{err:?}")))
